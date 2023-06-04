@@ -314,7 +314,7 @@ sekaid keys delete <name> ... [flags]
 | Flags         | Description                                                                   | Work  |
 | ------------- | ----------------------------------------------------------------------------- | ----- |
 | `-f, --force` | Remove the key unconditionally without asking for the passphrase. Deprecated. | ❌ no  |
-| `-h, --help`  | help for delete                                                               | ✅ yes |
+| `-h, --help`  | Help for delete                                                               | ✅ yes |
 | `-y, --yes`   | Skip confirmation prompt when deleting offline or ledger key references       | ✅ yes |
  
 | Global Flags               | Description                                                                            | Work  |
@@ -325,7 +325,7 @@ sekaid keys delete <name> ... [flags]
 | `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
 | `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
 | `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ no  |
-| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?   |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?   |
 
 ```
 /# sekaid keys delete --help
@@ -387,7 +387,7 @@ sekaid keys export <name> [flags]
 | `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
 | `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
 | `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ no  |
-| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?   |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?   |
 
 ```
 /# sekaid keys export --help
@@ -464,7 +464,7 @@ sekaid keys import <name> <keyfile> [flags]
 | `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
 | `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
 | `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ ?   |
-| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?   |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?   |
 
 ```
 /# sekaid keys import --help
@@ -518,7 +518,7 @@ sekaid keys list [flags]
 | `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
 | `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
 | `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ✅ yes |
-| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?   |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?   |
 
 ```
 /# sekaid keys list --help
@@ -586,6 +586,34 @@ validator
 
 #### 12.6 migrate
 
+Migrate key information from the legacy (db-based) Keybase to the new keyring-based Keyring.
+
+Usage:
+```
+sekaid keys migrate <old_home_dir> [flags]
+```
+
+| Flags        | Description                                                              | Work  |
+| ------------ | ------------------------------------------------------------------------ | ----- |
+| `--dry-run`  | Run migration without actually persisting any changes to the new Keybase | ❌ ?   |
+| `-h, --help` | Help for migrate                                                         | ✅ yes |
+
+| Global Flags               | Description                                                                            | Work |
+| -------------------------- | -------------------------------------------------------------------------------------- | ---- |
+| `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ❌ ?  |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ❌ ?  |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ❌ ?  |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?  |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?  |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ ?  |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?  |
+
+#TODO
+
+🟨  
+🟨  
+🟨  
+
 #### 12.7 mnemonic
 
 #### 12.8 parse
@@ -619,7 +647,7 @@ sekaid status [flags]
 
 | Global flags         | Description                                                                            | Work |
 | -------------------- | -------------------------------------------------------------------------------------- | ---- |
-| `--home`             | directory for config and data (default `"/root/.sekaid"`)                              | yes  |
+| `--home`             | Directory for config and data (default `"/root/.sekaid"`)                              | yes  |
 | `--log_format`       | The logging format (`json\|plain`) (default `"plain"`)                                 | ?    |
 | `--log_level string` | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ?    |
 | `--trace`            | Print out full stack trace on errors                                                   | ?    |
