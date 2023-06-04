@@ -487,11 +487,102 @@ Global Flags:
 ```
 
 #TODO
+
+🟨  
+🟨  
+🟨  
+
 ```
 /# sekaid keys import <name> <file> --home=/root/.sekai --keyring-backend=test
 ```
 
 #### 12.5 list
+
+Return a list of all public keys stored by this key manager along with their associated name and address.
+
+Usage:
+```
+sekaid keys list [flags]
+```
+
+| Flags              | Description     | Work  |
+| ------------------ | --------------- | ----- |
+| `-h, --help`       | Help for list   | ✅ yes |
+| `-n, --list-names` | List names only | ✅ yes |
+
+| Global Flags               | Description                                                                            | Work  |
+| -------------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ✅ yes |
+| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid keys list --help
+Return a list of all public keys stored by this key manager
+along with their associated name and address.
+
+Usage:
+  sekaid keys list [flags]
+
+Flags:
+  -h, --help         help for list
+  -n, --list-names   List names only
+
+Global Flags:
+      --home string              The application home directory (default "/root/.sekaid")
+      --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --log_format string        The logging format (json|plain) (default "plain")
+      --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string            Output format (text|json) (default "text")
+      --trace                    print out full stack trace on errors
+```
+
+```
+/# sekaid keys list --home=/root/.sekai --keyring-backend=test
+  type: local
+  address: kira1qwqtytwh0p4u6pmh9fzh9t8r3kyyzsaarpmqd0
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A12kfllXSYJJr0iFELFCC7gASzTdPx6QVAFIPHgyRoB9"}'
+  mnemonic: ""
+- name: test
+  type: local
+  address: kira1j5a333q9vuazmdtc0r9henhyyw97q8t620x4wn
+  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AqVtJBdzF5xnHtpDA50RKHz8g9MLUW/KDqynJ5QfqJPK"}'
+  mnemonic: ""
+. . .
+```
+
+```
+/# sekaid keys list --home=/root/.sekai --keyring-backend=test --output=json | jq
+[
+  {
+    "name": "00400705-b8ea-41c1-91bb-5cb26e42b7cb",
+    "type": "local",
+    "address": "kira184lvz68flxvxwpkvavvz7p3dzenvpcten4xaaz",
+    "pubkey": "{\"@type\":\"/cosmos.crypto.secp256k1.PubKey\",\"key\":\"A5eVNtogRjILK4TCsXhDicb+FGH9A8JoZuQ6uLQWG/O5\"}"
+  },
+  . . .
+  {
+    "name": "validator",
+    "type": "local",
+    "address": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+    "pubkey": "{\"@type\":\"/cosmos.crypto.secp256k1.PubKey\",\"key\":\"AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo\"}"
+  }
+]
+```
+
+List of names only:
+```
+/# sekaid keys list --home=/root/.sekai --keyring-backend=test --list-names
+signer
+test
+...
+validator
+```
 
 #### 12.6 migrate
 
