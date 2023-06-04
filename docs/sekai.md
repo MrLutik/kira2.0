@@ -45,31 +45,59 @@
 
 ### 1. add-genesis-account
 
+[Return to top](#sekai)
+
 ### 2. collect-gentxs
+
+[Return to top](#sekai)
 
 ### 3. config
 
+[Return to top](#sekai)
+
 ### 4. debug
+
+[Return to top](#sekai)
 
 #### 4.1 addr
 
+[Return to top](#sekai)
+
 #### 4.2 pubkey
+
+[Return to top](#sekai)
 
 #### 4.3 raw-bytes
 
+[Return to top](#sekai)
+
 ### 5. export
+
+[Return to top](#sekai)
 
 ### 6. export-metadata
 
+[Return to top](#sekai)
+
 ### 7. export-minimized-genesis
+
+[Return to top](#sekai)
 
 ### 8. gentx
 
+[Return to top](#sekai)
+
 ### 9. gentx-claim
+
+[Return to top](#sekai)
 
 ### 10. help
 
+[Return to top](#sekai)
+
 ### 11. init
+
+[Return to top](#sekai)
 
 ### 12. keys
 
@@ -82,31 +110,31 @@ sekaid keys [command]
 
 Available Commands:
 
-| Subcommand | Description                                                                                               |
-| ---------- | --------------------------------------------------------------------------------------------------------- |
-| `add`      | Add an encrypted private key (either newly generated or recovered), encrypt it, and save to \<name\> file |
-| `delete`   | Delete the given keys                                                                                     |
-| `export`   | Export private keys                                                                                       |
-| `import`   | Import private keys into the local keybase                                                                |
-| `list`     | List all keys                                                                                             |
-| `migrate`  | Migrate keys from the legacy (db-based) Keybase                                                           |
-| `mnemonic` | Compute the bip39 mnemonic for some input entropy                                                         |
-| `parse`    | Parse address from hex to bech32 and vice versa                                                           |
-| `show`     | Retrieve key information by name or address                                                               |
+| Subcommand                  | Description                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [`add`](#121-add)           | Add an encrypted private key (either newly generated or recovered), encrypt it, and save to \<name\> file |
+| [`delete`](#122-delete)     | Delete the given keys                                                                                     |
+| [`export`](#123-export)     | Export private keys                                                                                       |
+| [`import`](#124-import)     | Import private keys into the local keybase                                                                |
+| [`list`](#125-list)         | List all keys                                                                                             |
+| [`migrate`](#126-migrate)   | Migrate keys from the legacy (db-based) Keybase                                                           |
+| [`mnemonic`](#127-mnemonic) | Compute the bip39 mnemonic for some input entropy                                                         |
+| [`parse`](#128-parse)       | Parse address from hex to bech32 and vice versa                                                           |
+| [`show`](#129-show)         | Retrieve key information by name or address                                                               |
 
-| Flags                      | Description                                                                           | Work |
-| -------------------------- | ------------------------------------------------------------------------------------- | ---- |
-| `-h, --help`               | Help for keys                                                                         | yes  |
-| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                          | yes  |
-| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used | yes  |
-| `--output string`          | Output format (`text\|json`) (default `"text"`)                                       | yes  |
+| Flags                      | Description                                                                           | Work  |
+| -------------------------- | ------------------------------------------------------------------------------------- | ----- |
+| `-h, --help`               | Help for keys                                                                         | ✅ yes |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                          | ✅ yes |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used | ✅ yes |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                       | ✅ yes |
 
-| Global Flags          | Description                                                                            | Work |
-| --------------------- | -------------------------------------------------------------------------------------- | ---- |
-| `--home string`       | Directory for config and data (default `"/root/.sekaid"`)                              | yes  |
-| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ?    |
-| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ?    |
-| `--trace`             | Print out full stack trace on errors                                                   | ?    |
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`       | Directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?   |
 
 ```
 /# sekaid keys --help
@@ -160,6 +188,8 @@ Global Flags:
 
 Use "sekaid keys [command] --help" for more information about a command.
 ```
+
+[Return to top](#sekai)
 
 #### 12.1 add
 
@@ -301,6 +331,7 @@ Interactive with `-i | --interactive`:
 
 #TODO add other usages
 
+[Return to top](#sekai)
 
 #### 12.2 delete
 
@@ -363,6 +394,8 @@ If key does not exist:
 /# sekaid keys delete testForDocs --home=/root/.sekai --keyring-backend=test --yes --output=json | jq
 Error: testForDocs.info: key not found
 ```
+
+[Return to top](#sekai)
 
 #### 12.3 export
 
@@ -443,6 +476,8 @@ yes | sekaid keys export testForDocs2 --home=/root/.sekai --keyring-backend=test
 96176c3b3e94205b662d8cd4e68e536254d813067b4b6e475ac5ebd06a2ef8b9
 ```
 
+[Return to top](#sekai)
+
 #### 12.4 import
 
 Import a ASCII armored private key into the local keybase.
@@ -495,6 +530,8 @@ Global Flags:
 ```
 /# sekaid keys import <name> <file> --home=/root/.sekai --keyring-backend=test
 ```
+
+[Return to top](#sekai)
 
 #### 12.5 list
 
@@ -584,6 +621,8 @@ test
 validator
 ```
 
+[Return to top](#sekai)
+
 #### 12.6 migrate
 
 Migrate key information from the legacy (db-based) Keybase to the new keyring-based Keyring.
@@ -613,6 +652,8 @@ sekaid keys migrate <old_home_dir> [flags]
 🟨  
 🟨  
 🟨  
+
+[Return to top](#sekai)
 
 #### 12.7 mnemonic
 
@@ -671,6 +712,8 @@ exit front isolate strike problem truly solve village rack crash radar open spar
 > Input length: 44 [y/N]: y
 bicycle choose frame quality symbol super door eye fence glare slow merit danger naive dune violin rare december return measure axis young drastic suggest
 ```
+
+[Return to top](#sekai)
 
 #### 12.8 parse
 
@@ -751,6 +794,8 @@ Or we can provide hex address (without prefix)
   ]
 }
 ```
+
+[Return to top](#sekai)
 
 #### 12.9 show
 
@@ -847,6 +892,8 @@ kiravaloper1vmwdgw426aj9fx33fqusmtg6r65yyucm4ulwne
 kiravalcons1vmwdgw426aj9fx33fqusmtg6r65yyucmp0vjlc
 ```
 
+[Return to top](#sekai)
+
 ### 13. new-genesis-from-exported
 
 ### 14. query
@@ -941,14 +988,28 @@ Global Flags:
 
 ### 19. tendermint
 
+[Return to top](#sekai)
+
 ### 20. testnet
+
+[Return to top](#sekai)
 
 ### 21. tx
 
+[Return to top](#sekai)
+
 ### 22. val-address
+
+[Return to top](#sekai)
 
 ### 23. valcons-address
 
+[Return to top](#sekai)
+
 ### 24. validate-genesis
 
+[Return to top](#sekai)
+
 ### 25. version
+
+[Return to top](#sekai)
