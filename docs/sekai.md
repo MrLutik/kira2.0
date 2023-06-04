@@ -163,6 +163,106 @@ Use "sekaid keys [command] --help" for more information about a command.
 
 #### 12.1 add
 
+Derive a new private key and encrypt to disk.
+
+Usage:
+```
+sekaid keys add <name> [flags]
+```
+
+| Flags                      | Description                                                                          | Work  |
+| -------------------------- | ------------------------------------------------------------------------------------ | ----- |
+| `--account uint32`         | Account number for HD derivation                                                     | ❌ ?no |
+| `--algo string`            | Key signing algorithm to generate keys for (default `"secp256k1"`)                   | ❌ ?no |
+| `--coin-type uint32`       | Coin type number for HD derivation (default `118`)                                   | ❌ ?no |
+| `--dry-run`                | Perform action, but don't add key to local keystore                                  | ❌ ?no |
+| `--hd-path string`         | Manual HD Path derivation (overrides BIP44 config)                                   | ❌ ?no |
+| `-h, --help`               | Help for add                                                                         | ✅ yes |
+| `--index uint32`           | Address index number for HD derivation                                               | ❌ ?no |
+| `-i, --interactive`        | Interactively prompt user for BIP39 passphrase and mnemonic                          | ❌ ?no |
+| `--ledger`                 | Store a local reference to a private key on a Ledger device                          | ❌ ?no |
+| `--multisig strings`       | List of key names stored in keyring to construct a public legacy multisig key        | ❌ ?no |
+| `--multisig-threshold int` | K out of N required signatures. For use in conjunction with --multisig (default `1`) | ❌ ?no |
+| `--no-backup`              | Don't print out seed phrase (if others are watching the terminal)                    | ❌ ?no |
+| `--nosort`                 | Keys passed to --multisig are taken in the order they're supplied                    | ❌ ?no |
+| `--pubkey string`          | Parse a public key in JSON format and saves key info to \<name\> file.               | ❌ ?no |
+| `--recover`                | Provide seed phrase to recover existing key instead of creating                      | ✅ yes |
+
+| Global Flags               | Description                                                                            | Work  |
+| -------------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?no |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?no |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ✅ yes |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?no |
+
+```
+/# keys add --help
+Derive a new private key and encrypt to disk.
+Optionally specify a BIP39 mnemonic, a BIP39 passphrase to further secure the mnemonic,
+and a bip32 HD path to derive a specific account. The key will be stored under the given name
+and encrypted with the given password. The only input that is required is the encryption password.
+
+If run with -i, it will prompt the user for BIP44 path, BIP39 mnemonic, and passphrase.
+The flag --recover allows one to recover a key from a seed passphrase.
+If run with --dry-run, a key would be generated (or recovered) but not stored to the
+local keystore.
+Use the --pubkey flag to add arbitrary public keys to the keystore for constructing
+multisig transactions.
+
+You can create and store a multisig key by passing the list of key names stored in a keyring
+and the minimum number of signatures required through --multisig-threshold. The keys are
+sorted by address, unless the flag --nosort is set.
+Example:
+
+    keys add mymultisig --multisig "keyname1,keyname2,keyname3" --multisig-threshold 2
+
+Usage:
+  sekaid keys add <name> [flags]
+
+Flags:
+      --account uint32           Account number for HD derivation
+      --algo string              Key signing algorithm to generate keys for (default "secp256k1")
+      --coin-type uint32         coin type number for HD derivation (default 118)
+      --dry-run                  Perform action, but don't add key to local keystore
+      --hd-path string           Manual HD Path derivation (overrides BIP44 config)
+  -h, --help                     help for add
+      --index uint32             Address index number for HD derivation
+  -i, --interactive              Interactively prompt user for BIP39 passphrase and mnemonic
+      --ledger                   Store a local reference to a private key on a Ledger device
+      --multisig strings         List of key names stored in keyring to construct a public legacy multisig key
+      --multisig-threshold int   K out of N required signatures. For use in conjunction with --multisig (default 1)
+      --no-backup                Don't print out seed phrase (if others are watching the terminal)
+      --nosort                   Keys passed to --multisig are taken in the order they're supplied
+      --pubkey string            Parse a public key in JSON format and saves key info to <name> file.
+      --recover                  Provide seed phrase to recover existing key instead of creating
+
+Global Flags:
+      --home string              The application home directory (default "/root/.sekaid")
+      --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --log_format string        The logging format (json|plain) (default "plain")
+      --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string            Output format (text|json) (default "text")
+      --trace                    print out full stack trace on errors
+```
+
+```
+/# sekaid keys add testForDocs --home=/root/.sekai --keyring-backend=test --output=json | jq
+{
+  "name": "testForDocs",
+  "type": "local",
+  "address": "kira1xshj7342ar7hk08d6p5ynrwxzux29jzr9pdx40",
+  "pubkey": "{\"@type\":\"/cosmos.crypto.secp256k1.PubKey\",\"key\":\"AhPJzI5jcMD1xJ6at1ItLT6d1esQhTN7m8bqnXRVfREZ\"}",
+  "mnemonic": "fly dog voice claw pattern found open room extend victory wrap butter vast urban exclude staff private matrix way endorse bone eyebrow already genuine"
+}
+```
+
+#TODO add other usages
+
+
 #### 12.2 delete
 
 #### 12.3 export
