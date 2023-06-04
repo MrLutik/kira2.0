@@ -754,6 +754,99 @@ Or we can provide hex address (without prefix)
 
 #### 12.9 show
 
+Display keys details
+
+Usage:
+```
+sekaid keys show [name_or_address [name_or_address...]] [flags]
+```
+
+| Flags                      | Description                                                               | Work  |
+| -------------------------- | ------------------------------------------------------------------------- | ----- |
+| `-a, --address`            | Output the address only (overrides `--output`)                            | ✅ yes |
+| `--bech string`            | The Bech32 prefix encoding for a key (`acc\|val\|cons`) (default `"acc"`) | ✅ yes |
+| `-d, --device`             | Output the address in a ledger device                                     | ❌ ?   |
+| `-h, --help`               | Help for show                                                             | ✅ yes |
+| `--multisig-threshold int` | K out of N required signatures (default `1`)                              | ❌ ?   |
+| `-p, --pubkey`             | Output the public key only (overrides `--output`)                         | ✅ yes |
+
+| Global Flags               | Description                                                                            | Work  |
+| -------------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ✅ yes |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid keys show --help
+Display keys details. If multiple names or addresses are provided,
+then an ephemeral multisig key will be created under the name "multi"
+consisting of all the keys provided by name and multisig threshold.
+
+Usage:
+  sekaid keys show [name_or_address [name_or_address...]] [flags]
+
+Flags:
+  -a, --address                  Output the address only (overrides --output)
+      --bech string              The Bech32 prefix encoding for a key (acc|val|cons) (default "acc")
+  -d, --device                   Output the address in a ledger device
+  -h, --help                     help for show
+      --multisig-threshold int   K out of N required signatures (default 1)
+  -p, --pubkey                   Output the public key only (overrides --output)
+
+Global Flags:
+      --home string              The application home directory (default "/root/.sekaid")
+      --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --log_format string        The logging format (json|plain) (default "plain")
+      --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string            Output format (text|json) (default "text")
+      --trace                    print out full stack trace on errors
+```
+
+```
+/# sekaid keys show validator --home=/root/.sekai --keyring-backend=test --output=json | jq
+{
+  "name": "validator",
+  "type": "local",
+  "address": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+  "pubkey": "{\"@type\":\"/cosmos.crypto.secp256k1.PubKey\",\"key\":\"AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo\"}"
+}
+```
+
+Only address:
+```
+/# sekaid keys show validator --home=/root/.sekai --keyring-backend=test -a
+kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4
+```
+
+Only pubkey:
+```
+/# sekaid keys show validator --home=/root/.sekai --keyring-backend=test -p | jq
+{
+  "@type": "/cosmos.crypto.secp256k1.PubKey",
+  "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+}
+```
+
+```
+/# sekaid keys show validator --home=/root/.sekai --keyring-backend=test --bech acc -a
+kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4
+```
+
+```
+/# sekaid keys show validator --home=/root/.sekai --keyring-backend=test --bech val -a
+kiravaloper1vmwdgw426aj9fx33fqusmtg6r65yyucm4ulwne
+```
+
+```
+/# sekaid keys show validator --home=/root/.sekai --keyring-backend=test --bech cons -a
+kiravalcons1vmwdgw426aj9fx33fqusmtg6r65yyucmp0vjlc
+```
+
 ### 13. new-genesis-from-exported
 
 ### 14. query
