@@ -260,10 +260,81 @@ Global Flags:
 }
 ```
 
+Recover:
+```
+/# echo "fly dog voice claw pattern found open room extend victory wrap butter vast urban exclude staff private matrix way endorse bone eyebrow already genuine" | sekaid keys add testForDocs --keyring-backend=test --home=/root/.sekai --recover --output=json | jq
+{
+  "name": "testForDocs",
+  "type": "local",
+  "address": "kira1xshj7342ar7hk08d6p5ynrwxzux29jzr9pdx40",
+  "pubkey": "{\"@type\":\"/cosmos.crypto.secp256k1.PubKey\",\"key\":\"AhPJzI5jcMD1xJ6at1ItLT6d1esQhTN7m8bqnXRVfREZ\"}"
+}
+```
+
 #TODO add other usages
 
 
 #### 12.2 delete
+
+Delete keys from the Keybase backend.
+
+Usage:
+```
+sekaid keys delete <name> ... [flags]
+```
+
+| Flags         | Description                                                                   | Work  |
+| ------------- | ----------------------------------------------------------------------------- | ----- |
+| `-f, --force` | Remove the key unconditionally without asking for the passphrase. Deprecated. | ❌ no  |
+| `-h, --help`  | help for delete                                                               | ✅ yes |
+| `-y, --yes`   | Skip confirmation prompt when deleting offline or ledger key references       | ✅ yes |
+ 
+| Global Flags               | Description                                                                            | Work  |
+| -------------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?no |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?no |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ ?no |
+| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?no |
+
+```
+/# sekaid keys delete --help
+Delete keys from the Keybase backend.
+
+Note that removing offline or ledger keys will remove
+only the public key references stored locally, i.e.
+private keys stored in a ledger device cannot be deleted with the CLI.
+
+Usage:
+  sekaid keys delete <name>... [flags]
+
+Flags:
+  -f, --force   Remove the key unconditionally without asking for the passphrase. Deprecated.
+  -h, --help    help for delete
+  -y, --yes     Skip confirmation prompt when deleting offline or ledger key references
+
+Global Flags:
+      --home string              The application home directory (default "/root/.sekaid")
+      --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --log_format string        The logging format (json|plain) (default "plain")
+      --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string            Output format (text|json) (default "text")
+      --trace                    print out full stack trace on errors
+```
+
+```
+/# sekaid keys delete testForDocs --home=/root/.sekai --keyring-backend=test --yes
+Key deleted forever (uh oh!)
+```
+
+If key does not exist:
+```
+/# sekaid keys delete testForDocs --home=/root/.sekai --keyring-backend=test --yes --output=json | jq
+Error: testForDocs.info: key not found
+```
 
 #### 12.3 export
 
