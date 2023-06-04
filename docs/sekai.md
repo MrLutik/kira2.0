@@ -674,6 +674,84 @@ bicycle choose frame quality symbol super door eye fence glare slow merit danger
 
 #### 12.8 parse
 
+Convert and print to stdout key addresses and fingerprints from hexadecimal into bech32 cosmos prefixed format and vice versa.
+
+Usage:
+```
+sekaid keys parse <hex-or-bech32-address> [flags]
+```
+
+| Flags        | Description       | Work  |
+| ------------ | ----------------- | ----- |
+| `-h, --help` | Help for mnemonic | ✅ yes |
+
+| Global Flags               | Description                                                                            | Work  |
+| -------------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ✅ yes |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid keys parse --help
+Convert and print to stdout key addresses and fingerprints from
+hexadecimal into bech32 cosmos prefixed format and vice versa.
+
+Usage:
+  sekaid keys parse <hex-or-bech32-address> [flags]
+
+Flags:
+  -h, --help   help for parse
+
+Global Flags:
+      --home string              The application home directory (default "/root/.sekaid")
+      --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --log_format string        The logging format (json|plain) (default "plain")
+      --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string            Output format (text|json) (default "text")
+      --trace                    print out full stack trace on errors
+```
+
+There we can provide addresses with prefixes: 
+- `kira`
+- `kirapub`
+- `kiravaloper`
+- `kiravaloperpub`
+- `kiravalcons`
+- `kiravalconspub`
+```
+/# sekaid keys parse kira1j5a333q9vuazmdtc0r9henhyyw97q8t620x4wn
+human: kira
+bytes: 953B18C405673A2DB57878CB7CCEE4238BE01D7A
+```
+
+```
+/# sekaid keys parse kira1j5a333q9vuazmdtc0r9henhyyw97q8t620x4wn --output=json | jq
+{
+  "human": "kira",
+  "bytes": "953B18C405673A2DB57878CB7CCEE4238BE01D7A"
+}
+```
+
+Or we can provide hex address (without prefix)
+```
+/# sekaid keys parse 953B18C405673A2DB57878CB7CCEE4238BE01D7A --output=json | jq
+{
+  "formats": [
+    "kira1j5a333q9vuazmdtc0r9henhyyw97q8t620x4wn",
+    "kirapub1j5a333q9vuazmdtc0r9henhyyw97q8t68c055y",
+    "kiravaloper1j5a333q9vuazmdtc0r9henhyyw97q8t6ef6kkl",
+    "kiravaloperpub1j5a333q9vuazmdtc0r9henhyyw97q8t657dssf",
+    "kiravalcons1j5a333q9vuazmdtc0r9henhyyw97q8t6d6f267",
+    "kiravalconspub1j5a333q9vuazmdtc0r9henhyyw97q8t696kc6c"
+  ]
+}
+```
+
 #### 12.9 show
 
 ### 13. new-genesis-from-exported
