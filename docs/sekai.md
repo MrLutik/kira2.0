@@ -445,6 +445,52 @@ yes | sekaid keys export testForDocs2 --home=/root/.sekai --keyring-backend=test
 
 #### 12.4 import
 
+Import a ASCII armored private key into the local keybase.
+
+Usage:
+```
+sekaid keys import <name> <keyfile> [flags]
+```
+
+| Flags        | Description     | Work  |
+| ------------ | --------------- | ----- |
+| `-h, --help` | Help for import | ✅ yes |
+
+| Global Flags               | Description                                                                            | Work  |
+| -------------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ ?   |
+| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid keys import --help
+Import a ASCII armored private key into the local keybase.
+
+Usage:
+  sekaid keys import <name> <keyfile> [flags]
+
+Flags:
+  -h, --help   help for import
+
+Global Flags:
+      --home string              The application home directory (default "/root/.sekaid")
+      --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --log_format string        The logging format (json|plain) (default "plain")
+      --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string            Output format (text|json) (default "text")
+      --trace                    print out full stack trace on errors
+```
+
+#TODO
+```
+/# sekaid keys import <name> <file> --home=/root/.sekai --keyring-backend=test
+```
+
 #### 12.5 list
 
 #### 12.6 migrate
