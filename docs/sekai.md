@@ -122,12 +122,16 @@ Available Commands:
 | [`parse`](#128-parse)       | Parse address from hex to bech32 and vice versa                                                           |
 | [`show`](#129-show)         | Retrieve key information by name or address                                                               |
 
+
+
 | Flags                      | Description                                                                           | Work  |
 | -------------------------- | ------------------------------------------------------------------------------------- | ----- |
 | `-h, --help`               | Help for keys                                                                         | ✅ yes |
 | `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                          | ✅ yes |
 | `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used | ✅ yes |
 | `--output string`          | Output format (`text\|json`) (default `"text"`)                                       | ✅ yes |
+
+
 
 | Global Flags          | Description                                                                            | Work  |
 | --------------------- | -------------------------------------------------------------------------------------- | ----- |
@@ -217,6 +221,8 @@ sekaid keys add <name> [flags]
 | `--nosort`                 | Keys passed to --multisig are taken in the order they're supplied                    | ❌ ?   |
 | `--pubkey string`          | Parse a public key in JSON format and saves key info to \<name\> file.               | ❌ ?   |
 | `--recover`                | Provide seed phrase to recover existing key instead of creating                      | ✅ yes |
+
+
 
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
@@ -351,7 +357,9 @@ sekaid keys delete <name> ... [flags]
 | `-f, --force` | Remove the key unconditionally without asking for the passphrase. Deprecated. | ❌ no  |
 | `-h, --help`  | Help for delete                                                               | ✅ yes |
 | `-y, --yes`   | Skip confirmation prompt when deleting offline or ledger key references       | ✅ yes |
- 
+
+
+
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
 | `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
@@ -415,6 +423,8 @@ sekaid keys export <name> [flags]
 | `-h, --help`      | Help for export                                                                                           | ✅ yes |
 | `--unarmored-hex` | Export unarmored hex privkey. Requires `--unsafe`.                                                        | ✅ yes |
 | `--unsafe`        | Enable unsafe operations. This flag must be switched on along with all unsafe operation-specific options. | ✅ yes |
+
+
 
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
@@ -495,6 +505,8 @@ sekaid keys import <name> <keyfile> [flags]
 | ------------ | --------------- | ----- |
 | `-h, --help` | Help for import | ✅ yes |
 
+
+
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
 | `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
@@ -550,6 +562,8 @@ sekaid keys list [flags]
 | ------------------ | --------------- | ----- |
 | `-h, --help`       | Help for list   | ✅ yes |
 | `-n, --list-names` | List names only | ✅ yes |
+
+
 
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
@@ -641,6 +655,8 @@ sekaid keys migrate <old_home_dir> [flags]
 | `--dry-run`  | Run migration without actually persisting any changes to the new Keybase | ❌ ?   |
 | `-h, --help` | Help for migrate                                                         | ✅ yes |
 
+
+
 | Global Flags               | Description                                                                            | Work |
 | -------------------------- | -------------------------------------------------------------------------------------- | ---- |
 | `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ❌ ?  |
@@ -672,6 +688,8 @@ sekaid keys mnemonic [flags]
 | ------------------ | ----------------------------------------------------------------------------- | ----- |
 | `-h, --help`       | Help for mnemonic                                                             | ✅ yes |
 | `--unsafe-entropy` | Prompt the user to supply their own entropy, instead of relying on the system | ✅ yes |
+
+
 
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
@@ -731,6 +749,8 @@ sekaid keys parse <hex-or-bech32-address> [flags]
 | Flags        | Description       | Work  |
 | ------------ | ----------------- | ----- |
 | `-h, --help` | Help for mnemonic | ✅ yes |
+
+
 
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
@@ -818,6 +838,8 @@ sekaid keys show [name_or_address [name_or_address...]] [flags]
 | `-h, --help`               | Help for show                                                             | ✅ yes |
 | `--multisig-threshold int` | K out of N required signatures (default `1`)                              | ❌ ?   |
 | `-p, --pubkey`             | Output the public key only (overrides `--output`)                         | ✅ yes |
+
+
 
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
@@ -927,6 +949,8 @@ sekaid status [flags]
 | -------- | ------------------------------------------------------ | ---- |
 | `--help` | Help for status                                        | yes  |
 | `--node` | Node to connect to (default `"tcp://localhost:26657"`) | yes  |
+
+
 
 | Global flags         | Description                                                                            | Work |
 | -------------------- | -------------------------------------------------------------------------------------- | ---- |
