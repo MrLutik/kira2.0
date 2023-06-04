@@ -331,6 +331,10 @@ Interactive with `-i | --interactive`:
 
 #TODO add other usages
 
+🟨  
+🟨  
+🟨  
+
 [Return to top](#sekai)
 
 #### 12.2 delete
@@ -389,7 +393,7 @@ Global Flags:
 Key deleted forever (uh oh!)
 ```
 
-If key does not exist:
+❌: If key does not exist:
 ```
 /# sekaid keys delete testForDocs --home=/root/.sekai --keyring-backend=test --yes --output=json | jq
 Error: testForDocs.info: key not found
@@ -409,8 +413,8 @@ sekaid keys export <name> [flags]
 | Flags             | Description                                                                                               | Work  |
 | ----------------- | --------------------------------------------------------------------------------------------------------- | ----- |
 | `-h, --help`      | Help for export                                                                                           | ✅ yes |
-| `--unarmored-hex` | Export unarmored hex privkey. Requires `--unsafe`.                                                        | ❌ ?   |
-| `--unsafe`        | Enable unsafe operations. This flag must be switched on along with all unsafe operation-specific options. | ❌ ?   |
+| `--unarmored-hex` | Export unarmored hex privkey. Requires `--unsafe`.                                                        | ✅ yes |
+| `--unsafe`        | Enable unsafe operations. This flag must be switched on along with all unsafe operation-specific options. | ✅ yes |
 
 | Global Flags               | Description                                                                            | Work  |
 | -------------------------- | -------------------------------------------------------------------------------------- | ----- |
@@ -759,7 +763,7 @@ Global Flags:
       --trace                    print out full stack trace on errors
 ```
 
-There we can provide addresses with prefixes: 
+Here we can provide addresses with prefixes: 
 - `kira`
 - `kirapub`
 - `kiravaloper`
@@ -877,6 +881,7 @@ Only pubkey:
 }
 ```
 
+The Bech32 addresses (based on chosen prefix by `--bech`):
 ```
 /# sekaid keys show validator --home=/root/.sekai --keyring-backend=test --bech acc -a
 kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4
@@ -908,6 +913,10 @@ kiravalcons1vmwdgw426aj9fx33fqusmtg6r65yyucmp0vjlc
 Query remote node for status
 
 #TODO: the descritpion is not accurate. `sekaid status` queries the node where it was launched by default.
+
+🟨  
+🟨  
+🟨  
 
 Usage:
 ```
