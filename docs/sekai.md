@@ -104,9 +104,9 @@ Available Commands:
 | Global Flags          | Description                                                                            | Work |
 | --------------------- | -------------------------------------------------------------------------------------- | ---- |
 | `--home string`       | Directory for config and data (default `"/root/.sekaid"`)                              | yes  |
-| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ?no  |
-| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ?no  |
-| `--trace`             | Print out full stack trace on errors                                                   | ?no  |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ?    |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ?    |
+| `--trace`             | Print out full stack trace on errors                                                   | ?    |
 
 ```
 /# sekaid keys --help
@@ -172,20 +172,20 @@ sekaid keys add <name> [flags]
 
 | Flags                      | Description                                                                          | Work  |
 | -------------------------- | ------------------------------------------------------------------------------------ | ----- |
-| `--account uint32`         | Account number for HD derivation                                                     | ❌ ?no |
-| `--algo string`            | Key signing algorithm to generate keys for (default `"secp256k1"`)                   | ❌ ?no |
-| `--coin-type uint32`       | Coin type number for HD derivation (default `118`)                                   | ❌ ?no |
-| `--dry-run`                | Perform action, but don't add key to local keystore                                  | ❌ ?no |
-| `--hd-path string`         | Manual HD Path derivation (overrides BIP44 config)                                   | ❌ ?no |
+| `--account uint32`         | Account number for HD derivation                                                     | ❌ ?   |
+| `--algo string`            | Key signing algorithm to generate keys for (default `"secp256k1"`)                   | ❌ ?   |
+| `--coin-type uint32`       | Coin type number for HD derivation (default `118`)                                   | ❌ ?   |
+| `--dry-run`                | Perform action, but don't add key to local keystore                                  | ❌ ?   |
+| `--hd-path string`         | Manual HD Path derivation (overrides BIP44 config)                                   | ❌ ?   |
 | `-h, --help`               | Help for add                                                                         | ✅ yes |
-| `--index uint32`           | Address index number for HD derivation                                               | ❌ ?no |
-| `-i, --interactive`        | Interactively prompt user for BIP39 passphrase and mnemonic                          | ❌ ?no |
-| `--ledger`                 | Store a local reference to a private key on a Ledger device                          | ❌ ?no |
-| `--multisig strings`       | List of key names stored in keyring to construct a public legacy multisig key        | ❌ ?no |
-| `--multisig-threshold int` | K out of N required signatures. For use in conjunction with --multisig (default `1`) | ❌ ?no |
-| `--no-backup`              | Don't print out seed phrase (if others are watching the terminal)                    | ❌ ?no |
-| `--nosort`                 | Keys passed to --multisig are taken in the order they're supplied                    | ❌ ?no |
-| `--pubkey string`          | Parse a public key in JSON format and saves key info to \<name\> file.               | ❌ ?no |
+| `--index uint32`           | Address index number for HD derivation                                               | ❌ ?   |
+| `-i, --interactive`        | Interactively prompt user for BIP39 passphrase and mnemonic                          | ❌ ?   |
+| `--ledger`                 | Store a local reference to a private key on a Ledger device                          | ❌ ?   |
+| `--multisig strings`       | List of key names stored in keyring to construct a public legacy multisig key        | ❌ ?   |
+| `--multisig-threshold int` | K out of N required signatures. For use in conjunction with --multisig (default `1`) | ❌ ?   |
+| `--no-backup`              | Don't print out seed phrase (if others are watching the terminal)                    | ❌ ?   |
+| `--nosort`                 | Keys passed to --multisig are taken in the order they're supplied                    | ❌ ?   |
+| `--pubkey string`          | Parse a public key in JSON format and saves key info to \<name\> file.               | ❌ ?   |
 | `--recover`                | Provide seed phrase to recover existing key instead of creating                      | ✅ yes |
 
 | Global Flags               | Description                                                                            | Work  |
@@ -193,10 +193,10 @@ sekaid keys add <name> [flags]
 | `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
 | `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
 | `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
-| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?no |
-| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?no |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
 | `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ✅ yes |
-| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?no |
+| `--trace`                  | Print out full stack trace on errors                                                   | ❌ ?   |
 
 ```
 /# keys add --help
@@ -260,7 +260,7 @@ Global Flags:
 }
 ```
 
-Recover:
+Recover by `--recover`:
 ```
 /# echo "fly dog voice claw pattern found open room extend victory wrap butter vast urban exclude staff private matrix way endorse bone eyebrow already genuine" | sekaid keys add testForDocs --keyring-backend=test --home=/root/.sekai --recover --output=json | jq
 {
@@ -268,6 +268,34 @@ Recover:
   "type": "local",
   "address": "kira1xshj7342ar7hk08d6p5ynrwxzux29jzr9pdx40",
   "pubkey": "{\"@type\":\"/cosmos.crypto.secp256k1.PubKey\",\"key\":\"AhPJzI5jcMD1xJ6at1ItLT6d1esQhTN7m8bqnXRVfREZ\"}"
+}
+```
+_If mnemonic will not be provided by pipe, it will be prompted manually_
+```
+/# sekaid keys add testForDocs2 --keyring-backend=test --home=/root/.sekai --recover --output=json | jq
+> Enter your bip39 mnemonic
+fly dog voice claw pattern found open room extend victory wrap butter vast urban exclude staff private matrix way endorse bone eyebrow already genuine
+{
+  "name": "testForDocs2",
+  "type": "local",
+  "address": "kira1xshj7342ar7hk08d6p5ynrwxzux29jzr9pdx40",
+  "pubkey": "{\"@type\":\"/cosmos.crypto.secp256k1.PubKey\",\"key\":\"AhPJzI5jcMD1xJ6at1ItLT6d1esQhTN7m8bqnXRVfREZ\"}"
+}
+```
+
+Interactive with `-i | --interactive`:
+```
+/# sekaid keys add testForDocs4 -i --keyring-backend=test --output=json | jq
+> Enter your bip39 mnemonic, or hit enter to generate one.
+
+> Enter your bip39 passphrase. This is combined with the mnemonic to derive the seed. Most users should just hit enter to use the default, ""
+
+{
+  "name": "testForDocs4",
+  "type": "local",
+  "address": "kira1h4uu0skupqutvfzw9zyudaj5vczut28pmc6rx0",
+  "pubkey": "{\"@type\":\"/cosmos.crypto.secp256k1.PubKey\",\"key\":\"A3xP2BL5RjIT0BZqjEf6j/OqffTX0pgEpsXxdoVIikEI\"}",
+  "mnemonic": "spatial forest make border anger armor century bird lava month jeans inch paper alien nation thing interest joy machine cable index wreck spin property"
 }
 ```
 
@@ -294,10 +322,10 @@ sekaid keys delete <name> ... [flags]
 | `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
 | `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
 | `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
-| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?no |
-| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?no |
-| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ ?no |
-| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?no |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ no  |
+| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?   |
 
 ```
 /# sekaid keys delete --help
@@ -337,6 +365,83 @@ Error: testForDocs.info: key not found
 ```
 
 #### 12.3 export
+
+Export a private key from the local keyring in ASCII-armored encrypted format.
+
+Usage:
+```
+sekaid keys export <name> [flags]
+```
+
+| Flags             | Description                                                                                               | Work  |
+| ----------------- | --------------------------------------------------------------------------------------------------------- | ----- |
+| `-h, --help`      | Help for export                                                                                           | ✅ yes |
+| `--unarmored-hex` | Export unarmored hex privkey. Requires `--unsafe`.                                                        | ❌ ?   |
+| `--unsafe`        | Enable unsafe operations. This flag must be switched on along with all unsafe operation-specific options. | ❌ ?   |
+
+| Global Flags               | Description                                                                            | Work  |
+| -------------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`            | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--keyring-backend string` | Select keyring's backend (`os\|file\|test`) (default `"os"`)                           | ✅ yes |
+| `--keyring-dir string`     | The client Keyring directory; if omitted, the default `'home'` directory will be used  | ✅ yes |
+| `--log_format string`      | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`       | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--output string`          | Output format (`text\|json`) (default `"text"`)                                        | ❌ no  |
+| `--trace`                  | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid keys export --help
+Export a private key from the local keyring in ASCII-armored encrypted format.
+
+When both the --unarmored-hex and --unsafe flags are selected, cryptographic
+private key material is exported in an INSECURE fashion that is designed to
+allow users to import their keys in hot wallets. This feature is for advanced
+users only that are confident about how to handle private keys work and are
+FULLY AWARE OF THE RISKS. If you are unsure, you may want to do some research
+and export your keys in ASCII-armored encrypted format.
+
+Usage:
+  sekaid keys export <name> [flags]
+
+Flags:
+  -h, --help            help for export
+      --unarmored-hex   Export unarmored hex privkey. Requires --unsafe.
+      --unsafe          Enable unsafe operations. This flag must be switched on along with all unsafe operation-specific options.
+
+Global Flags:
+      --home string              The application home directory (default "/root/.sekaid")
+      --keyring-backend string   Select keyring's backend (os|file|test) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --log_format string        The logging format (json|plain) (default "plain")
+      --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --output string            Output format (text|json) (default "text")
+      --trace                    print out full stack trace on errors
+```
+
+```
+/# sekaid keys export testForDocs --home=/root/.sekai --keyring-backend=test --output=json
+Enter passphrase to encrypt the exported key: <input password>
+-----BEGIN TENDERMINT PRIVATE KEY-----
+kdf: bcrypt
+salt: 03D68CF41D5698BD951C8897917AAA23
+type: secp256k1
+
+J4O49A3wRJkioJOAOgHpZq0h0iABo8BoRc79Iy9fKaItridiH/obaiJawUFH0he0
+IJ7Yjha4ZVQDoChl44ot9NgN/ulGXKViMPCU2ps=
+=RQle
+-----END TENDERMINT PRIVATE KEY-----
+```
+
+```
+/# sekaid keys export testForDocs --home=/root/.sekai --keyring-backend=test --output=json --unarmored-hex --unsafe
+WARNING: The private key will be exported as an unarmored hexadecimal string. USE AT YOUR OWN RISK. Continue? [y/N]: y
+96176c3b3e94205b662d8cd4e68e536254d813067b4b6e475ac5ebd06a2ef8b9
+```
+or
+```
+yes | sekaid keys export testForDocs2 --home=/root/.sekai --keyring-backend=test --output=json --unarmored-hex --unsafe
+96176c3b3e94205b662d8cd4e68e536254d813067b4b6e475ac5ebd06a2ef8b9
+```
 
 #### 12.4 import
 
@@ -378,9 +483,9 @@ sekaid status [flags]
 | Global flags         | Description                                                                            | Work |
 | -------------------- | -------------------------------------------------------------------------------------- | ---- |
 | `--home`             | directory for config and data (default `"/root/.sekaid"`)                              | yes  |
-| `--log_format`       | The logging format (`json\|plain`) (default `"plain"`)                                 | ?no  |
-| `--log_level string` | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ?no  |
-| `--trace`            | Print out full stack trace on errors                                                   | ?no  |
+| `--log_format`       | The logging format (`json\|plain`) (default `"plain"`)                                 | ?    |
+| `--log_level string` | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ?    |
+| `--trace`            | Print out full stack trace on errors                                                   | ?    |
 
 ```
 /# sekaid status --help
