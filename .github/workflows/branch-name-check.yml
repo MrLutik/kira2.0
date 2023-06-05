@@ -1,0 +1,18 @@
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  branch-name-check:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check Branch Name
+        run: |
+          branch_name=$(git symbolic-ref --short HEAD)
+          if [[ "$branch_name" != feature/* && "$branch_name" != bugfix/* ]]; then
+            echo "Error: Branch names must start with 'feature/' or 'bugfix/'."
+            exit 1
+          fi
+
+
