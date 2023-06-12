@@ -5552,6 +5552,179 @@ Use "sekaid query customgov [command] --help" for more information about a comma
 
 ##### 14.9.1 all-execution-fees
 
+Query all execution fees.
+
+Usage:
+```
+sekaid query customgov all-execution-fees [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for all-execution-fees                                                                      | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov all-execution-fees --help
+Query all execution fees
+
+Usage:
+  sekaid query customgov all-execution-fees [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for all-execution-fees
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov all-execution-fees -o json | jq
+{
+  "fees": [
+    {
+      "transaction_type": "activate",
+      "execution_fee": "100",
+      "failure_fee": "1000",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "claim-councilor",
+      "execution_fee": "100",
+      "failure_fee": "1",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "claim-proposal-type-x",
+      "execution_fee": "100",
+      "failure_fee": "1",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "claim-validator",
+      "execution_fee": "100",
+      "failure_fee": "1",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "pause",
+      "execution_fee": "100",
+      "failure_fee": "100",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "submit-proposal-type-x",
+      "execution_fee": "10",
+      "failure_fee": "1",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "unpause",
+      "execution_fee": "100",
+      "failure_fee": "100",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "upsert-token-alias",
+      "execution_fee": "100",
+      "failure_fee": "1",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "veto-proposal-type-x",
+      "execution_fee": "100",
+      "failure_fee": "1",
+      "timeout": "10",
+      "default_parameters": "0"
+    },
+    {
+      "transaction_type": "vote-proposal-type-x",
+      "execution_fee": "100",
+      "failure_fee": "1",
+      "timeout": "10",
+      "default_parameters": "0"
+    }
+  ],
+  "tx_types": [
+    "remove-blacklist-role-permission",
+    "deposit-spending-pool",
+    "remove-from-custody-whitelist",
+    "submit_evidence",
+    "whitelist-permissions",
+    "create-role",
+    "blacklist-role-permission",
+    "create-spending-pool",
+    "register-spending-pool-beneficiary",
+    "remove-role",
+    "claim_rewards",
+    "request-identity-records-verify",
+    "set-network-properties",
+    "blacklist-permissions",
+    "whitelist-role-permission",
+    "remove-whitelist-role-permission",
+    "claim-validator",
+    "pause",
+    "delegate",
+    "submit-proposal",
+    "cancel-identity-records-verify-request",
+    "assign-role",
+    "decline-custody-transaction",
+    "undelegate",
+    "drop-custody-whitelist",
+    "approve-custody-transaction",
+    "activate",
+    "register_delegator",
+    "add-to-custody-custodians",
+    "register-identity-records",
+    "claim_undelegation",
+    "set_compound_info",
+    "handle-identity-records-verify-request",
+    "set-execution-fee",
+    "upsert-token-rate",
+    "unpause",
+    "claim-spending-pool",
+    "multisend",
+    "vote-proposal",
+    "edit-identity-record",
+    "create-custody",
+    "add-to-custody-whitelist",
+    "upsert_staking_pool",
+    "remove-from-custody-custodians",
+    "drop-custody-custodians",
+    "send",
+    "claim-councilor",
+    "upsert-token-alias"
+  ]
+}
+```
+
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
 
@@ -5926,6 +6099,64 @@ sekaid query customgov data-registry-keys --output=json | jq
 [Return to top](#sekai)
 
 ##### 14.9.10 execution-fee
+
+Query execution fee by the type of transaction.
+
+Usage:
+```
+sekaid query customgov execution-fee [transaction_type] [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for execution-fee                                                                           | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov execution-fee --help
+Query execution fee by the type of transaction
+
+Usage:
+  sekaid query customgov execution-fee [transaction_type] [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for execution-fee
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov execution-fee pause -o json | jq
+{
+  "fee": {
+    "transaction_type": "pause",
+    "execution_fee": "100",
+    "failure_fee": "100",
+    "timeout": "10",
+    "default_parameters": "0"
+  }
+}
+```
 
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
@@ -17884,6 +18115,397 @@ sekaid tx customgov request-identity-record-verify --from=kira1vmwdgw426aj9fx33f
 [Return to top](#sekai)
 
 ##### 21.7.11 set-execution-fee
+
+Submit a transaction to set execution fee.
+
+Usage:
+```
+sekaid tx customgov set-execution-fee [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ✅ yes |
+| `--default_parameters uint`   | default parameters                                                                                                                                          | ❌ ?   |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--execution_fee uint`        | execution fee (default `10`)                                                                                                                                | ✅ yes |
+| `--failure_fee uint`          | failure fee (default `1`)                                                                                                                                   | ✅ yes |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ❌ ?   |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for set-execution-fee                                                                                                                                  | ✅ yes |
+| `--infos-file string`         | The infos file for identity request.                                                                                                                        | ✅ yes |
+| `--infos-json string`         | The infos json for identity request.                                                                                                                        | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default `'home'` directory will be used                                                                       | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ✅ yes |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `--record-ids string`         | Concatenated identity record ids array. e.g. `1,2`                                                                                                          | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout uint`              | timeout                                                                                                                                                     | ✅ yes |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--tip string`                | The tip to be given to the verifier.                                                                                                                        | ✅ yes |
+| `--transaction_type string`   | execution type                                                                                                                                              | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov set-execution-fee --help
+Submit a transaction to set execution fee
+
+Usage:
+  sekaid tx customgov set-execution-fee [flags]
+
+Flags:
+  -a, --account-number uint       The account number of the signing account (offline mode only)
+  -b, --broadcast-mode string     Transaction broadcasting mode (sync|async|block) (default "sync")
+      --default_parameters uint   default parameters
+      --dry-run                   ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --execution_fee uint        execution fee (default 10)
+      --failure_fee uint          failure fee (default 1)
+      --fee-account string        Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string               Fees to pay along with transaction; eg: 10uatom
+      --from string               Name or address of private key with which to sign
+      --gas string                gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float      adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string         Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only             Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                      help for set-execution-fee
+      --keyring-backend string    Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string        The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                    Use a connected Ledger device
+      --node string               <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string               Note to add a description to the transaction (previously --memo)
+      --offline                   Offline mode (does not allow any online functionality
+  -o, --output string             Output format (text|json) (default "json")
+  -s, --sequence uint             The sequence number of the signing account (offline mode only)
+      --sign-mode string          Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout uint              timeout
+      --timeout-height uint       Set a block timeout height to prevent the tx from being committed past a certain height
+      --transaction_type string   execution type
+  -y, --yes                       Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid tx customgov set-execution-fee --execution_fee=100 --failure_fee=100 --transaction_type=create-role --timeout=10 --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --chain-id=localnet-4 --keyring-backend=test --home=/root/.sekai --fees=100ukex --yes --broadcast-mode=async --output=json | jq
+{
+  "height": "0",
+  "txhash": "DDF0EA387745E2733B959E27C9B86BE85CC20AB305D18434674AE51ED5792A7E",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+```
+sekaid q tx DDF0EA387745E2733B959E27C9B86BE85CC20AB305D18434674AE51ED5792A7E -o json | jq
+```
+
+```json
+{
+  "height": "144169",
+  "txhash": "DDF0EA387745E2733B959E27C9B86BE85CC20AB305D18434674AE51ED5792A7E",
+  "codespace": "",
+  "code": 0,
+  "data": "0A1E0A1C2F6B6972612E676F762E4D7367536574457865637574696F6E466565",
+  "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSetExecutionFee\"}]},{\"type\":\"set_execution_fee\",\"attributes\":[{\"key\":\"proposer\",\"value\":\"kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\"},{\"key\":\"transaction_type\",\"value\":\"create-role\"},{\"key\":\"execution_fee\",\"value\":\"100\"},{\"key\":\"failure_fee\",\"value\":\"100\"},{\"key\":\"time_out\",\"value\":\"100\"},{\"key\":\"default_parameters\",\"value\":\"0\"}]}]}]",
+  "logs": [
+    {
+      "msg_index": 0,
+      "log": "",
+      "events": [
+        {
+          "type": "message",
+          "attributes": [
+            {
+              "key": "action",
+              "value": "/kira.gov.MsgSetExecutionFee"
+            }
+          ]
+        },
+        {
+          "type": "set_execution_fee",
+          "attributes": [
+            {
+              "key": "proposer",
+              "value": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4"
+            },
+            {
+              "key": "transaction_type",
+              "value": "create-role"
+            },
+            {
+              "key": "execution_fee",
+              "value": "100"
+            },
+            {
+              "key": "failure_fee",
+              "value": "100"
+            },
+            {
+              "key": "time_out",
+              "value": "100"
+            },
+            {
+              "key": "default_parameters",
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": {
+    "@type": "/cosmos.tx.v1beta1.Tx",
+    "body": {
+      "messages": [
+        {
+          "@type": "/kira.gov.MsgSetExecutionFee",
+          "transaction_type": "create-role",
+          "execution_fee": "100",
+          "failure_fee": "100",
+          "timeout": "10",
+          "default_parameters": "0",
+          "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4"
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "121"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "ukex",
+            "amount": "100"
+          }
+        ],
+        "gas_limit": "200000",
+        "payer": "",
+        "granter": ""
+      }
+    },
+    "signatures": [
+      "hSfBo7I+9seNSzf0PEDUHLOj+W1Ug0uHxrokuYYXmH5TTqrWYD13Cr//U6eS9qQhVuGjPTg4WlId63D78C0yHQ=="
+    ]
+  },
+  "timestamp": "2023-06-12T17:28:31Z",
+  "events": [
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "YWNjX3NlcQ==",
+          "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMjE=",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "c2lnbmF0dXJl",
+          "value": "aFNmQm83SSs5c2VOU3pmMFBFRFVITE9qK1cxVWcwdUh4cm9rdVlZWG1INVRUcXJXWUQxM0NyLy9VNmVTOXFRaFZ1R2pQVGc0V2xJZDYzRDc4QzB5SFE9PQ==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "c3BlbmRlcg==",
+          "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+          "index": true
+        },
+        {
+          "key": "YW1vdW50",
+          "value": "MTAwdWtleA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "cmVjZWl2ZXI=",
+          "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+          "index": true
+        },
+        {
+          "key": "YW1vdW50",
+          "value": "MTAwdWtleA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "cmVjaXBpZW50",
+          "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+          "index": true
+        },
+        {
+          "key": "c2VuZGVy",
+          "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+          "index": true
+        },
+        {
+          "key": "YW1vdW50",
+          "value": "MTAwdWtleA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "c2VuZGVy",
+          "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "ZmVl",
+          "value": "MTAwdWtleA==",
+          "index": true
+        },
+        {
+          "key": "ZmVlX3BheWVy",
+          "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "YWN0aW9u",
+          "value": "L2tpcmEuZ292Lk1zZ1NldEV4ZWN1dGlvbkZlZQ==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "set_execution_fee",
+      "attributes": [
+        {
+          "key": "cHJvcG9zZXI=",
+          "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+          "index": true
+        },
+        {
+          "key": "dHJhbnNhY3Rpb25fdHlwZQ==",
+          "value": "Y3JlYXRlLXJvbGU=",
+          "index": true
+        },
+        {
+          "key": "ZXhlY3V0aW9uX2ZlZQ==",
+          "value": "MTAw",
+          "index": true
+        },
+        {
+          "key": "ZmFpbHVyZV9mZWU=",
+          "value": "MTAw",
+          "index": true
+        },
+        {
+          "key": "dGltZV9vdXQ=",
+          "value": "MTAw",
+          "index": true
+        },
+        {
+          "key": "ZGVmYXVsdF9wYXJhbWV0ZXJz",
+          "value": "MA==",
+          "index": true
+        }
+      ]
+    }
+  ]
+}
+```
+</details>
+
+<details>
+  <summary>Check changes</summary>
+
+```
+sekaid q customgov execution-fee create-role -o json | jq
+{
+  "fee": {
+    "transaction_type": "create-role",
+    "execution_fee": "100",
+    "failure_fee": "100",
+    "timeout": "10",
+    "default_parameters": "0"
+  }
+}
+```
+</details>
 
 [Return to top](#sekai)
 
