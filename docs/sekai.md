@@ -122,9 +122,21 @@
         - [21.7.6 poll](#2176-poll)
         - [21.7.7 proposal](#2177-proposal)
           - [21.7.7.1 account](#21771-account)
+          - [21.7.7.1.1 assign-role](#217711-assign-role)
+          - [21.7.7.1.2 blacklist-permission](#217712-blacklist-permission)
+          - [21.7.7.1.3 remove-blacklisted-permission](#217713-remove-blacklisted-permission)
+          - [21.7.7.1.4 remove-whitelisted-permission](#217714-remove-whitelisted-permission)
+          - [21.7.7.1.5 unassign-role](#217715-unassign-role)
+          - [21.7.7.1.6 whitelist-permission](#217716-whitelist-permission)
           - [21.7.7.2 proposal-jail-councilor](#21772-proposal-jail-councilor)
           - [21.7.7.3 proposal-reset-whole-councilor-rank](#21773-proposal-reset-whole-councilor-rank)
           - [21.7.7.4 role](#21774-role)
+          - [21.7.7.4.1 blacklist-permission](#217741-blacklist-permission)
+          - [21.7.7.4.2 create](#217742-create)
+          - [21.7.7.4.3 remove](#217743-remove)
+          - [21.7.7.4.4 remove-blacklisted-permission](#217744-remove-blacklisted-permission)
+          - [21.7.7.4.5 remove-whitelisted-permission](#217745-remove-whitelisted-permission)
+          - [21.7.7.4.6 whitelist-permission](#217746-whitelist-permission)
           - [21.7.7.5 set-network-property](#21775-set-network-property)
           - [21.7.7.6 set-poor-network-msgs](#21776-set-poor-network-msgs)
           - [21.7.7.7 set-proposal-durations-proposal](#21777-set-proposal-durations-proposal)
@@ -5605,6 +5617,87 @@ Can't use together:
 
 ##### 14.9.3 all-proposal-durations
 
+Query all proposal durations.
+
+Usage:
+```
+sekaid query customgov all-proposal-durations [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for all-proposal-durations                                                                  | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov all-proposal-durations --help
+Query all proposal durations.
+
+Example:
+$ sekaid query gov all-proposal-durations
+
+Usage:
+  sekaid query customgov all-proposal-durations [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for all-proposal-durations
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov all-proposal-durations -o json | jq
+{
+  "proposal_durations": {
+    "AssignRoleToAccount": "360",
+    "BlacklistAccountPermission": "360",
+    "BlacklistRolePermission": "360",
+    "CancelSoftwareUpgrade": "360",
+    "CreateRoleProposal": "360",
+    "RemoveBlacklistedAccountPermission": "360",
+    "RemoveBlacklistedRolePermission": "360",
+    "RemoveRoleProposal": "360",
+    "RemoveWhitelistedAccountPermission": "360",
+    "RemoveWhitelistedRolePermission": "360",
+    "ResetWholeCouncilorRank": "360",
+    "ResetWholeValidatorRank": "360",
+    "SetNetworkProperty": "360",
+    "SetPoorNetworkMessages": "360",
+    "SetProposalDurationsProposal": "360",
+    "SlashValidator": "360",
+    "SoftwareUpgrade": "360",
+    "TokensWhiteBlackChange": "360",
+    "UnassignRoleFromAccount": "360",
+    "UnjailValidator": "360",
+    "UpsertDataRegistry": "360",
+    "UpsertTokenAlias": "360",
+    "UpsertTokenRates": "360",
+    "WhitelistAccountPermission": "360",
+    "WhitelistRolePermission": "360"
+  }
+}
+```
+
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
 
@@ -6493,20 +6586,345 @@ Global Flags:
 
 ##### 14.9.23 proposal
 
+Query details for a proposal.
+
+Usage:
+```
+sekaid query customgov proposal [proposal-id] [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for proposal                                                                                | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov proposal --help
+Query details for a proposal. You can find the
+proposal-id by running "sekaid query gov proposals".
+
+Example:
+$ sekaid query gov proposal 1
+
+Usage:
+  sekaid query customgov proposal [proposal-id] [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for proposal
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov proposal 13 -o json | jq
+{
+  "proposal_id": "13",
+  "title": "Reducing value of minimal fee for docs",
+  "description": "Changing value of minimal fee for testing for docs",
+  "content": {
+    "@type": "/kira.gov.SetNetworkPropertyProposal",
+    "network_property": "MAX_TX_FEE",
+    "value": {
+      "value": "1000",
+      "str_value": ""
+    }
+  },
+  "submit_time": "2023-06-12T09:22:10.251027877Z",
+  "voting_end_time": "2023-06-12T09:28:10.251027877Z",
+  "enactment_end_time": "2023-06-12T09:33:10.251027877Z",
+  "min_voting_end_block_height": "141342",
+  "min_enactment_end_block_height": "141376",
+  "result": "VOTE_RESULT_PASSED",
+  "exec_result": "executed successfully"
+}
+```
+
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
 
 ##### 14.9.24 proposal-duration
+
+Query all all proposal durations.
+
+Usage:
+```
+sekaid query customgov proposal-duration [proposal_type] [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for proposal-duration                                                                       | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov proposal-duration --help
+Query all all proposal durations.
+
+Example:
+$ sekaid query gov proposal-duration SetNetworkProperty
+
+Usage:
+  sekaid query customgov proposal-duration [proposal_type] [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for proposal-duration
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov proposal-duration CreateRoleProposal -o json | jq
+{
+  "duration": "360"
+}
+```
 
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
 
 ##### 14.9.25 proposals
 
+Query for a all paginated proposals that match optional filters.
+
+Usage:
+```
+sekaid query customgov proposals [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--count-total`       | count total number of records in customgov to query for                                          | ✅ yes |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for proposals                                                                               | ✅ yes |
+| `--limit uint`        | pagination limit of customgov to query for (default `100`)                                       | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `--offset uint`       | pagination offset of customgov to query for                                                      | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+| `--page uint`         | pagination page of customgov to query for. This sets offset to a multiple of limit (default `1`) | ✅ yes |
+| `--page-key string`   | pagination page-key of customgov to query for                                                    | ✅ yes |
+| `--reverse`           | results are sorted in descending order                                                           | ✅ yes |
+| `--voter string`      | (optional) filter by proposals voted on by voted                                                 | ❌ no  |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov proposals --help
+Query for a all paginated proposals that match optional filters:
+
+Example:
+$ sekaid query gov proposals --depositor cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
+$ sekaid query gov proposals --voter cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
+
+Usage:
+  sekaid query customgov proposals [flags]
+
+Flags:
+      --count-total       count total number of records in customgov to query for
+      --height int        Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help              help for proposals
+      --limit uint        pagination limit of customgov to query for (default 100)
+      --node string       <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --offset uint       pagination offset of customgov to query for
+  -o, --output string     Output format (text|json) (default "text")
+      --page uint         pagination page of customgov to query for. This sets offset to a multiple of limit (default 1)
+      --page-key string   pagination page-key of customgov to query for
+      --reverse           results are sorted in descending order
+      --voter string      (optional) filter by proposals voted on by voted
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov proposals -o json | jq
+{
+  "proposals": [
+    {
+      "proposal_id": "1",
+      "title": "Upsert KEX icon URL link",
+      "description": "Initial Setup From KIRA Manager",
+      "content": {
+        "@type": "/kira.tokens.ProposalUpsertTokenAlias",
+        "symbol": "KEX",
+        "name": "KIRA",
+        "icon": "http://kira-network.s3-eu-west-1.amazonaws.com/assets/img/tokens/kex.svg",
+        "decimals": 6,
+        "denoms": [
+          "ukex"
+        ],
+        "invalidated": false
+      },
+      "submit_time": "2023-05-25T13:00:51.893680415Z",
+      "voting_end_time": "2023-05-25T13:06:51.893680415Z",
+      "enactment_end_time": "2023-05-25T13:11:51.893680415Z",
+      "min_voting_end_block_height": "25",
+      "min_enactment_end_block_height": "58",
+      "result": "VOTE_RESULT_PASSED",
+      "exec_result": "executed successfully"
+    },
+    // . . .
+    {
+      "proposal_id": "28",
+      "title": "Test proposal for docs",
+      "description": "Test proposal for docs",
+      "content": {
+        "@type": "/kira.gov.SetProposalDurationsProposal",
+        "typeof_proposals": [
+          "AssignRoleToAccount",
+          "BlacklistAccountPermission"
+        ],
+        "proposal_durations": [
+          "300",
+          "310"
+        ]
+      },
+      "submit_time": "2023-06-12T14:41:26.992416500Z",
+      "voting_end_time": "2023-06-12T14:47:26.992416500Z",
+      "enactment_end_time": "2023-06-12T14:52:26.992416500Z",
+      "min_voting_end_block_height": "143199",
+      "min_enactment_end_block_height": "143233",
+      "result": "VOTE_RESULT_QUORUM_NOT_REACHED",
+      "exec_result": ""
+    }
+  ],
+  "pagination": {
+    "next_key": null,
+    "total": "0"
+  }
+}
+```
+
+Other usages:
+```
+sekaid q customgov proposals --limit=2 --offset=4 --reverse --height=80000 --count-total --output=json | jq
+```
+
+```
+sekaid q customgov proposals --limit=2 --page=2 --reverse --height=80000 --count-total --output=json | jq
+```
+
+```
+sekaid q customgov proposals --limit=2 --page-key="<next_key>" --reverse --height=80000 --count-total --output=json | jq
+```
+
+**Pay attention**
+Can't use together:
+- `--page` and `--page-key`
+- `--offset` and `--page`
+- `--height` for future blocks
+
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
 
 ##### 14.9.26 proposer_voters_count
+
+Query proposer and voters count that can create at least a type of proposal.
+
+Usage:
+```
+sekaid query customgov proposer_voters_count [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for proposer_voters_count                                                                   | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov proposer_voters_count --help
+Query proposer and voters count that can create at least a type of proposal.
+
+Example:
+$ sekaid query gov proposer_voters_count
+
+Usage:
+  sekaid query customgov proposer_voters_count [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for proposer_voters_count
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov proposer_voters_count -o json | jq
+{
+  "proposers": "4",
+  "voters": "2"
+}
+```
 
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
@@ -6523,15 +6941,249 @@ Global Flags:
 
 ##### 14.9.29 vote
 
+Query details for a single vote on a proposal given its identifier.
+
+Usage:
+```
+sekaid query customgov vote [proposal-id] [voter-addr] [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for vote                                                                                    | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov vote --help
+Query details for a single vote on a proposal given its identifier.
+
+Example:
+$ sekaid query gov vote 1 kira1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
+
+Usage:
+  sekaid query customgov vote [proposal-id] [voter-addr] [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for vote
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid query customgov vote 9 kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 -o json | jq
+{
+  "proposal_id": "9",
+  "voter": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+  "option": "VOTE_OPTION_YES",
+  "slash": "0.010000000000000000"
+}
+```
+
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
 
 ##### 14.9.30 voters
 
+Query voters for a single proposal by its identifier.
+
+Usage:
+```
+sekaid query customgov voters [proposal-id] [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for voters                                                                                  | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov voters --help
+Query voters for a single proposal by its identifier.
+
+Example:
+$ sekaid query gov voters 1
+
+Usage:
+  sekaid query customgov voters [proposal-id] [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for voters
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid query customgov voters 8 -o json | jq
+{
+  "voters": [
+    {
+      "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "roles": [
+        "2"
+      ],
+      "status": "ACTIVE",
+      "votes": [
+        "VOTE_OPTION_YES",
+        "VOTE_OPTION_NO",
+        "VOTE_OPTION_ABSTAIN",
+        "VOTE_OPTION_NO_WITH_VETO"
+      ],
+      "permissions": {
+        "blacklist": [
+          10
+        ],
+        "whitelist": [
+          28,
+          12,
+          13
+        ]
+      },
+      "skin": "0"
+    },
+    {
+      "address": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+      "roles": [
+        "1",
+        "2"
+      ],
+      "status": "ACTIVE",
+      "votes": [
+        "VOTE_OPTION_YES",
+        "VOTE_OPTION_ABSTAIN",
+        "VOTE_OPTION_NO",
+        "VOTE_OPTION_NO_WITH_VETO"
+      ],
+      "permissions": {
+        "blacklist": [],
+        "whitelist": [
+          4,
+          35,
+          14,
+          28,
+          5,
+          36,
+          15,
+          29
+        ]
+      },
+      "skin": "1"
+    }
+  ]
+}
+```
+
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
 
 ##### 14.9.31 votes
+
+Query vote details for a single proposal by its identifier.
+
+Usage:
+```
+sekaid query customgov votes [proposal-id] [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for votes                                                                                   | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov votes --help
+Query vote details for a single proposal by its identifier.
+
+Example:
+$ sekaid query gov votes 1
+
+Usage:
+  sekaid query customgov votes [proposal-id] [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for votes
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov votes 8 -o json | jq
+{
+  "votes": [
+    {
+      "proposal_id": "8",
+      "voter": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+      "option": "VOTE_OPTION_YES",
+      "slash": "0.010000000000000000"
+    },
+    {
+      "proposal_id": "8",
+      "voter": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "option": "VOTE_OPTION_YES",
+      "slash": "0.010000000000000000"
+    }
+  ]
+}
+```
 
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
@@ -10013,17 +10665,4522 @@ Use "sekaid tx customgov proposal [command] --help" for more information about a
 
 ###### 21.7.7.1 account
 
+Account proposals management subcommands.
+
+Usage:
+```
+sekaid tx customgov proposal account [flags]
+sekaid tx customgov proposal account [command]
+```
+
+Available Commands:
+
+| Subcommand                                                               | Description                                                           |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| [`assign-role`](#217711-assign-role)                                     | Create a proposal to assign a role to an address.                     |
+| [`blacklist-permission`](#217712-blacklist-permission)                   | Create a proposal to blacklist a permission to an address.            |
+| [`remove-blacklisted-permission`](#217713-remove-blacklisted-permission) | Create a proposal to remove a blacklisted permission from an address. |
+| [`remove-whitelisted-permission`](#217714-remove-whitelisted-permission) | Create a proposal to remove a whitelisted permission from an address. |
+| [`unassign-role`](#217715-unassign-role)                                 | Create a proposal to unassign a role from an address.                 |
+| [`whitelist-permission`](#217716-whitelist-permission)                   | Create a proposal to whitelist a permission to an address.            |
+
+
+
+| Flags         | Description      | Work  |
+| ------------- | ---------------- | ----- |
+| ` -h, --help` | help for account | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work |
+| --------------------- | -------------------------------------------------------------------------------------- | ---- |
+| `--chain-id string`   | The network chain ID                                                                   | ❌ ?  |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ❌ ?  |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?  |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?  |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?  |
+
+```
+/# sekaid tx customgov proposal account --help
+Account proposals management subcommands
+
+Usage:
+  sekaid tx customgov proposal account [flags]
+  sekaid tx customgov proposal account [command]
+
+Available Commands:
+  assign-role                   Create a proposal to assign a role to an address.
+  blacklist-permission          Create a proposal to blacklist a permission to an address.
+  remove-blacklisted-permission Create a proposal to remove a blacklisted permission from an address.
+  remove-whitelisted-permission Create a proposal to remove a whitelisted permission from an address.
+  unassign-role                 Create a proposal to unassign a role from an address.
+  whitelist-permission          Create a proposal to whitelist a permission to an address.
+
+Flags:
+  -h, --help   help for account
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+
+Use "sekaid tx customgov proposal account [command] --help" for more information about a command.
+```
+
+[Return to top](#sekai)
+
+###### 21.7.7.1.1 assign-role
+
+Create a proposal to assign a role to an address.
+
+Usage:
+```
+sekaid tx customgov proposal account assign-role role [role_identifier] [flags] ❌ mistake! ... assgin-role [role_sid | role_id] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--addr string`               | the address to set permissions                                                                                                                              | ✅ yes |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for assign-role                                                                                                                                        | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal account assign-role --help
+Create a proposal to assign a role to an address.
+
+Usage:
+  sekaid tx customgov proposal account assign-role role [role_identifier] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --addr string              the address to set permissions
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for assign-role
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+> `--description` and `--title` are required
+
+```
+sekaid tx customgov proposal account assign-role 4 --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --addr=kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt --home=/root/.sekai --chain-id=localnet-4 --fees=10ukex --keyring-backend=test --description="Test proposal for docs" --title="Test proposal" --yes -o json | jq
+{
+  "height": "0",
+  "txhash": "99E4837DABC3A3837E6FEFEF6382F3F07F9306068D3CF55EE92AE180F3D091AE",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 99E4837DABC3A3837E6FEFEF6382F3F07F9306068D3CF55EE92AE180F3D091AE -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "141555",
+    "txhash": "99E4837DABC3A3837E6FEFEF6382F3F07F9306068D3CF55EE92AE180F3D091AE",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C1202080E",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"14\"},{\"key\":\"proposal_type\",\"value\":\"AssignRoleToAccount\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal for docs\\ncontent:\\n  typeurl: /kira.gov.AssignRoleToAccountProposal\\n  value:\\n  - 10\\n  - 20\\n  - 247\\n  - 114\\n  - 3\\n  - 50\\n  - 223\\n  - 138\\n  - 35\\n  - 224\\n  - 167\\n  - 8\\n  - 117\\n  - 128\\n  - 102\\n  - 88\\n  - 115\\n  - 212\\n  - 100\\n  - 159\\n  - 201\\n  - 44\\n  - 18\\n  - 1\\n  - 52\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "14"
+              },
+              {
+                "key": "proposal_type",
+                "value": "AssignRoleToAccount"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal for docs\ncontent:\n  typeurl: /kira.gov.AssignRoleToAccountProposal\n  value:\n  - 10\n  - 20\n  - 247\n  - 114\n  - 3\n  - 50\n  - 223\n  - 138\n  - 35\n  - 224\n  - 167\n  - 8\n  - 117\n  - 128\n  - 102\n  - 88\n  - 115\n  - 212\n  - 100\n  - 159\n  - 201\n  - 44\n  - 18\n  - 1\n  - 52\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal for docs",
+            "content": {
+              "@type": "/kira.gov.AssignRoleToAccountProposal",
+              "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+              "role_identifier": "4"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "97"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "10"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "nmKNCKdiAhL+Hr5w10UPuiUmkDBQoKfp/5QCIheclaYHWUZ54BpDoYM16xDnAfKaIs0wGu/rc0hG2PpWDvjO/w=="
+      ]
+    },
+    "timestamp": "2023-06-12T09:59:07Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC85Nw==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "bm1LTkNLZGlBaEwrSHI1dzEwVVB1aVVta0RCUW9LZnAvNVFDSWhlY2xhWUhXVVo1NEJwRG9ZTTE2eERuQWZLYUlzMHdHdS9yYzBoRzJQcFdEdmpPL3c9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTB1a2V4",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MTQ=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "QXNzaWduUm9sZVRvQWNjb3VudA==",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwgZm9yIGRvY3MKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuQXNzaWduUm9sZVRvQWNjb3VudFByb3Bvc2FsCiAgdmFsdWU6CiAgLSAxMAogIC0gMjAKICAtIDI0NwogIC0gMTE0CiAgLSAzCiAgLSA1MAogIC0gMjIzCiAgLSAxMzgKICAtIDM1CiAgLSAyMjQKICAtIDE2NwogIC0gOAogIC0gMTE3CiAgLSAxMjgKICAtIDEwMgogIC0gODgKICAtIDExNQogIC0gMjEyCiAgLSAxMDAKICAtIDE1OQogIC0gMjAxCiAgLSA0NAogIC0gMTgKICAtIDEKICAtIDUyCiAgeHh4X25vdW5rZXllZGxpdGVyYWw6IHt9CiAgeHh4X3VucmVjb2duaXplZDogW10KICB4eHhfc2l6ZWNhY2hlOiAwCg==",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 14 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "14",
+    "title": "Test proposal",
+    "description": "Test proposal for docs",
+    "content": {
+      "@type": "/kira.gov.AssignRoleToAccountProposal",
+      "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "role_identifier": "4"
+    },
+    "submit_time": "2023-06-12T09:59:07.424361608Z",
+    "voting_end_time": "2023-06-12T10:05:07.424361608Z",
+    "enactment_end_time": "2023-06-12T10:10:07.424361608Z",
+    "min_voting_end_block_height": "141557",
+    "min_enactment_end_block_height": "141558",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.1.2 blacklist-permission
+
+Create a proposal to blacklist a permission to an address.
+
+Usage:
+```
+sekaid tx customgov proposal account blacklist-permission [permission_id] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--addr string`               | the address to set permissions                                                                                                                              | ✅ yes |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for blacklist-permission                                                                                                                               | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal account blacklist-permission --help
+Create a proposal to blacklist a permission to an address.
+
+Usage:
+  sekaid tx customgov proposal account blacklist-permission [permission_id] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --addr string              the address to set permissions
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for blacklist-permission
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+> **We can't blacklist whitelisted permission**
+
+```
+sekaid tx customgov proposal account blacklist-permission 14 --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --addr=kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt --home=/root/.sekai --chain-id=localnet-4 --fees=10ukex --keyring-backend=test --description="Test proposal for docs" --title="Test proposal" --yes -o json | jq
+{
+  "height": "0",
+  "txhash": "DD748427FEA3D3866007A13887152A5369106380886A47669FFD4932635AC353",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx DD748427FEA3D3866007A13887152A5369106380886A47669FFD4932635AC353 -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "141782",
+    "txhash": "DD748427FEA3D3866007A13887152A5369106380886A47669FFD4932635AC353",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020810",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"16\"},{\"key\":\"proposal_type\",\"value\":\"BlacklistAccountPermission\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal for docs\\ncontent:\\n  typeurl: /kira.gov.BlacklistAccountPermissionProposal\\n  value:\\n  - 10\\n  - 20\\n  - 247\\n  - 114\\n  - 3\\n  - 50\\n  - 223\\n  - 138\\n  - 35\\n  - 224\\n  - 167\\n  - 8\\n  - 117\\n  - 128\\n  - 102\\n  - 88\\n  - 115\\n  - 212\\n  - 100\\n  - 159\\n  - 201\\n  - 44\\n  - 16\\n  - 14\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "16"
+              },
+              {
+                "key": "proposal_type",
+                "value": "BlacklistAccountPermission"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal for docs\ncontent:\n  typeurl: /kira.gov.BlacklistAccountPermissionProposal\n  value:\n  - 10\n  - 20\n  - 247\n  - 114\n  - 3\n  - 50\n  - 223\n  - 138\n  - 35\n  - 224\n  - 167\n  - 8\n  - 117\n  - 128\n  - 102\n  - 88\n  - 115\n  - 212\n  - 100\n  - 159\n  - 201\n  - 44\n  - 16\n  - 14\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal for docs",
+            "content": {
+              "@type": "/kira.gov.BlacklistAccountPermissionProposal",
+              "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+              "permission": "PERMISSION_CREATE_UPSERT_TOKEN_ALIAS_PROPOSAL"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "100"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "10"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "NnDiSXreT1opubriO91tTq2DlIo+VWJdRqbE+BnBY5F08FSlmq6ceS/Ltlprc9twZYKkTT+YrwpOoI2Xi7wxmA=="
+      ]
+    },
+    "timestamp": "2023-06-12T10:38:08Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMDA=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "Tm5EaVNYcmVUMW9wdWJyaU85MXRUcTJEbElvK1ZXSmRScWJFK0JuQlk1RjA4RlNsbXE2Y2VTL0x0bHByYzl0d1pZS2tUVCtZcndwT29JMlhpN3d4bUE9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTB1a2V4",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MTY=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "QmxhY2tsaXN0QWNjb3VudFBlcm1pc3Npb24=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwgZm9yIGRvY3MKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuQmxhY2tsaXN0QWNjb3VudFBlcm1pc3Npb25Qcm9wb3NhbAogIHZhbHVlOgogIC0gMTAKICAtIDIwCiAgLSAyNDcKICAtIDExNAogIC0gMwogIC0gNTAKICAtIDIyMwogIC0gMTM4CiAgLSAzNQogIC0gMjI0CiAgLSAxNjcKICAtIDgKICAtIDExNwogIC0gMTI4CiAgLSAxMDIKICAtIDg4CiAgLSAxMTUKICAtIDIxMgogIC0gMTAwCiAgLSAxNTkKICAtIDIwMQogIC0gNDQKICAtIDE2CiAgLSAxNAogIHh4eF9ub3Vua2V5ZWRsaXRlcmFsOiB7fQogIHh4eF91bnJlY29nbml6ZWQ6IFtdCiAgeHh4X3NpemVjYWNoZTogMAo=",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid query customgov proposal 16 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "16",
+    "title": "Test proposal",
+    "description": "Test proposal for docs",
+    "content": {
+      "@type": "/kira.gov.BlacklistAccountPermissionProposal",
+      "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "permission": "PERMISSION_CREATE_UPSERT_TOKEN_ALIAS_PROPOSAL"
+    },
+    "submit_time": "2023-06-12T10:38:08.789572953Z",
+    "voting_end_time": "2023-06-12T10:44:08.789572953Z",
+    "enactment_end_time": "2023-06-12T10:49:08.789572953Z",
+    "min_voting_end_block_height": "141784",
+    "min_enactment_end_block_height": "141785",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.1.3 remove-blacklisted-permission
+
+Create a proposal to remove a blacklisted permission from an address.
+
+Usage:
+```
+sekaid tx customgov proposal account remove-blacklisted-permission [permission_id] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--addr string`               | the address to set permissions                                                                                                                              | ✅ yes |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for remove-blacklisted-permission                                                                                                                      | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+sekaid tx customgov proposal account remove-blacklisted-permission 10 --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --addr=kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt --home=/root/.sekai --chain-id=localnet-4 --fees=10ukex --keyring-backend=test --description="Test proposal for docs" --title="Test proposal" --yes -o json | jq
+{
+  "height": "0",
+  "txhash": "29E3FD5033DD532CE7B783F761F9C78B16B2D0F4FE93D0EA64B2B87A581B4F01",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 29E3FD5033DD532CE7B783F761F9C78B16B2D0F4FE93D0EA64B2B87A581B4F01 -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "141933",
+    "txhash": "29E3FD5033DD532CE7B783F761F9C78B16B2D0F4FE93D0EA64B2B87A581B4F01",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020811",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"17\"},{\"key\":\"proposal_type\",\"value\":\"RemoveBlacklistedAccountPermission\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal for docs\\ncontent:\\n  typeurl: /kira.gov.RemoveBlacklistedAccountPermissionProposal\\n  value:\\n  - 10\\n  - 20\\n  - 247\\n  - 114\\n  - 3\\n  - 50\\n  - 223\\n  - 138\\n  - 35\\n  - 224\\n  - 167\\n  - 8\\n  - 117\\n  - 128\\n  - 102\\n  - 88\\n  - 115\\n  - 212\\n  - 100\\n  - 159\\n  - 201\\n  - 44\\n  - 16\\n  - 10\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "17"
+              },
+              {
+                "key": "proposal_type",
+                "value": "RemoveBlacklistedAccountPermission"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal for docs\ncontent:\n  typeurl: /kira.gov.RemoveBlacklistedAccountPermissionProposal\n  value:\n  - 10\n  - 20\n  - 247\n  - 114\n  - 3\n  - 50\n  - 223\n  - 138\n  - 35\n  - 224\n  - 167\n  - 8\n  - 117\n  - 128\n  - 102\n  - 88\n  - 115\n  - 212\n  - 100\n  - 159\n  - 201\n  - 44\n  - 16\n  - 10\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal for docs",
+            "content": {
+              "@type": "/kira.gov.RemoveBlacklistedAccountPermissionProposal",
+              "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+              "permission": "PERMISSION_CREATE_UPSERT_DATA_REGISTRY_PROPOSAL"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "101"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "10"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "Ot4WugrrQGOdS0e1EikLGJog4Ne+he4NvH5yxW1clyQ5bApg0b7tQL+V6ZPIcpNOF7Jm2K6vwslcy4aInbwqkg=="
+      ]
+    },
+    "timestamp": "2023-06-12T11:04:05Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMDE=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "T3Q0V3VncnJRR09kUzBlMUVpa0xHSm9nNE5lK2hlNE52SDV5eFcxY2x5UTViQXBnMGI3dFFMK1Y2WlBJY3BOT0Y3Sm0ySzZ2d3NsY3k0YUluYndxa2c9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTB1a2V4",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MTc=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "UmVtb3ZlQmxhY2tsaXN0ZWRBY2NvdW50UGVybWlzc2lvbg==",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwgZm9yIGRvY3MKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuUmVtb3ZlQmxhY2tsaXN0ZWRBY2NvdW50UGVybWlzc2lvblByb3Bvc2FsCiAgdmFsdWU6CiAgLSAxMAogIC0gMjAKICAtIDI0NwogIC0gMTE0CiAgLSAzCiAgLSA1MAogIC0gMjIzCiAgLSAxMzgKICAtIDM1CiAgLSAyMjQKICAtIDE2NwogIC0gOAogIC0gMTE3CiAgLSAxMjgKICAtIDEwMgogIC0gODgKICAtIDExNQogIC0gMjEyCiAgLSAxMDAKICAtIDE1OQogIC0gMjAxCiAgLSA0NAogIC0gMTYKICAtIDEwCiAgeHh4X25vdW5rZXllZGxpdGVyYWw6IHt9CiAgeHh4X3VucmVjb2duaXplZDogW10KICB4eHhfc2l6ZWNhY2hlOiAwCg==",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 17 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "17",
+    "title": "Test proposal",
+    "description": "Test proposal for docs",
+    "content": {
+      "@type": "/kira.gov.RemoveBlacklistedAccountPermissionProposal",
+      "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "permission": "PERMISSION_CREATE_UPSERT_DATA_REGISTRY_PROPOSAL"
+    },
+    "submit_time": "2023-06-12T11:04:05.818914927Z",
+    "voting_end_time": "2023-06-12T11:10:05.818914927Z",
+    "enactment_end_time": "2023-06-12T11:15:05.818914927Z",
+    "min_voting_end_block_height": "141935",
+    "min_enactment_end_block_height": "141936",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.1.4 remove-whitelisted-permission
+
+Create a proposal to remove a whitelisted permission from an address.
+
+Usage:
+```
+sekaid tx customgov proposal account remove-whitelisted-permission [permission_id] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--addr string`               | the address to set permissions                                                                                                                              | ✅ yes |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for remove-whitelisted-permission                                                                                                                      | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal account remove-whitelisted-permission --help
+Create a proposal to remove a whitelisted permission from an address.
+
+Usage:
+  sekaid tx customgov proposal account remove-whitelisted-permission [permission_id] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --addr string              the address to set permissions
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for remove-whitelisted-permission
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+
+
+```
+sekaid tx customgov proposal account remove-whitelisted-permission 12 --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --addr=kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt --home=/root/.sekai --chain-id=localnet-4 --fees=10ukex --keyring-backend=test --description="Test proposal for docs" --title="Test proposal" --yes -o json | jq
+{
+  "height": "0",
+  "txhash": "297D3955DE3C620FA1670BDCFCC567E7EB323D9C300E307E9BED53625378020F",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 297D3955DE3C620FA1670BDCFCC567E7EB323D9C300E307E9BED53625378020F -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "142021",
+    "txhash": "297D3955DE3C620FA1670BDCFCC567E7EB323D9C300E307E9BED53625378020F",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020812",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"18\"},{\"key\":\"proposal_type\",\"value\":\"RemoveWhitelistedAccountPermission\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal for docs\\ncontent:\\n  typeurl: /kira.gov.RemoveWhitelistedAccountPermissionProposal\\n  value:\\n  - 10\\n  - 20\\n  - 247\\n  - 114\\n  - 3\\n  - 50\\n  - 223\\n  - 138\\n  - 35\\n  - 224\\n  - 167\\n  - 8\\n  - 117\\n  - 128\\n  - 102\\n  - 88\\n  - 115\\n  - 212\\n  - 100\\n  - 159\\n  - 201\\n  - 44\\n  - 16\\n  - 12\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "18"
+              },
+              {
+                "key": "proposal_type",
+                "value": "RemoveWhitelistedAccountPermission"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal for docs\ncontent:\n  typeurl: /kira.gov.RemoveWhitelistedAccountPermissionProposal\n  value:\n  - 10\n  - 20\n  - 247\n  - 114\n  - 3\n  - 50\n  - 223\n  - 138\n  - 35\n  - 224\n  - 167\n  - 8\n  - 117\n  - 128\n  - 102\n  - 88\n  - 115\n  - 212\n  - 100\n  - 159\n  - 201\n  - 44\n  - 16\n  - 12\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal for docs",
+            "content": {
+              "@type": "/kira.gov.RemoveWhitelistedAccountPermissionProposal",
+              "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+              "permission": "PERMISSION_CREATE_SET_NETWORK_PROPERTY_PROPOSAL"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "103"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "10"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "wrJE4bPMqRMJ2AaUEfRGgILw2j2ZtDEFUt5v9WjjyJBqfpQ1sgdw0zOYaJhVLtEnITtj/stl0lwUGkyyqTmeYQ=="
+      ]
+    },
+    "timestamp": "2023-06-12T11:19:14Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMDM=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "d3JKRTRiUE1xUk1KMkFhVUVmUkdnSUx3MmoyWnRERUZVdDV2OVdqanlKQnFmcFExc2dkdzB6T1lhSmhWTHRFbklUdGovc3RsMGx3VUdreXlxVG1lWVE9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTB1a2V4",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MTg=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "UmVtb3ZlV2hpdGVsaXN0ZWRBY2NvdW50UGVybWlzc2lvbg==",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwgZm9yIGRvY3MKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuUmVtb3ZlV2hpdGVsaXN0ZWRBY2NvdW50UGVybWlzc2lvblByb3Bvc2FsCiAgdmFsdWU6CiAgLSAxMAogIC0gMjAKICAtIDI0NwogIC0gMTE0CiAgLSAzCiAgLSA1MAogIC0gMjIzCiAgLSAxMzgKICAtIDM1CiAgLSAyMjQKICAtIDE2NwogIC0gOAogIC0gMTE3CiAgLSAxMjgKICAtIDEwMgogIC0gODgKICAtIDExNQogIC0gMjEyCiAgLSAxMDAKICAtIDE1OQogIC0gMjAxCiAgLSA0NAogIC0gMTYKICAtIDEyCiAgeHh4X25vdW5rZXllZGxpdGVyYWw6IHt9CiAgeHh4X3VucmVjb2duaXplZDogW10KICB4eHhfc2l6ZWNhY2hlOiAwCg==",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 18 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "18",
+    "title": "Test proposal",
+    "description": "Test proposal for docs",
+    "content": {
+      "@type": "/kira.gov.RemoveWhitelistedAccountPermissionProposal",
+      "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "permission": "PERMISSION_CREATE_SET_NETWORK_PROPERTY_PROPOSAL"
+    },
+    "submit_time": "2023-06-12T11:19:14.776196895Z",
+    "voting_end_time": "2023-06-12T11:25:14.776196895Z",
+    "enactment_end_time": "2023-06-12T11:30:14.776196895Z",
+    "min_voting_end_block_height": "142023",
+    "min_enactment_end_block_height": "142057",
+    "result": "VOTE_RESULT_QUORUM_NOT_REACHED",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.1.5 unassign-role
+
+Create a proposal to unassign a role from an address.
+
+Usage:
+```
+sekaid tx customgov proposal account unassign-role role [flags] 🟨 Can use role_id | role_sid
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--addr string`               | the address to set permissions                                                                                                                              | ✅ yes |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for unassign-role                                                                                                                                      | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal account unassign-role --help
+Create a proposal to unassign a role from an address.
+
+Usage:
+  sekaid tx customgov proposal account unassign-role role [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --addr string              the address to set permissions
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for unassign-role
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid tx customgov proposal account unassign-role validator --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --addr=kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt --home=/root/.sekai --chain-id=localnet-4 --fees=10ukex --keyring-backend=test --description="Test proposal for docs" --title="Test proposal" --yes -o json | jq
+{
+  "height": "0",
+  "txhash": "295F7574ADFD68B5D039F6E3E019B9B24897A443F2861088291194A6EF569D0D",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 295F7574ADFD68B5D039F6E3E019B9B24897A443F2861088291194A6EF569D0D -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "142120",
+    "txhash": "295F7574ADFD68B5D039F6E3E019B9B24897A443F2861088291194A6EF569D0D",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020813",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"19\"},{\"key\":\"proposal_type\",\"value\":\"UnassignRoleFromAccount\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal for docs\\ncontent:\\n  typeurl: /kira.gov.UnassignRoleFromAccountProposal\\n  value:\\n  - 10\\n  - 20\\n  - 247\\n  - 114\\n  - 3\\n  - 50\\n  - 223\\n  - 138\\n  - 35\\n  - 224\\n  - 167\\n  - 8\\n  - 117\\n  - 128\\n  - 102\\n  - 88\\n  - 115\\n  - 212\\n  - 100\\n  - 159\\n  - 201\\n  - 44\\n  - 18\\n  - 9\\n  - 118\\n  - 97\\n  - 108\\n  - 105\\n  - 100\\n  - 97\\n  - 116\\n  - 111\\n  - 114\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "19"
+              },
+              {
+                "key": "proposal_type",
+                "value": "UnassignRoleFromAccount"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal for docs\ncontent:\n  typeurl: /kira.gov.UnassignRoleFromAccountProposal\n  value:\n  - 10\n  - 20\n  - 247\n  - 114\n  - 3\n  - 50\n  - 223\n  - 138\n  - 35\n  - 224\n  - 167\n  - 8\n  - 117\n  - 128\n  - 102\n  - 88\n  - 115\n  - 212\n  - 100\n  - 159\n  - 201\n  - 44\n  - 18\n  - 9\n  - 118\n  - 97\n  - 108\n  - 105\n  - 100\n  - 97\n  - 116\n  - 111\n  - 114\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal for docs",
+            "content": {
+              "@type": "/kira.gov.UnassignRoleFromAccountProposal",
+              "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+              "role_identifier": "validator"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "105"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "10"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "dqu/YESslTFwwXdRrfpACFPOzdIct5sq3qpE43y07kgppsr5mpJQmstLpp1OHOR5MznU3I9QvplooRS/YUqA8A=="
+      ]
+    },
+    "timestamp": "2023-06-12T11:36:15Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMDU=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "ZHF1L1lFU3NsVEZ3d1hkUnJmcEFDRlBPemRJY3Q1c3EzcXBFNDN5MDdrZ3Bwc3I1bXBKUW1zdExwcDFPSE9SNU16blUzSTlRdnBsb29SUy9ZVXFBOEE9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTB1a2V4",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MTk=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "VW5hc3NpZ25Sb2xlRnJvbUFjY291bnQ=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwgZm9yIGRvY3MKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuVW5hc3NpZ25Sb2xlRnJvbUFjY291bnRQcm9wb3NhbAogIHZhbHVlOgogIC0gMTAKICAtIDIwCiAgLSAyNDcKICAtIDExNAogIC0gMwogIC0gNTAKICAtIDIyMwogIC0gMTM4CiAgLSAzNQogIC0gMjI0CiAgLSAxNjcKICAtIDgKICAtIDExNwogIC0gMTI4CiAgLSAxMDIKICAtIDg4CiAgLSAxMTUKICAtIDIxMgogIC0gMTAwCiAgLSAxNTkKICAtIDIwMQogIC0gNDQKICAtIDE4CiAgLSA5CiAgLSAxMTgKICAtIDk3CiAgLSAxMDgKICAtIDEwNQogIC0gMTAwCiAgLSA5NwogIC0gMTE2CiAgLSAxMTEKICAtIDExNAogIHh4eF9ub3Vua2V5ZWRsaXRlcmFsOiB7fQogIHh4eF91bnJlY29nbml6ZWQ6IFtdCiAgeHh4X3NpemVjYWNoZTogMAo=",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 19 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "19",
+    "title": "Test proposal",
+    "description": "Test proposal for docs",
+    "content": {
+      "@type": "/kira.gov.UnassignRoleFromAccountProposal",
+      "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "role_identifier": "validator"
+    },
+    "submit_time": "2023-06-12T11:36:15.728838159Z",
+    "voting_end_time": "2023-06-12T11:42:15.728838159Z",
+    "enactment_end_time": "2023-06-12T11:47:15.728838159Z",
+    "min_voting_end_block_height": "142122",
+    "min_enactment_end_block_height": "142123",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.1.6 whitelist-permission
+
+Create a proposal to whitelist a permission to an address.
+
+Usage:
+```
+sekaid tx customgov proposal account whitelist-permission [permission_id] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--addr string`               | the address to set permissions                                                                                                                              | ✅ yes |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for whitelist-permission                                                                                                                               | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal account whitelist-permission --help
+Create a proposal to whitelist a permission to an address.
+
+Usage:
+  sekaid tx customgov proposal account whitelist-permission [permission_id] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --addr string              the address to set permissions
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for whitelist-permission
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+> **Can't whitelist blacklisted permission**
+
+```
+sekaid tx customgov proposal account whitelist-permission 14 --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --addr=kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt --home=/root/.sekai --chain-id=localnet-4 --fees=10ukex --keyring-backend=test --description="Test proposal for docs" --title="Test proposal" --yes -o json | jq
+{
+  "height": "0",
+  "txhash": "2733898301260774DAA8F962B8D7D680D01BA79C9AF7748EAE9906352BC62102",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 2733898301260774DAA8F962B8D7D680D01BA79C9AF7748EAE9906352BC62102 -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "142200",
+    "txhash": "2733898301260774DAA8F962B8D7D680D01BA79C9AF7748EAE9906352BC62102",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020814",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"20\"},{\"key\":\"proposal_type\",\"value\":\"WhitelistAccountPermission\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal for docs\\ncontent:\\n  typeurl: /kira.gov.WhitelistAccountPermissionProposal\\n  value:\\n  - 10\\n  - 20\\n  - 247\\n  - 114\\n  - 3\\n  - 50\\n  - 223\\n  - 138\\n  - 35\\n  - 224\\n  - 167\\n  - 8\\n  - 117\\n  - 128\\n  - 102\\n  - 88\\n  - 115\\n  - 212\\n  - 100\\n  - 159\\n  - 201\\n  - 44\\n  - 16\\n  - 14\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "20"
+              },
+              {
+                "key": "proposal_type",
+                "value": "WhitelistAccountPermission"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal for docs\ncontent:\n  typeurl: /kira.gov.WhitelistAccountPermissionProposal\n  value:\n  - 10\n  - 20\n  - 247\n  - 114\n  - 3\n  - 50\n  - 223\n  - 138\n  - 35\n  - 224\n  - 167\n  - 8\n  - 117\n  - 128\n  - 102\n  - 88\n  - 115\n  - 212\n  - 100\n  - 159\n  - 201\n  - 44\n  - 16\n  - 14\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal for docs",
+            "content": {
+              "@type": "/kira.gov.WhitelistAccountPermissionProposal",
+              "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+              "permission": "PERMISSION_CREATE_UPSERT_TOKEN_ALIAS_PROPOSAL"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "107"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "10"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "a6/6w6RjWLA7JC4Kkup5WK4rZvl7mggP4Nmxxc/P/04rQMBwBfeu0dno4b8P2luG6DTg8rfXQfoQ5OCEcSTy/A=="
+      ]
+    },
+    "timestamp": "2023-06-12T11:50:00Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMDc=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "YTYvNnc2UmpXTEE3SkM0S2t1cDVXSzRyWnZsN21nZ1A0Tm14eGMvUC8wNHJRTUJ3QmZldTBkbm80YjhQMmx1RzZEVGc4cmZYUWZvUTVPQ0VjU1R5L0E9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTB1a2V4",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MjA=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "V2hpdGVsaXN0QWNjb3VudFBlcm1pc3Npb24=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwgZm9yIGRvY3MKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuV2hpdGVsaXN0QWNjb3VudFBlcm1pc3Npb25Qcm9wb3NhbAogIHZhbHVlOgogIC0gMTAKICAtIDIwCiAgLSAyNDcKICAtIDExNAogIC0gMwogIC0gNTAKICAtIDIyMwogIC0gMTM4CiAgLSAzNQogIC0gMjI0CiAgLSAxNjcKICAtIDgKICAtIDExNwogIC0gMTI4CiAgLSAxMDIKICAtIDg4CiAgLSAxMTUKICAtIDIxMgogIC0gMTAwCiAgLSAxNTkKICAtIDIwMQogIC0gNDQKICAtIDE2CiAgLSAxNAogIHh4eF9ub3Vua2V5ZWRsaXRlcmFsOiB7fQogIHh4eF91bnJlY29nbml6ZWQ6IFtdCiAgeHh4X3NpemVjYWNoZTogMAo=",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 20 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "20",
+    "title": "Test proposal",
+    "description": "Test proposal for docs",
+    "content": {
+      "@type": "/kira.gov.WhitelistAccountPermissionProposal",
+      "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "permission": "PERMISSION_CREATE_UPSERT_TOKEN_ALIAS_PROPOSAL"
+    },
+    "submit_time": "2023-06-12T11:50:00.816857099Z",
+    "voting_end_time": "2023-06-12T11:56:00.816857099Z",
+    "enactment_end_time": "2023-06-12T12:01:00.816857099Z",
+    "min_voting_end_block_height": "142202",
+    "min_enactment_end_block_height": "142236",
+    "result": "VOTE_RESULT_QUORUM_NOT_REACHED",
+    "exec_result": ""
+  }
+  ```
+</details>
+
 [Return to top](#sekai)
 
 ###### 21.7.7.2 proposal-jail-councilor
+
+Create a proposal to jail councilors.
+
+Usage:
+```
+sekaid tx customgov proposal proposal-jail-councilor [councilors] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for proposal-jail-councilor                                                                                                                            | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal proposal-jail-councilor --help
+Create a proposal to jail councilors
+
+Usage:
+  sekaid tx customgov proposal proposal-jail-councilor [councilors] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for proposal-jail-councilor
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+#TODO haven't tested
+
+🟨  
+🟨  
+🟨  
 
 [Return to top](#sekai)
 
 ###### 21.7.7.3 proposal-reset-whole-councilor-rank
 
+Create a proposal to reset whole councilor rank.
+
+Usage:
+```
+sekaid tx customgov proposal proposal-reset-whole-councilor-rank [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for proposal-reset-whole-councilor-rank                                                                                                                | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal proposal-reset-whole-councilor-rank --help
+Create a proposal to reset whole councilor rank
+
+Usage:
+  sekaid tx customgov proposal proposal-reset-whole-councilor-rank [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for proposal-reset-whole-councilor-rank
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+#TODO haven't tested
+
+🟨  
+🟨  
+🟨  
+
 [Return to top](#sekai)
 
 ###### 21.7.7.4 role
+
+Role proposals management subcommands.
+
+Usage:
+```
+sekaid tx customgov proposal role [flags]
+sekaid tx customgov proposal role [command]
+```
+
+Available Commands:
+
+| Subcommands                         | Description                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| [`blacklist-permission`]()          | Raise governance proposal to blacklist a permission for a role.           |
+| [`create`]()                        | Raise governance proposal to create a new role.                           |
+| [`remove`]()                        | Raise governance proposal to remove a role.                               |
+| [`remove-blacklisted-permission`]() | Raise governance proposal to remove a blacklisted permission from a role. |
+| [`remove-whitelisted-permission`]() | Raise governance proposal to remove whitelisted permission from a role.   |
+| [`whitelist-permission`]()          | Raise governance proposal to whitelist a permission for a role.           |
+
+
+
+| Flags        | Description   | Work |
+| ------------ | ------------- | ---- |
+| `-h, --help` | help for role |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal role --help
+Role proposals management subcommands
+
+Usage:
+  sekaid tx customgov proposal role [flags]
+  sekaid tx customgov proposal role [command]
+
+Available Commands:
+  blacklist-permission          Raise governance proposal to blacklist a permission for a role.
+  create                        Raise governance proposal to create a new role.
+  remove                        Raise governance proposal to remove a role.
+  remove-blacklisted-permission Raise governance proposal to remove a blacklisted permission from a role.
+  remove-whitelisted-permission Raise governance proposal to remove whitelisted permission from a role.
+  whitelist-permission          Raise governance proposal to whitelist a permission for a role.
+
+Flags:
+  -h, --help   help for role
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+
+Use "sekaid tx customgov proposal role [command] --help" for more information about a command.
+```
+
+[Return to top](#sekai)
+
+###### 21.7.7.4.1 blacklist-permission
+
+Raise governance proposal to blacklist a permission for a role.
+
+Usage:
+```
+sekaid tx customgov proposal role blacklist-permission [role_sid] [role_description] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--blacklist int32Slice`      | the blacklist values in format 1,2,3 (default `[]`)                                                                                                         | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for blacklist-permission                                                                                                                               | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `--whitelist int32Slice`      | the whitelist value in format 1,2,3 (default `[]`)                                                                                                          | ❌ ?   |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal role blacklist-permission --help
+Raise governance proposal to blacklist a permission for a role.
+
+Usage:
+  sekaid tx customgov proposal role blacklist-permission [role_sid] [role_description] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --blacklist int32Slice     the blacklist values in format 1,2,3 (default [])
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for blacklist-permission
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+      --whitelist int32Slice     the whitelist value in format 1,2,3 (default [])
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid tx customgov proposal role blacklist-permission 3 11 --title="Test proposal" --description="Test proposal" --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --keyring-backend=test --home=/root/.sekai --chain-id=localnet-4 --fees=10ukex --yes --output=json | jq
+{
+  "height": "0",
+  "txhash": "854CC53C8A5860E30E6C9EE4A101E3BAE5F3AF9FD13A023965006ABF6953164B",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 854CC53C8A5860E30E6C9EE4A101E3BAE5F3AF9FD13A023965006ABF6953164B -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "142786",
+    "txhash": "854CC53C8A5860E30E6C9EE4A101E3BAE5F3AF9FD13A023965006ABF6953164B",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020815",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"21\"},{\"key\":\"proposal_type\",\"value\":\"BlacklistRolePermission\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal\\ncontent:\\n  typeurl: /kira.gov.BlacklistRolePermissionProposal\\n  value:\\n  - 10\\n  - 1\\n  - 51\\n  - 16\\n  - 11\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "21"
+              },
+              {
+                "key": "proposal_type",
+                "value": "BlacklistRolePermission"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal\ncontent:\n  typeurl: /kira.gov.BlacklistRolePermissionProposal\n  value:\n  - 10\n  - 1\n  - 51\n  - 16\n  - 11\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal",
+            "content": {
+              "@type": "/kira.gov.BlacklistRolePermissionProposal",
+              "role_identifier": "3",
+              "permission": "PERMISSION_VOTE_UPSERT_DATA_REGISTRY_PROPOSAL"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "108"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "10"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "x3IfoIjy+d3Qzfl9SjiAgOoaMpY4mLixhc7iIp1jMJE4iM4JNA63pzXB4XfuFN+z1Q3Y5DSrUBkxRHhgdfwxMg=="
+      ]
+    },
+    "timestamp": "2023-06-12T13:30:45Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMDg=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "eDNJZm9JankrZDNRemZsOVNqaUFnT29hTXBZNG1MaXhoYzdpSXAxak1KRTRpTTRKTkE2M3B6WEI0WGZ1Rk4rejFRM1k1RFNyVUJreFJIaGdkZnd4TWc9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTB1a2V4",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTB1a2V4",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MjE=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "QmxhY2tsaXN0Um9sZVBlcm1pc3Npb24=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuQmxhY2tsaXN0Um9sZVBlcm1pc3Npb25Qcm9wb3NhbAogIHZhbHVlOgogIC0gMTAKICAtIDEKICAtIDUxCiAgLSAxNgogIC0gMTEKICB4eHhfbm91bmtleWVkbGl0ZXJhbDoge30KICB4eHhfdW5yZWNvZ25pemVkOiBbXQogIHh4eF9zaXplY2FjaGU6IDAK",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 21 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "21",
+    "title": "Test proposal",
+    "description": "Test proposal",
+    "content": {
+      "@type": "/kira.gov.BlacklistRolePermissionProposal",
+      "role_identifier": "3",
+      "permission": "PERMISSION_VOTE_UPSERT_DATA_REGISTRY_PROPOSAL"
+    },
+    "submit_time": "2023-06-12T13:30:45.511453097Z",
+    "voting_end_time": "2023-06-12T13:36:45.511453097Z",
+    "enactment_end_time": "2023-06-12T13:41:45.511453097Z",
+    "min_voting_end_block_height": "142788",
+    "min_enactment_end_block_height": "142789",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.4.2 create
+
+Raise governance proposal to create a new role.
+
+Usage:
+```
+sekaid tx customgov proposal role create [role_sid] [role_description] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--blacklist int32Slice`      | the blacklist values in format 1,2,3 (default `[]`)                                                                                                         | ✅ yes |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for create                                                                                                                                             | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `--whitelist int32Slice`      | the whitelist value in format 1,2,3 (default `[]`)                                                                                                          | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal role create --help
+Raise governance proposal to create a new role.
+
+Usage:
+  sekaid tx customgov proposal role create [role_sid] [role_description] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --blacklist int32Slice     the blacklist values in format 1,2,3 (default [])
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for create
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+      --whitelist int32Slice     the whitelist value in format 1,2,3 (default [])
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+```
+
+```
+sekaid tx customgov proposal role create 'bruh3' "'Bruh'(3) role" --title="Test proposal for 'bruh3' role" --description="Test proposal for creating 'bruh3' role" --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --whitelist=20,21 --blacklist=22,23 --keyring-backend=test --chain-id=localnet-4 --home=/root/.sekai --fees=100ukex --broadcast-mode=async --yes --output=json | jq
+{
+  "height": "0",
+  "txhash": "05D7C2595B3AFD249CCB3A9FE2040B1B6AFE2CBAB72465771790EF19EA047F38",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 05D7C2595B3AFD249CCB3A9FE2040B1B6AFE2CBAB72465771790EF19EA047F38 -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "142853",
+    "txhash": "05D7C2595B3AFD249CCB3A9FE2040B1B6AFE2CBAB72465771790EF19EA047F38",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020816",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"22\"},{\"key\":\"proposal_type\",\"value\":\"CreateRoleProposal\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal for 'bruh3' role\\ndescription: Test proposal for creating 'bruh3' role\\ncontent:\\n  typeurl: /kira.gov.CreateRoleProposal\\n  value:\\n  - 10\\n  - 5\\n  - 98\\n  - 114\\n  - 117\\n  - 104\\n  - 51\\n  - 18\\n  - 14\\n  - 39\\n  - 66\\n  - 114\\n  - 117\\n  - 104\\n  - 39\\n  - 40\\n  - 51\\n  - 41\\n  - 32\\n  - 114\\n  - 111\\n  - 108\\n  - 101\\n  - 26\\n  - 2\\n  - 20\\n  - 21\\n  - 34\\n  - 2\\n  - 22\\n  - 23\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "22"
+              },
+              {
+                "key": "proposal_type",
+                "value": "CreateRoleProposal"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal for 'bruh3' role\ndescription: Test proposal for creating 'bruh3' role\ncontent:\n  typeurl: /kira.gov.CreateRoleProposal\n  value:\n  - 10\n  - 5\n  - 98\n  - 114\n  - 117\n  - 104\n  - 51\n  - 18\n  - 14\n  - 39\n  - 66\n  - 114\n  - 117\n  - 104\n  - 39\n  - 40\n  - 51\n  - 41\n  - 32\n  - 114\n  - 111\n  - 108\n  - 101\n  - 26\n  - 2\n  - 20\n  - 21\n  - 34\n  - 2\n  - 22\n  - 23\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal for 'bruh3' role",
+            "description": "Test proposal for creating 'bruh3' role",
+            "content": {
+              "@type": "/kira.gov.CreateRoleProposal",
+              "role_sid": "bruh3",
+              "role_description": "'Bruh'(3) role",
+              "whitelisted_permissions": [
+                "PERMISSION_CREATE_UNJAIL_VALIDATOR_PROPOSAL",
+                "PERMISSION_VOTE_UNJAIL_VALIDATOR_PROPOSAL"
+              ],
+              "blacklisted_permissions": [
+                "PERMISSION_CREATE_CREATE_ROLE_PROPOSAL",
+                "PERMISSION_VOTE_CREATE_ROLE_PROPOSAL"
+              ]
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "109"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "100"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "U98UymXe9j7LpZwcbKAo6F4wNZV1X2haFdihaqkgQs4uNCJJNGaW1Kujp/qmvtBVyXBkF/YYWQEKDFtepBg5ZA=="
+      ]
+    },
+    "timestamp": "2023-06-12T13:42:16Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMDk=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "VTk4VXltWGU5ajdMcFp3Y2JLQW82RjR3TlpWMVgyaGFGZGloYXFrZ1FzNHVOQ0pKTkdhVzFLdWpwL3FtdnRCVnlYQmtGL1lZV1FFS0RGdGVwQmc1WkE9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTAwdWtleA==",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MjI=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "Q3JlYXRlUm9sZVByb3Bvc2Fs",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwgZm9yICdicnVoMycgcm9sZQpkZXNjcmlwdGlvbjogVGVzdCBwcm9wb3NhbCBmb3IgY3JlYXRpbmcgJ2JydWgzJyByb2xlCmNvbnRlbnQ6CiAgdHlwZXVybDogL2tpcmEuZ292LkNyZWF0ZVJvbGVQcm9wb3NhbAogIHZhbHVlOgogIC0gMTAKICAtIDUKICAtIDk4CiAgLSAxMTQKICAtIDExNwogIC0gMTA0CiAgLSA1MQogIC0gMTgKICAtIDE0CiAgLSAzOQogIC0gNjYKICAtIDExNAogIC0gMTE3CiAgLSAxMDQKICAtIDM5CiAgLSA0MAogIC0gNTEKICAtIDQxCiAgLSAzMgogIC0gMTE0CiAgLSAxMTEKICAtIDEwOAogIC0gMTAxCiAgLSAyNgogIC0gMgogIC0gMjAKICAtIDIxCiAgLSAzNAogIC0gMgogIC0gMjIKICAtIDIzCiAgeHh4X25vdW5rZXllZGxpdGVyYWw6IHt9CiAgeHh4X3VucmVjb2duaXplZDogW10KICB4eHhfc2l6ZWNhY2hlOiAwCg==",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 22 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "22",
+    "title": "Test proposal for 'bruh3' role",
+    "description": "Test proposal for creating 'bruh3' role",
+    "content": {
+      "@type": "/kira.gov.CreateRoleProposal",
+      "role_sid": "bruh3",
+      "role_description": "'Bruh'(3) role",
+      "whitelisted_permissions": [
+        "PERMISSION_CREATE_UNJAIL_VALIDATOR_PROPOSAL",
+        "PERMISSION_VOTE_UNJAIL_VALIDATOR_PROPOSAL"
+      ],
+      "blacklisted_permissions": [
+        "PERMISSION_CREATE_CREATE_ROLE_PROPOSAL",
+        "PERMISSION_VOTE_CREATE_ROLE_PROPOSAL"
+      ]
+    },
+    "submit_time": "2023-06-12T13:42:16.485050497Z",
+    "voting_end_time": "2023-06-12T13:48:16.485050497Z",
+    "enactment_end_time": "2023-06-12T13:53:16.485050497Z",
+    "min_voting_end_block_height": "142855",
+    "min_enactment_end_block_height": "142856",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.4.3 remove
+
+Raise governance proposal to remove a role.
+
+Usage:
+```
+sekaid tx customgov proposal role remove [role_sid] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for remove                                                                                                                                             | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `--whitelist int32Slice`      | the whitelist value in format 1,2,3 (default `[]`)                                                                                                          | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal role remove --help
+Raise governance proposal to remove a role.
+
+Usage:
+  sekaid tx customgov proposal role remove [role_sid] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for remove
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid tx customgov proposal role remove 'bruh2' --title="Test proposal" --description="Test proposal" --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --keyring-backend=test --chain-id=localnet-4 --home=/root/.sekai --fees=100ukex --broadcast-mode=async --yes --output=json | jq
+```
+
+❌ _remove role proposal is not implemented!_
+
+[Return to top](#sekai)
+
+###### 21.7.7.4.4 remove-blacklisted-permission
+
+Raise governance proposal to remove a blacklisted permission from a role.
+
+Usage:
+```
+sekaid tx customgov proposal role remove-blacklisted-permission [role_sid] [role_description] [flags] ❌ mistake! [role_sid | role_id] [permission_id]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--blacklist int32Slice`      | the blacklist values in format 1,2,3 (default `[]`)                                                                                                         | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for remove-blacklisted-permission                                                                                                                      | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `--whitelist int32Slice`      | the whitelist value in format 1,2,3 (default `[]`)                                                                                                          | ❌ ?   |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal role remove-blacklisted-permission --help
+Raise governance proposal to remove a blacklisted permission from a role.
+
+Usage:
+  sekaid tx customgov proposal role remove-blacklisted-permission [role_sid] [role_description] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --blacklist int32Slice     the blacklist values in format 1,2,3 (default [])
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for remove-blacklisted-permission
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+      --whitelist int32Slice     the whitelist value in format 1,2,3 (default [])
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid tx customgov proposal role remove-blacklisted-permission bruh 10 --title="Test proposal" --description="Test proposal" --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --keyring-backend=test --chain-id=localnet-4 --home=/root/.sekai --fees=100ukex --broadcast-mode=async --yes --output=json | jq
+{
+  "height": "0",
+  "txhash": "0435572323540F92E5F3EC95086FA34DB6C09D1A9AF57B3FAF40BBD6F6AC58CE",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 0435572323540F92E5F3EC95086FA34DB6C09D1A9AF57B3FAF40BBD6F6AC58CE -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "142956",
+    "txhash": "0435572323540F92E5F3EC95086FA34DB6C09D1A9AF57B3FAF40BBD6F6AC58CE",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020817",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"23\"},{\"key\":\"proposal_type\",\"value\":\"RemoveBlacklistedRolePermission\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal\\ncontent:\\n  typeurl: /kira.gov.RemoveBlacklistedRolePermissionProposal\\n  value:\\n  - 10\\n  - 4\\n  - 98\\n  - 114\\n  - 117\\n  - 104\\n  - 16\\n  - 10\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "23"
+              },
+              {
+                "key": "proposal_type",
+                "value": "RemoveBlacklistedRolePermission"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal\ncontent:\n  typeurl: /kira.gov.RemoveBlacklistedRolePermissionProposal\n  value:\n  - 10\n  - 4\n  - 98\n  - 114\n  - 117\n  - 104\n  - 16\n  - 10\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal",
+            "content": {
+              "@type": "/kira.gov.RemoveBlacklistedRolePermissionProposal",
+              "role_sid": "bruh",
+              "permission": "PERMISSION_CREATE_UPSERT_DATA_REGISTRY_PROPOSAL"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "113"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "100"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "0UhZaikBOdSDX/4E1Bq/0fyNFCHheRN3QVOyGAdQ+wlxM9vXGnBM0L/JvUYBsAQEYcgxBYsyE8mttkD5nDxzmA=="
+      ]
+    },
+    "timestamp": "2023-06-12T14:00:01Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMTM=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "MFVoWmFpa0JPZFNEWC80RTFCcS8wZnlORkNIaGVSTjNRVk95R0FkUSt3bHhNOXZYR25CTTBML0p2VVlCc0FRRVljZ3hCWXN5RThtdHRrRDVuRHh6bUE9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTAwdWtleA==",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MjM=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "UmVtb3ZlQmxhY2tsaXN0ZWRSb2xlUGVybWlzc2lvbg==",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuUmVtb3ZlQmxhY2tsaXN0ZWRSb2xlUGVybWlzc2lvblByb3Bvc2FsCiAgdmFsdWU6CiAgLSAxMAogIC0gNAogIC0gOTgKICAtIDExNAogIC0gMTE3CiAgLSAxMDQKICAtIDE2CiAgLSAxMAogIHh4eF9ub3Vua2V5ZWRsaXRlcmFsOiB7fQogIHh4eF91bnJlY29nbml6ZWQ6IFtdCiAgeHh4X3NpemVjYWNoZTogMAo=",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 23 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "23",
+    "title": "Test proposal",
+    "description": "Test proposal",
+    "content": {
+      "@type": "/kira.gov.RemoveBlacklistedRolePermissionProposal",
+      "role_sid": "bruh",
+      "permission": "PERMISSION_CREATE_UPSERT_DATA_REGISTRY_PROPOSAL"
+    },
+    "submit_time": "2023-06-12T14:00:01.126696499Z",
+    "voting_end_time": "2023-06-12T14:06:01.126696499Z",
+    "enactment_end_time": "2023-06-12T14:11:01.126696499Z",
+    "min_voting_end_block_height": "142958",
+    "min_enactment_end_block_height": "142959",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.4.5 remove-whitelisted-permission
+
+Raise governance proposal to remove whitelisted permission from a role.
+
+Usage:
+```
+sekaid tx customgov proposal role remove-whitelisted-permission [role_sid] [permission] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--blacklist int32Slice`      | the blacklist values in format 1,2,3 (default `[]`)                                                                                                         | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for remove-whitelisted-permission                                                                                                                      | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `--whitelist int32Slice`      | the whitelist value in format 1,2,3 (default `[]`)                                                                                                          | ❌ ?   |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal role remove-whitelisted-permission --help
+Raise governance proposal to remove whitelisted permission from a role.
+
+Usage:
+  sekaid tx customgov proposal role remove-whitelisted-permission [role_sid] [permission] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --blacklist int32Slice     the blacklist values in format 1,2,3 (default [])
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for remove-whitelisted-permission
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+      --whitelist int32Slice     the whitelist value in format 1,2,3 (default [])
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid tx customgov proposal role remove-whitelisted-permission 4 28 --title="Test proposal" --description="Test proposal" --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --keyring-backend=test --chain-id=localnet-4 --home=/root/.sekai --fees=100ukex --broadcast-mode=async --yes --output=json | jq
+{
+  "height": "0",
+  "txhash": "445C111D2424B3619FC90554F64E735809F56F9CF21FE689049E48877A2EDAE8",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 445C111D2424B3619FC90554F64E735809F56F9CF21FE689049E48877A2EDAE8 -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "142994",
+    "txhash": "445C111D2424B3619FC90554F64E735809F56F9CF21FE689049E48877A2EDAE8",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C12020819",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"25\"},{\"key\":\"proposal_type\",\"value\":\"RemoveWhitelistedRolePermission\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal\\ncontent:\\n  typeurl: /kira.gov.RemoveWhitelistedRolePermissionProposal\\n  value:\\n  - 10\\n  - 1\\n  - 52\\n  - 16\\n  - 28\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "25"
+              },
+              {
+                "key": "proposal_type",
+                "value": "RemoveWhitelistedRolePermission"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal\ncontent:\n  typeurl: /kira.gov.RemoveWhitelistedRolePermissionProposal\n  value:\n  - 10\n  - 1\n  - 52\n  - 16\n  - 28\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal",
+            "content": {
+              "@type": "/kira.gov.RemoveWhitelistedRolePermissionProposal",
+              "role_sid": "4",
+              "permission": "PERMISSION_CREATE_SOFTWARE_UPGRADE_PROPOSAL"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "115"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "100"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "ZsEjyPOsXBVV4xZ2fIzpAeq1WBaGwH4KgdEIQfpbAftM2TWy4SRWt4yhwQnpcvQH2+tY4px/6I7EOk1DfnbIGg=="
+      ]
+    },
+    "timestamp": "2023-06-12T14:06:33Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMTU=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "WnNFanlQT3NYQlZWNHhaMmZJenBBZXExV0JhR3dINEtnZEVJUWZwYkFmdE0yVFd5NFNSV3Q0eWh3UW5wY3ZRSDIrdFk0cHgvNkk3RU9rMURmbmJJR2c9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTAwdWtleA==",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MjU=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "UmVtb3ZlV2hpdGVsaXN0ZWRSb2xlUGVybWlzc2lvbg==",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuUmVtb3ZlV2hpdGVsaXN0ZWRSb2xlUGVybWlzc2lvblByb3Bvc2FsCiAgdmFsdWU6CiAgLSAxMAogIC0gMQogIC0gNTIKICAtIDE2CiAgLSAyOAogIHh4eF9ub3Vua2V5ZWRsaXRlcmFsOiB7fQogIHh4eF91bnJlY29nbml6ZWQ6IFtdCiAgeHh4X3NpemVjYWNoZTogMAo=",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 25 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "25",
+    "title": "Test proposal",
+    "description": "Test proposal",
+    "content": {
+      "@type": "/kira.gov.RemoveWhitelistedRolePermissionProposal",
+      "role_sid": "4",
+      "permission": "PERMISSION_CREATE_SOFTWARE_UPGRADE_PROPOSAL"
+    },
+    "submit_time": "2023-06-12T14:06:33.096171946Z",
+    "voting_end_time": "2023-06-12T14:12:33.096171946Z",
+    "enactment_end_time": "2023-06-12T14:17:33.096171946Z",
+    "min_voting_end_block_height": "142996",
+    "min_enactment_end_block_height": "143030",
+    "result": "VOTE_RESULT_QUORUM_NOT_REACHED",
+    "exec_result": ""
+  }
+  ```
+</details>
+
+[Return to top](#sekai)
+
+###### 21.7.7.4.6 whitelist-permission
+
+Raise governance proposal to whitelist a permission for a role.
+
+Usage:
+```
+sekaid tx customgov proposal role whitelist-permission [role_sid] [permission_id] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `--blacklist int32Slice`      | the blacklist values in format 1,2,3 (default `[]`)                                                                                                         | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for whitelist-permission                                                                                                                               | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `--whitelist int32Slice`      | the whitelist value in format 1,2,3 (default `[]`)                                                                                                          | ❌ ?   |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal role whitelist-permission --help
+Raise governance proposal to whitelist a permission for a role.
+
+Usage:
+  sekaid tx customgov proposal role whitelist-permission [role_sid] [permission_id] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+      --blacklist int32Slice     the blacklist values in format 1,2,3 (default [])
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for whitelist-permission
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+      --whitelist int32Slice     the whitelist value in format 1,2,3 (default [])
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid tx customgov proposal role whitelist-permission 3 11 --title="Test proposal" --description="Test proposal" --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --keyring-backend=test --chain-id=localnet-4 --home=/root/.sekai --fees=100ukex --broadcast-mode=async --yes --output=json | jq
+{
+  "height": "0",
+  "txhash": "383217AAFC0C23FCA0D13D253CEAFE883E1E89B3D512AA985E65D98439624CC3",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 383217AAFC0C23FCA0D13D253CEAFE883E1E89B3D512AA985E65D98439624CC3 -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "143069",
+    "txhash": "383217AAFC0C23FCA0D13D253CEAFE883E1E89B3D512AA985E65D98439624CC3",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C1202081A",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"26\"},{\"key\":\"proposal_type\",\"value\":\"WhitelistRolePermission\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal\\ndescription: Test proposal\\ncontent:\\n  typeurl: /kira.gov.WhitelistRolePermissionProposal\\n  value:\\n  - 10\\n  - 1\\n  - 51\\n  - 16\\n  - 11\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "26"
+              },
+              {
+                "key": "proposal_type",
+                "value": "WhitelistRolePermission"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal\ndescription: Test proposal\ncontent:\n  typeurl: /kira.gov.WhitelistRolePermissionProposal\n  value:\n  - 10\n  - 1\n  - 51\n  - 16\n  - 11\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal",
+            "description": "Test proposal",
+            "content": {
+              "@type": "/kira.gov.WhitelistRolePermissionProposal",
+              "role_identifier": "3",
+              "permission": "PERMISSION_VOTE_UPSERT_DATA_REGISTRY_PROPOSAL"
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "116"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "100"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "DoKkT3wrfNzoweZ9Ln7vZdrP5afBxZ68IwP7bqnPsMUoy6eSXIYDJXKIMbfP4OybOduKi4/Ptd6nfZrc3TxcRA=="
+      ]
+    },
+    "timestamp": "2023-06-12T14:19:27Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMTY=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "RG9La1Qzd3JmTnpvd2VaOUxuN3ZaZHJQNWFmQnhaNjhJd1A3YnFuUHNNVW95NmVTWElZREpYS0lNYmZQNE95Yk9kdUtpNC9QdGQ2bmZacmMzVHhjUkE9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTAwdWtleA==",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MjY=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "V2hpdGVsaXN0Um9sZVBlcm1pc3Npb24=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuV2hpdGVsaXN0Um9sZVBlcm1pc3Npb25Qcm9wb3NhbAogIHZhbHVlOgogIC0gMTAKICAtIDEKICAtIDUxCiAgLSAxNgogIC0gMTEKICB4eHhfbm91bmtleWVkbGl0ZXJhbDoge30KICB4eHhfdW5yZWNvZ25pemVkOiBbXQogIHh4eF9zaXplY2FjaGU6IDAK",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 26 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "26",
+    "title": "Test proposal",
+    "description": "Test proposal",
+    "content": {
+      "@type": "/kira.gov.WhitelistRolePermissionProposal",
+      "role_identifier": "3",
+      "permission": "PERMISSION_VOTE_UPSERT_DATA_REGISTRY_PROPOSAL"
+    },
+    "submit_time": "2023-06-12T14:19:27.042751264Z",
+    "voting_end_time": "2023-06-12T14:25:27.042751264Z",
+    "enactment_end_time": "2023-06-12T14:30:27.042751264Z",
+    "min_voting_end_block_height": "143071",
+    "min_enactment_end_block_height": "143072",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
 
 [Return to top](#sekai)
 
@@ -10043,7 +15200,7 @@ sekaid tx customgov proposal set-network-property <property> <value> [flags]
 | `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
 | `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
 | `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
-| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
 | `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
 | `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
 | `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
@@ -10455,9 +15612,487 @@ sekaid tx customgov proposal set-network-property "MIN_TX_FEE" 10 --title="Reduc
 
 ###### 21.7.7.6 set-poor-network-msgs
 
+🟨 Create a proposal to set a value on a network property. 🟨
+
+Usage:
+```
+sekaid tx customgov proposal set-poor-network-msgs <messages> [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for set-poor-network-msgs                                                                                                                              | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal set-poor-network-msgs --help
+
+                $ %s tx customgov proposal set-poor-network-msgs XXXX,YYY --from=<key_or_address>
+
+                All the message types supported could be added here
+                        create-role
+                        assign-role
+                        remove-role
+                        ...
+
+Usage:
+  sekaid tx customgov proposal set-poor-network-msgs <messages> [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for set-poor-network-msgs
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+#TODO haven't tested
+
+🟨  
+🟨  
+🟨
+
 [Return to top](#sekai)
 
 ###### 21.7.7.7 set-proposal-durations-proposal
+
+Create a proposal to set batch proposal durations.
+
+Usage:
+```
+sekaid tx customgov proposal set-proposal-durations-proposal [proposal_types] [durations] [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ❌ ?   |
+| `--description string`        | The description of the proposal, it can be a url, some text, etc.                                                                                           | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for set-proposal-durations-proposal                                                                                                                    | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default 'home' directory will be used                                                                         | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ❌ ?   |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `--title string`              | The title of the proposal.                                                                                                                                  | ✅ yes |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal set-proposal-durations-proposal --help
+Create a proposal to set batch proposal durations.
+
+Usage:
+  sekaid tx customgov proposal set-proposal-durations-proposal [proposal_types] [durations] [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --description string       The description of the proposal, it can be a url, some text, etc.
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for set-proposal-durations-proposal
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --title string             The title of the proposal.
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+> You can find current proposal durations here: `sekaid q customgov all-proposal-durations -o json | jq`
+>
+> You can provide key-value pairs like this: ` AssignRoleToAccount,BlacklistAccountPermission 300,310`
+
+```
+sekaid tx customgov proposal set-proposal-durations-proposal AssignRoleToAccount 300 --title="Test proposal for docs" --description="Test proposal for docs" --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --chain-id=localnet-4 --home=/root/.sekai --keyring-backend=test --fees=100ukex --yes --output=json | jq
+{
+  "height": "0",
+  "txhash": "43DA0E8CAF8CDA944D8C6BC2F182E99EBC144187B07F16609CEB7C68535306EB",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 43DA0E8CAF8CDA944D8C6BC2F182E99EBC144187B07F16609CEB7C68535306EB -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "143174",
+    "txhash": "43DA0E8CAF8CDA944D8C6BC2F182E99EBC144187B07F16609CEB7C68535306EB",
+    "codespace": "",
+    "code": 0,
+    "data": "0A210A1B2F6B6972612E676F762E4D73675375626D697450726F706F73616C1202081B",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgSubmitProposal\"}]},{\"type\":\"submit_proposal\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"27\"},{\"key\":\"proposal_type\",\"value\":\"SetProposalDurationsProposal\"},{\"key\":\"proposal_content\",\"value\":\"proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\\ntitle: Test proposal for docs\\ndescription: Test proposal for docs\\ncontent:\\n  typeurl: /kira.gov.SetProposalDurationsProposal\\n  value:\\n  - 10\\n  - 19\\n  - 65\\n  - 115\\n  - 115\\n  - 105\\n  - 103\\n  - 110\\n  - 82\\n  - 111\\n  - 108\\n  - 101\\n  - 84\\n  - 111\\n  - 65\\n  - 99\\n  - 99\\n  - 111\\n  - 117\\n  - 110\\n  - 116\\n  - 18\\n  - 2\\n  - 172\\n  - 2\\n  xxx_nounkeyedliteral: {}\\n  xxx_unrecognized: []\\n  xxx_sizecache: 0\\n\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgSubmitProposal"
+              }
+            ]
+          },
+          {
+            "type": "submit_proposal",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "27"
+              },
+              {
+                "key": "proposal_type",
+                "value": "SetProposalDurationsProposal"
+              },
+              {
+                "key": "proposal_content",
+                "value": "proposer: kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\ntitle: Test proposal for docs\ndescription: Test proposal for docs\ncontent:\n  typeurl: /kira.gov.SetProposalDurationsProposal\n  value:\n  - 10\n  - 19\n  - 65\n  - 115\n  - 115\n  - 105\n  - 103\n  - 110\n  - 82\n  - 111\n  - 108\n  - 101\n  - 84\n  - 111\n  - 65\n  - 99\n  - 99\n  - 111\n  - 117\n  - 110\n  - 116\n  - 18\n  - 2\n  - 172\n  - 2\n  xxx_nounkeyedliteral: {}\n  xxx_unrecognized: []\n  xxx_sizecache: 0\n"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgSubmitProposal",
+            "proposer": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "title": "Test proposal for docs",
+            "description": "Test proposal for docs",
+            "content": {
+              "@type": "/kira.gov.SetProposalDurationsProposal",
+              "typeof_proposals": [
+                "AssignRoleToAccount"
+              ],
+              "proposal_durations": [
+                "300"
+              ]
+            }
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "117"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "100"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "YbR5agxdjERYOsqh7t5tgusY0YeYC7RA1OCz14TXGoQF6I2t8v9P9wQdlR67ZSW4M/x0JI4yQJXy1oX35DFYwg=="
+      ]
+    },
+    "timestamp": "2023-06-12T14:37:29Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC8xMTc=",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "WWJSNWFneGRqRVJZT3NxaDd0NXRndXNZMFllWUM3UkExT0N6MTRUWEdvUUY2STJ0OHY5UDl3UWRsUjY3WlNXNE0veDBKSTR5UUpYeTFvWDM1REZZd2c9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTAwdWtleA==",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1N1Ym1pdFByb3Bvc2Fs",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "submit_proposal",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "Mjc=",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfdHlwZQ==",
+            "value": "U2V0UHJvcG9zYWxEdXJhdGlvbnNQcm9wb3NhbA==",
+            "index": true
+          },
+          {
+            "key": "cHJvcG9zYWxfY29udGVudA==",
+            "value": "cHJvcG9zZXI6IGtpcmExdm13ZGd3NDI2YWo5ZngzM2ZxdXNtdGc2cjY1eXl1Y214NnJkdDQKdGl0bGU6IFRlc3QgcHJvcG9zYWwgZm9yIGRvY3MKZGVzY3JpcHRpb246IFRlc3QgcHJvcG9zYWwgZm9yIGRvY3MKY29udGVudDoKICB0eXBldXJsOiAva2lyYS5nb3YuU2V0UHJvcG9zYWxEdXJhdGlvbnNQcm9wb3NhbAogIHZhbHVlOgogIC0gMTAKICAtIDE5CiAgLSA2NQogIC0gMTE1CiAgLSAxMTUKICAtIDEwNQogIC0gMTAzCiAgLSAxMTAKICAtIDgyCiAgLSAxMTEKICAtIDEwOAogIC0gMTAxCiAgLSA4NAogIC0gMTExCiAgLSA2NQogIC0gOTkKICAtIDk5CiAgLSAxMTEKICAtIDExNwogIC0gMTEwCiAgLSAxMTYKICAtIDE4CiAgLSAyCiAgLSAxNzIKICAtIDIKICB4eHhfbm91bmtleWVkbGl0ZXJhbDoge30KICB4eHhfdW5yZWNvZ25pemVkOiBbXQogIHh4eF9zaXplY2FjaGU6IDAK",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check proposal</summary>
+
+  ```
+  sekaid q customgov proposal 27 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "27",
+    "title": "Test proposal for docs",
+    "description": "Test proposal for docs",
+    "content": {
+      "@type": "/kira.gov.SetProposalDurationsProposal",
+      "typeof_proposals": [
+        "AssignRoleToAccount"
+      ],
+      "proposal_durations": [
+        "300"
+      ]
+    },
+    "submit_time": "2023-06-12T14:37:29.848780313Z",
+    "voting_end_time": "2023-06-12T14:43:29.848780313Z",
+    "enactment_end_time": "2023-06-12T14:48:29.848780313Z",
+    "min_voting_end_block_height": "143176",
+    "min_enactment_end_block_height": "143177",
+    "result": "VOTE_PENDING",
+    "exec_result": ""
+  }
+  ```
+</details>
 
 [Return to top](#sekai)
 
@@ -10899,6 +16534,382 @@ sekaid tx customgov proposal upsert-data-registry icon2 891bd9d3b2ee0c6eed43a812
 [Return to top](#sekai)
 
 ###### 21.7.7.9 vote
+
+Vote a proposal.
+
+Usage:
+```
+sekaid tx customgov proposal vote proposal-id vote-option [flags]
+```
+
+| Flags                         | Description                                                                                                                                                 | Work  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `-a, --account-number uint`   | The account number of the signing account (offline mode only)                                                                                               | ❌ ?   |
+| `-b, --broadcast-mode string` | Transaction broadcasting mode (`sync\|async\|block`) (default `"sync"`)                                                                                     | ✅ yes |
+| `--dry-run`                   | ignore the `--gas` flag and perform a simulation of a transaction, but don't broadcast it                                                                   | ❌ ?   |
+| `--fee-account string`        | Fee account pays fees for the transaction instead of deducting from the signer                                                                              | ❌ ?   |
+| `--fees string`               | Fees to pay along with transaction; eg: `10uatom`                                                                                                           | ✅ yes |
+| `--from string`               | Name or address of private key with which to sign                                                                                                           | ✅ yes |
+| `--gas string`                | gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default `200000`)                                                | ❌ ?   |
+| `--gas-adjustment float`      | adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default `1`) | ❌ ?   |
+| `--gas-prices string`         | Gas prices in decimal format to determine the transaction fee (e.g. `0.1uatom`)                                                                             | ❌ ?   |
+| `--generate-only`             | Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)                                                    | ✅ yes |
+| `-h, --help`                  | help for vote                                                                                                                                               | ✅ yes |
+| `--keyring-backend string`    | Select keyring's backend (`os\|file\|kwallet\|pass\|test\|memory`) (default `"os"`)                                                                         | ✅ yes |
+| `--keyring-dir string`        | The client Keyring directory; if omitted, the default `'home'` directory will be used                                                                       | ✅ yes |
+| `--ledger`                    | Use a connected Ledger device                                                                                                                               | ✅ yes |
+| `--node string`               | \<host\>:\<port\> to tendermint rpc interface for this chain (default `"tcp://localhost:26657"`)                                                            | ✅ yes |
+| `--note string`               | Note to add a description to the transaction (previously `--memo`)                                                                                          | ❌ ?   |
+| `--offline`                   | Offline mode (does not allow any online functionality                                                                                                       | ❌ ?   |
+| `-o, --output string`         | Output format (`text\|json`) (default `"json"`)                                                                                                             | ✅ yes |
+| `-s, --sequence uint`         | The sequence number of the signing account (offline mode only)                                                                                              | ❌ ?   |
+| `--sign-mode string`          | Choose sign mode (`direct\|amino-json`), this is an advanced feature                                                                                        | ❌ ?   |
+| `--slash string`              | slash value on the proposal (default `"0.01"`)                                                                                                              | ❌ ?   |
+| `--timeout-height uint`       | Set a block timeout height to prevent the tx from being committed past a certain height                                                                     | ❌ ?   |
+| `-y, --yes`                   | Skip tx broadcasting prompt confirmation                                                                                                                    | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid tx customgov proposal vote --help
+Vote a proposal.
+
+Usage:
+  sekaid tx customgov proposal vote proposal-id vote-option [flags]
+
+Flags:
+  -a, --account-number uint      The account number of the signing account (offline mode only)
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "sync")
+      --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it
+      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fees string              Fees to pay along with transaction; eg: 10uatom
+      --from string              Name or address of private key with which to sign
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
+      --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+  -h, --help                     help for vote
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "os")
+      --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
+      --ledger                   Use a connected Ledger device
+      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --note string              Note to add a description to the transaction (previously --memo)
+      --offline                  Offline mode (does not allow any online functionality
+  -o, --output string            Output format (text|json) (default "json")
+  -s, --sequence uint            The sequence number of the signing account (offline mode only)
+      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
+      --slash string             slash value on the proposal (default "0.01")
+      --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+  -y, --yes                      Skip tx broadcasting prompt confirmation
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+> `vote-option` can be
+>
+> - 0: Unspecified
+> - 1: Yes
+> - 2: Abstain
+> - 3: No
+> - 4: Veto
+
+```
+sekaid tx customgov proposal vote 13 1 --from=kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 --keyring-backend=test --home=/root/.sekai --chain-id=localnet-4 --fees=100ukex --yes --output=json | jq
+{
+  "height": "0",
+  "txhash": "10C68B927E3A1BDED0EDD8112AB96DB97CC31FA5B91C88566C960D813B64D073",
+  "codespace": "",
+  "code": 0,
+  "data": "",
+  "raw_log": "[]",
+  "logs": [],
+  "info": "",
+  "gas_wanted": "0",
+  "gas_used": "0",
+  "tx": null,
+  "timestamp": "",
+  "events": []
+}
+```
+
+<details>
+  <summary>Check tx execution</summary>
+
+  ```
+  sekaid q tx 10C68B927E3A1BDED0EDD8112AB96DB97CC31FA5B91C88566C960D813B64D073 -o json | jq
+  ```
+
+  ```json
+  {
+    "height": "141342",
+    "txhash": "10C68B927E3A1BDED0EDD8112AB96DB97CC31FA5B91C88566C960D813B64D073",
+    "codespace": "",
+    "code": 0,
+    "data": "0A1B0A192F6B6972612E676F762E4D7367566F746550726F706F73616C",
+    "raw_log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/kira.gov.MsgVoteProposal\"}]},{\"type\":\"proposal_vote\",\"attributes\":[{\"key\":\"proposal_id\",\"value\":\"13\"},{\"key\":\"voter\",\"value\":\"kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4\"},{\"key\":\"option\",\"value\":\"VOTE_OPTION_YES\"}]}]}]",
+    "logs": [
+      {
+        "msg_index": 0,
+        "log": "",
+        "events": [
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/kira.gov.MsgVoteProposal"
+              }
+            ]
+          },
+          {
+            "type": "proposal_vote",
+            "attributes": [
+              {
+                "key": "proposal_id",
+                "value": "13"
+              },
+              {
+                "key": "voter",
+                "value": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4"
+              },
+              {
+                "key": "option",
+                "value": "VOTE_OPTION_YES"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "info": "",
+    "gas_wanted": "0",
+    "gas_used": "0",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/kira.gov.MsgVoteProposal",
+            "proposal_id": "13",
+            "voter": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+            "option": "VOTE_OPTION_YES",
+            "slash": "0.010000000000000000"
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AjjA26m3ab7z6Ddrqeons69CREF8q/d815X180ucZLmo"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "96"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "ukex",
+              "amount": "100"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        }
+      },
+      "signatures": [
+        "pSzlgYtk+hG0zRlF59DHl/rS928uIGAX+w5m2rFCF2dMsSCw9q28te49FLDzr7IDmrgoC3euUB/Qo99N+ZQH7w=="
+      ]
+    },
+    "timestamp": "2023-06-12T09:22:30Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "YWNjX3NlcQ==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NC85Ng==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "c2lnbmF0dXJl",
+            "value": "cFN6bGdZdGsraEcwelJsRjU5REhsL3JTOTI4dUlHQVgrdzVtMnJGQ0YyZE1zU0N3OXEyOHRlNDlGTER6cjdJRG1yZ29DM2V1VUIvUW85OU4rWlFIN3c9PQ==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_spent",
+        "attributes": [
+          {
+            "key": "c3BlbmRlcg==",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "coin_received",
+        "attributes": [
+          {
+            "key": "cmVjZWl2ZXI=",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "transfer",
+        "attributes": [
+          {
+            "key": "cmVjaXBpZW50",
+            "value": "a2lyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHFrZncycw==",
+            "index": true
+          },
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "YW1vdW50",
+            "value": "MTAwdWtleA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "c2VuZGVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "ZmVl",
+            "value": "MTAwdWtleA==",
+            "index": true
+          },
+          {
+            "key": "ZmVlX3BheWVy",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "YWN0aW9u",
+            "value": "L2tpcmEuZ292Lk1zZ1ZvdGVQcm9wb3NhbA==",
+            "index": true
+          }
+        ]
+      },
+      {
+        "type": "proposal_vote",
+        "attributes": [
+          {
+            "key": "cHJvcG9zYWxfaWQ=",
+            "value": "MTM=",
+            "index": true
+          },
+          {
+            "key": "dm90ZXI=",
+            "value": "a2lyYTF2bXdkZ3c0MjZhajlmeDMzZnF1c210ZzZyNjV5eXVjbXg2cmR0NA==",
+            "index": true
+          },
+          {
+            "key": "b3B0aW9u",
+            "value": "Vk9URV9PUFRJT05fWUVT",
+            "index": true
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</details>
+
+<details>
+  <summary>Check vote</summary>
+
+  ```
+  sekaid q customgov votes 13 -o json | jq
+  ```
+
+  ```json
+  {
+    "votes": [
+      {
+        "proposal_id": "13",
+        "voter": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+        "option": "VOTE_OPTION_YES",
+        "slash": "0.010000000000000000"
+      }
+    ]
+  }
+  ```
+
+  ```
+  sekaid q customgov vote 13 kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4 -o json | jq
+  ```
+
+  ```json
+  {
+    "proposal_id": "13",
+    "voter": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+    "option": "VOTE_OPTION_YES",
+    "slash": "0.010000000000000000"
+  }
+  ```
+</details>
 
 [Return to top](#sekai)
 
