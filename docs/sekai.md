@@ -8302,6 +8302,62 @@ sekaid q txs --events=submit_proposal.proposal_type=UpsertDataRegistry --limit=1
 
 ### 15. rollback
 
+A state rollback is performed to recover from an incorrect application state transition,
+when Tendermint has persisted an incorrect app hash and is thus unable to make
+progress. Rollback overwrites a state at height n with the state at height n - 1.
+The application also roll back to height n - 1. No blocks are removed, so upon
+restarting Tendermint the transactions in block n will be re-executed against the
+application.
+
+Usage:
+```
+sekaid rollback [flags]
+```
+
+| Flags        | Description  | Work  |
+| ------------ | ------------ | ----- |
+| `-h, --help` | help for txs | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`       | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?   |
+
+
+```
+# sekaid rollback -h
+
+A state rollback is performed to recover from an incorrect application state transition,
+when Tendermint has persisted an incorrect app hash and is thus unable to make
+progress. Rollback overwrites a state at height n with the state at height n - 1.
+The application also roll back to height n - 1. No blocks are removed, so upon
+restarting Tendermint the transactions in block n will be re-executed against the
+application.
+
+Usage:
+  sekaid rollback [flags]
+
+Flags:
+  -h, --help   help for rollback
+
+Global Flags:
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+**important, sekaid node has to be stoped to perform this command**
+
+```
+# sekaid rollback --home $SEKAID_HOME
+Rolled back state to height 31 and hash 89288F2D6B9745B24DE223CA83CC2176CE5EE9B34BD3596D8CCF1F68F76F9E4Broot@669b80378d29
+```
+
 [Return to top](#sekai)
 
 ### 16. rosetta
