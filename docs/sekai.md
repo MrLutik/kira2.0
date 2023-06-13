@@ -8549,6 +8549,112 @@ Global Flags:
 
 ### 19. tendermint
 
+Tendermint subcommands
+
+Usage:
+```
+sekaid tendermint [command]
+```
+
+
+Available Commands:
+
+| Subcommand       | Description                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| `reset-state `     | Remove all the data and WAL                                                        |
+| `show-address`     | Shows this node's tendermint validator consensus address                           |
+| `show-node-id`     | Show this node's ID                                                                |
+| `show-validator`   | Show this node's tendermint validator info                                         |
+| `unsafe-reset-all` | (unsafe) Remove all the data and WAL, reset this node's validator to genesis state |
+| `version`          | Print tendermint libraries' version                                                |
+
+
+
+| Flags        | Description | Work  |
+| ------------ | ----------- | ----- |
+| `-h, --help` | Help for tx | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`       | Directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+# sekaid tendermint -h
+Tendermint subcommands
+
+Usage:
+  sekaid tendermint [command]
+
+Available Commands:
+  reset-state      Remove all the data and WAL
+  show-address     Shows this node's tendermint validator consensus address
+  show-node-id     Show this node's ID
+  show-validator   Show this node's tendermint validator info
+  unsafe-reset-all (unsafe) Remove all the data and WAL, reset this node's validator to genesis state
+  version          Print tendermint libraries' version
+
+Flags:
+  -h, --help   help for tendermint
+
+Global Flags:
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+
+```
+# sekaid tendermint reset-state --home $SEKAID_HOME
+I[2023-06-13|13:47:39.222] Removed all blockstore.db                    dir=/root/.sekaid-PEPEGENETWORK-1/data/blockstore.db
+I[2023-06-13|13:47:39.222] Removed all state.db                         dir=/root/.sekaid-PEPEGENETWORK-1/data/state.db
+I[2023-06-13|13:47:39.223] Removed all cs.wal                           dir=/root/.sekaid-PEPEGENETWORK-1/data/cs.wal
+I[2023-06-13|13:47:39.223] Removed all evidence.db                      dir=/root/.sekaid-PEPEGENETWORK-1/data/evidence.db
+I[2023-06-13|13:47:39.224] Removed tx_index.db                          dir=/root/.sekaid-PEPEGENETWORK-1/data/tx_index.db
+```
+
+
+```
+sekaid tendermint show-address --home $SEKAID_HOME
+kiravalcons15jeawxkxx9nws6knjkywggmsdn5qa7dhnxg8k
+```
+
+
+
+```
+# sekaid tendermint show-node-id --home $SEKAID_HOME
+cc57aecd262219356156532438afea19f83d7960
+```
+
+
+```
+# sekaid tendermint show-validator --home $SEKAID_HOME
+{"@type":"/cosmos.crypto.ed25519.PubKey","key":"njRqCAsanZhtcntb+qvP/pKTYy77s0CKY5FY4TUk/rI="}
+```
+
+
+```
+# sekaid tendermint unsafe-reset-all --home $SEKAID_HOME
+I[2023-06-13|13:52:30.009] Removed existing address book                file=/root/.sekaid-PEPEGENETWORK-1/config/addrbook.json
+I[2023-06-13|13:52:30.010] Removed all blockchain history               dir=/root/.sekaid-PEPEGENETWORK-1/data
+I[2023-06-13|13:52:30.014] Reset private validator file to genesis state keyFile=/root/.sekaid-PEPEGENETWORK-1/config/priv_validator_key.json stateFile=/root/.sekaid-PEPEGENETWORK-1/data/priv_validator_state.json
+```
+
+
+```
+# sekaid tendermint version
+tendermint: 0.34.22
+abci: 0.17.0
+blockprotocol: 11
+p2pprotocol: 8
+
+```
+
 [Return to top](#sekai)
 
 ### 20. testnet
