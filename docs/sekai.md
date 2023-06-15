@@ -4594,6 +4594,79 @@ kiravalcons1vmwdgw426aj9fx33fqusmtg6r65yyucmp0vjlc
 [Return to top](#sekai)
 
 ### 13. new-genesis-from-exported
+   
+    
+ Get new genesis from exported app state json.
+
+**- Change chain-id to new_chain_id as indicated by the upgrade plan**
+
+**- Replace current upgrade plan in the app_state.upgrade with next plan and set next plan to null**
+
+| Flags           | Description                                                | Work  |
+| --------------- | ---------------------------------------------------------- | ----- |
+| -h, --help      | help for new-genesis-from-exported                         | ✅ yes |
+| --json-minimize | flag to export genesis in minimized version (default true) | ❌ ?   |
+
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`       | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?   |
+
+
+
+```
+# sekaid  new-genesis-from-exported -h
+Get new genesis from exported app state json.
+- Change chain-id to new_chain_id as indicated by the upgrade plan
+- Replace current upgrade plan in the app_state.upgrade with next plan and set next plan to null
+
+Example:
+$ sekaid new-genesis-from-exported exported-genesis.json new-genesis.json
+
+Usage:
+  sekaid new-genesis-from-exported [path-to-exported.json] [path-to-new.json] [flags]
+
+Flags:
+  -h, --help            help for new-genesis-from-exported
+      --json-minimize   flag to export genesis in minimized version (default true)
+
+Global Flags:
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+
+
+**to execute this old genesis file need to have a new upgrade plan that comes from upgrade voting, couldnt figure out how to make it so only command with error**
+
+**to get export.json use [5. export](#5-export)**
+
+**also need to change a chain id in old genesis.json to new one**
+
+```
+# sekaid  new-genesis-from-exported export.json newExport.json
+Error: next plan is not available
+Usage:
+  sekaid new-genesis-from-exported [path-to-exported.json] [path-to-new.json] [flags]
+
+Flags:
+  -h, --help            help for new-genesis-from-exported
+      --json-minimize   flag to export genesis in minimized version (default true)
+
+Global Flags:
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
 
 [Return to top](#sekai)
 
