@@ -8892,6 +8892,69 @@ Rolled back state to height 31 and hash 89288F2D6B9745B24DE223CA83CC2176CE5EE9B3
 [Return to top](#sekai)
 
 ### 16. rosetta
+ 
+spin up a rosetta server
+
+
+
+Usage:
+
+```
+sekaid rosetta [flags]
+```
+
+
+| Flags               | Description                                                             | Work    |
+| ------------------- | ----------------------------------------------------------------------- | ------- |
+| --addr string       | the address rosetta will bind to (default ":8080")                      | ❌ ?     |
+| --blockchain string | the blockchain type (default "app")                                     | ❌ ?     |
+| --grpc string       | the app gRPC endpoint (default "localhost:9090")                        | ❌ ?     |
+| -h, --help          | help for rosetta                                                        | ✅ yes   |
+| --network string    | the network name (default "network")                                    | ❌ ?     |
+| --offline           | run rosetta only with construction API                                  | ❌ no    |
+| --retries int       | the number of retries that will be done before quitting (default 5)     | ✅ yes ? |
+| --tendermint string | the tendermint rpc endpoint, without tcp:// (default "localhost:26657") | ❌ ?     |
+
+
+
+| Global flags         | Description                                                                            | Work |
+| -------------------- | -------------------------------------------------------------------------------------- | ---- |
+| `--home`             | directory for config and data (default `"/root/.sekaid"`)                              | ❌?no |
+| `--log_format`       | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌?no |
+| `--log_level string` | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌?no |
+| `--trace`            | Print out full stack trace on errors                                                   | ❌?no |
+
+```
+# sekaid rosetta -h
+spin up a rosetta server
+
+Usage:
+  sekaid rosetta [flags]
+
+Flags:
+      --addr string         the address rosetta will bind to (default ":8080")
+      --blockchain string   the blockchain type (default "app")
+      --grpc string         the app gRPC endpoint (default "localhost:9090")
+  -h, --help                help for rosetta
+      --network string      the network name (default "network")
+      --offline             run rosetta only with construction API
+      --retries int         the number of retries that will be done before quitting (default 5)
+      --tendermint string   the tendermint rpc endpoint, without tcp:// (default "localhost:26657")
+
+Global Flags:
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+⚠️ probably doesnt work or didnt tested properly⚠️ getting error 
+
+```
+# sekaid rosetta
+WARNING: The Rosetta server is still a beta feature. Please do not use it in production.
+Error: maximum number of retries exceeded, last error: post failed: Post "http://localhost:26657": dial tcp 127.0.0.1:26657: connect: connection refused
+```
 
 [Return to top](#sekai)
 
@@ -9090,8 +9153,8 @@ sekaid tendermint [command]
 
 Available Commands:
 
-| Subcommand       | Description                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------- |
+| Subcommand         | Description                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------- |
 | `reset-state `     | Remove all the data and WAL                                                        |
 | `show-address`     | Shows this node's tendermint validator consensus address                           |
 | `show-node-id`     | Show this node's ID                                                                |
