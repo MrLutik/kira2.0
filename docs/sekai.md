@@ -5500,6 +5500,123 @@ Global Flags:
 
 #### 14.5 block
 
+Get verified data for a the block at given height.
+
+Usage:
+```
+sekaid query block [height] [flags]
+```
+
+| Flags               | Description                                            | Work  |
+| ------------------- | ------------------------------------------------------ | ----- |
+| `-h, --help`        | help for block                                         | ✅ yes |
+| `-n, --node string` | Node to connect to (default `"tcp://localhost:26657"`) | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work  |
+| --------------------- | -------------------------------------------------------------------------------------- | ----- |
+| `--home string`       | The application home directory (default `"/root/.sekaid"`)                             | ✅ yes |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?   |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?   |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?   |
+
+```
+/# sekaid q block --help
+Get verified data for a the block at given height
+
+Usage:
+  sekaid query block [height] [flags]
+
+Flags:
+  -h, --help          help for block
+  -n, --node string   Node to connect to (default "tcp://localhost:26657")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q block | jq
+{
+  "block_id": {
+    "hash": "1F3F551F585C9BB9811501A75D8F105CF824C2A1DD5272C6F1BE53E82D43193C",
+    "parts": {
+      "total": 1,
+      "hash": "52D0D25C694E5BC246F5B51A626F9CEADD1F8C5B0F2B2FC48B993A66282920E9"
+    }
+  },
+  "block": {
+    "header": {
+      "version": {
+        "block": "11"
+      },
+      "chain_id": "localnet-4",
+      "height": "174055",
+      "time": "2023-06-16T07:17:08.902297084Z",
+      "last_block_id": {
+        "hash": "3E8204BA72055F80A637D151269DF45C0CDEB03605F11A8CE15C4532926CCC52",
+        "parts": {
+          "total": 1,
+          "hash": "6B52CCF991B651EB0C31F56241D102D5F04B58DC277CE496268869ACBDE92E7F"
+        }
+      },
+      "last_commit_hash": "D978ED250019BE0EC690A32BB60702BCDA0086D6C5DFB2FA6CF02335487EC754",
+      "data_hash": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "validators_hash": "1BF73BA1D524EF1AE14D42AEE9D723932811A867B9363887E4C900019E1F185F",
+      "next_validators_hash": "1BF73BA1D524EF1AE14D42AEE9D723932811A867B9363887E4C900019E1F185F",
+      "consensus_hash": "048091BC7DDC283F77BFBF91D73C44DA58C3DF8A9CBC867405D8B7F3DAADA22F",
+      "app_hash": "5434EF8AB2D3517836AD874580BA54C6587C820E96253EA5C2611574082E2B30",
+      "last_results_hash": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "evidence_hash": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "proposer_address": "463E25C36D575B4B10360776B7AE46CFBFF2E928"
+    },
+    "data": {
+      "txs": null
+    },
+    "evidence": {
+      "evidence": null
+    },
+    "last_commit": {
+      "height": "174054",
+      "round": 0,
+      "block_id": {
+        "hash": "3E8204BA72055F80A637D151269DF45C0CDEB03605F11A8CE15C4532926CCC52",
+        "parts": {
+          "total": 1,
+          "hash": "6B52CCF991B651EB0C31F56241D102D5F04B58DC277CE496268869ACBDE92E7F"
+        }
+      },
+      "signatures": [
+        {
+          "block_id_flag": 2,
+          "validator_address": "463E25C36D575B4B10360776B7AE46CFBFF2E928",
+          "timestamp": "2023-06-16T07:17:08.902297084Z",
+          "signature": "S15UAmRYHvTv5/QetpNf9GIe7Sw2QkFltPt7Y+sK3bSQxocqiVHuuOIAL2cxPdnMjazGooWOYdksUHcM2SnMBw=="
+        },
+        {
+          "block_id_flag": 2,
+          "validator_address": "AAD2554628B4F2388756655CE26A7B33381BD9D3",
+          "timestamp": "2023-06-16T07:17:08.921521395Z",
+          "signature": "NNnB1wyHL+3ivm77ihAZwXOwlC+Byi9D/QWKvW+U7Z9+r+rMQXahwcois4N+IC7uYWMTC+5kdsEbJgYis/V4AQ=="
+        },
+        {
+          "block_id_flag": 2,
+          "validator_address": "AFC8EBD65CE1E7DD38E1E4DD514E9B03A0085E98",
+          "timestamp": "2023-06-16T07:17:08.995834992Z",
+          "signature": "KeZXtonBtC5FJi9fgq2dtI4EccqBo9tY76DKb+V2Lu3B/sir8d24fKOkAKsoGUbWxxK8t7iwiqFDpHH4tByHCw=="
+        }
+      ]
+    }
+  }
+}
+```
+
 [Return to top](#sekai)
 
 #### 14.6 collectives
@@ -7152,6 +7269,155 @@ Global Flags:
 [Return to top](#sekai)
 
 ##### 14.9.18 non-councilors
+
+Query all governance members that are NOT Councilors.
+
+Usage:
+```
+sekaid query customgov non-councilors [flags]
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ✅ yes |
+| `-h, --help`          | help for non-councilors                                                                          | ✅ yes |
+| `--node string`       | \<host\>:\<port\> to Tendermint RPC interface for this chain (default `"tcp://localhost:26657"`) | ✅ yes |
+| `-o, --output string` | Output format (`text\|json`) (default `"text"`)                                                  | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ ignored |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ ignored |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+/# sekaid q customgov non-councilors --help
+Query all governance members that are NOT Councilors.
+
+Example:
+$ sekaid query gov non-councilors
+
+Usage:
+  sekaid query customgov non-councilors [flags]
+
+Flags:
+      --height int      Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help            help for non-councilors
+      --node string     <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string   Output format (text|json) (default "text")
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+```
+sekaid q customgov non-councilors -o json | jq
+{
+  "non_councilors": [
+    {
+      "address": "kira1vmwdgw426aj9fx33fqusmtg6r65yyucmx6rdt4",
+      "roles": [
+        "1",
+        "2"
+      ],
+      "status": "ACTIVE",
+      "votes": [
+        "VOTE_OPTION_YES",
+        "VOTE_OPTION_ABSTAIN",
+        "VOTE_OPTION_NO",
+        "VOTE_OPTION_NO_WITH_VETO"
+      ],
+      "permissions": {
+        "blacklist": [],
+        "whitelist": [
+          4,
+          35,
+          14,
+          28,
+          5,
+          36,
+          15,
+          29,
+          7
+        ]
+      },
+      "skin": "1"
+    },
+    {
+      "address": "kira1nqcqufejredawp25ycxqh37983n65pejpfyg9e",
+      "roles": [
+        "2"
+      ],
+      "status": "ACTIVE",
+      "votes": [
+        "VOTE_OPTION_YES",
+        "VOTE_OPTION_NO",
+        "VOTE_OPTION_ABSTAIN",
+        "VOTE_OPTION_NO_WITH_VETO"
+      ],
+      "permissions": {
+        "blacklist": [],
+        "whitelist": [
+          28
+        ]
+      },
+      "skin": "0"
+    },
+    {
+      "address": "kira1aazhcagtar2ryz9pvecgj6t6j6dcnkkd6j9hzx",
+      "roles": [
+        "2"
+      ],
+      "status": "ACTIVE",
+      "votes": [
+        "VOTE_OPTION_YES",
+        "VOTE_OPTION_NO",
+        "VOTE_OPTION_ABSTAIN",
+        "VOTE_OPTION_NO_WITH_VETO"
+      ],
+      "permissions": {
+        "blacklist": [],
+        "whitelist": [
+          28
+        ]
+      },
+      "skin": "0"
+    },
+    {
+      "address": "kira17aeqxvkl3g37pfcgwkqxvkrn63jfljfvjravnt",
+      "roles": [
+        "2"
+      ],
+      "status": "ACTIVE",
+      "votes": [
+        "VOTE_OPTION_YES",
+        "VOTE_OPTION_NO",
+        "VOTE_OPTION_ABSTAIN",
+        "VOTE_OPTION_NO_WITH_VETO"
+      ],
+      "permissions": {
+        "blacklist": [
+          10
+        ],
+        "whitelist": [
+          28,
+          12,
+          13
+        ]
+      },
+      "skin": "0"
+    }
+  ]
+}
+```
 
 [Return to "`query customgov`"](#149-customgov)  
 [Return to top](#sekai)
