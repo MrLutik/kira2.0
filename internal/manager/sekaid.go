@@ -21,6 +21,14 @@ type SekaidManager struct {
 	DockerManager          *docker.DockerManager
 }
 
+// Returns configured SekaidManager.
+// *docker.DockerManager: The poiner for docker.DockerManager instance.
+// grpcPort: The grpc port for sekaid.
+// rpcPort: The rpc port for sekaid.
+// imageName: The name of a image that sekaid container will be using.
+// volumeName: The name of a volume that sekaid container will be using.
+// dockerNetworkName: The name of a docker network that sekaid container will be using.
+// containerName: The name of a container that sekaid will have.
 func NewSekaidManager(dockerManager *docker.DockerManager, grpcPort, rpcPort, imageName, volumeName, dockerNetworkName, containerName string) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n", grpcPort, rpcPort, imageName, volumeName, dockerNetworkName)
@@ -71,7 +79,7 @@ func NewSekaidManager(dockerManager *docker.DockerManager, grpcPort, rpcPort, im
 	return &SekaidManager{sekaiContainerConfig, sekaiHostConfig, sekaidNetworkingConfig, dockerManager}, err
 }
 
-// SetupSekaidContainer sets up the 'sekaid' container with the specified configurations.
+// InitSekaidBinInContainer sets up the 'sekaid' container with the specified configurations.
 // ctx: The context for the operation.
 // moniker: The moniker for the 'sekaid' container.
 // sekaidContainerName: The name of the 'sekaid' container.
@@ -80,7 +88,7 @@ func NewSekaidManager(dockerManager *docker.DockerManager, grpcPort, rpcPort, im
 // keyringBackend: The keyring backend to use.
 // rcpPort: The RPC port for 'sekaid'.
 // mnemonicDir: The directory to store the generated mnemonics.
-// Returns an error if any issue occurs during the setup process.
+// Returns an error if any issue occurs during the init process.
 func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir string) error {
 	log := logging.Log
 	log.Infoln("Setting up 'sekaid' container")
@@ -127,16 +135,20 @@ func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context, moniker, s
 		return err
 	}
 
-	// command = fmt.Sprintf(`sekaid start --rpc.laddr "tcp://0.0.0.0:%s" --home=%s`, rcpPort, sekaidHome)
-	// _, err = s.DockerManager.ExecCommandInContainerInDetachMode(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
-	// if err != nil {
-	// 	log.Errorf("Command '%s' execution error: %s\n", command, err)
-	// }
-
 	log.Infoln("'sekaid' container started")
 	return nil
 }
 
+// StartSekaidBinInContainer starts sekaid binary inside sekaidContainerName var
+// ctx: The context for the operation.
+// moniker: The moniker for the 'sekaid' container.
+// sekaidContainerName: The name of the 'sekaid' container.
+// sekaidNetworkName: The name of the network associated with the 'sekaid' container.
+// sekaidHome: The home directory for 'sekaid'.
+// keyringBackend: The keyring backend to use.
+// rcpPort: The RPC port for 'sekaid'.
+// mnemonicDir: The directory to store the generated mnemonics.
+// Returns an error if any issue occurs during the start process.
 func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir string) error {
 	log := logging.Log
 	log.Infoln("Starting 'sekaid' container")
@@ -149,12 +161,21 @@ func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context, moniker, 
 	return nil
 }
 
-// Combine SetupSekaidBinInContainer and StartSekaidBinInContainer together
-// First trying to run sekaid bin from previus state if exist
-// Then checking if sekaid bin running inside container
-// If no initing new one
-// Then starting again
-// If no sekaid bin running inside container second time return error
+// Combine SetupSekaidBinInContainer and StartSekaidBinInContainer together.
+// First trying to run sekaid bin from previus state if exist.
+// Then checking if sekaid bin running inside container.
+// If no initing new one.
+// Then starting again.
+// If no sekaid bin running inside container second time - return error.
+// ctx: The context for the operation.
+// moniker: The moniker for the 'sekaid' container.
+// sekaidContainerName: The name of the 'sekaid' container.
+// sekaidNetworkName: The name of the network associated with the 'sekaid' container.
+// sekaidHome: The home directory for 'sekaid'.
+// keyringBackend: The keyring backend to use.
+// rcpPort: The RPC port for 'sekaid'.
+// mnemonicDir: The directory to store the generated mnemonics.
+// Returns an error if any issue occurs during the run process.
 func (s *SekaidManager) RunSekaidContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir string) error {
 	log := logging.Log
 	err := s.StartSekaidBinInContainer(ctx, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir)
