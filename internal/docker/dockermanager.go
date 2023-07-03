@@ -551,6 +551,8 @@ func (dm *DockerManager) GetInspectOfContainer(ctx context.Context, containerIde
 // about each network as a slice of types.NetworkResource containing the information about each network,
 // or an error if there was a problem retrieving the networks.
 func (dm *DockerManager) GetNetworksInfo(ctx context.Context) ([]types.NetworkResource, error) {
+	log.Infof("Getting networks information")
+
 	resources, err := dm.Cli.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
 		log.Errorf("Getting networks info error: %s\n", err)
@@ -558,4 +560,130 @@ func (dm *DockerManager) GetNetworksInfo(ctx context.Context) ([]types.NetworkRe
 	}
 
 	return resources, nil
+}
+
+// KillAndDeleteContainer kills and deletes a Docker container using the Docker API.
+// This method kills and deletes a Docker container specified by `containerToDelete`. It uses
+// the Docker API to send a `SIGKILL` signal to the container, forcefully terminating it. Then,
+// it removes the container from the Docker environment using the `ContainerRemove` method.
+// If any errors occur during the process, an error is returned. Otherwise, nil is returned
+// to indicate successful deletion.
+func (dm *DockerManager) KillAndDeleteContainer(ctx context.Context, containerToDelete string) error {
+	log.Infof("Killing container '%s'", containerToDelete)
+
+	const sig = "SIGKILL"
+	err := dm.Cli.ContainerKill(ctx, containerToDelete, sig)
+	if err != nil {
+		log.Errorf("Container '%s' is not running: %s", containerToDelete, err)
+		return err
+	}
+
+	err = dm.Cli.ContainerRemove(ctx, containerToDelete, types.ContainerRemoveOptions{Force: true})
+	if err != nil {
+		log.Errorf("Failed to remove container: %s", err)
+		return err
+	}
+
+	log.Infof("Container '%s' is successfully deleted", containerToDelete)
+	return nil
+}
+
+// IsContainerHealthy checks the healthy status of a Docker container.
+// This method checks the healthy status of a Docker container specified by `containerToCheck`.
+// It uses the Docker API to inspect the container and retrieve its health status. If the container's
+// health status is "healthy", it returns true to indicate that the container is healthy.
+// Otherwise, it returns false.
+func (dm *DockerManager) IsContainerHealthy(ctx context.Context, containerToCheck string) (bool, error) {
+	log.Infof("Checking healthy status of container '%s'", containerToCheck)
+
+	inspect, err := dm.Cli.ContainerInspect(ctx, containerToCheck)
+	if err != nil {
+		log.Errorf("failed to inspect container %s: %s", containerToCheck, err)
+		return false, err
+	}
+
+	if inspect.State.Health == nil {
+		log.Errorf("Container '%s' does not have 'healthcheck'", containerToCheck)
+		return false, fmt.Errorf("container '%s' does not have 'heathcheck'", containerToCheck)
+	}
+
+	status := strings.ToLower(inspect.State.Health.Status)
+	if status == "healthy" {
+		return true, nil
+	}
+	return false, nil
+}
+
+// IsContainerRunning checks if a Docker container is running or starting.
+// This method checks if a Docker container specified by `containerToCheck` is currently running or starting.
+// It uses the Docker API to inspect the container and retrieve its status. If the container's status is "running"
+// or "starting", it returns true to indicate that the container is running or in the process
+// of starting. Otherwise, it returns false.
+func (dm *DockerManager) IsContainerRunning(ctx context.Context, containerToCheck string) (bool, error) {
+	inspect, err := dm.Cli.ContainerInspect(ctx, containerToCheck)
+	if err != nil {
+		log.Errorf("failed to inspect container %s: %s", containerToCheck, err)
+		return false, err
+	}
+
+	status := strings.ToLower(inspect.State.Status)
+	if status == "running" || status == "starting" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// PauseContainer pauses a running Docker container.
+// This method pauses a running Docker container specified by `containerToPause`. It uses the Docker API
+// to send a pause signal to the container, temporarily suspending its processes. If any errors occur during
+// the process, an error is returned. Otherwise, nil is returned to indicate successful pausing.
+func (dm *DockerManager) PauseContainer(ctx context.Context, containerToPause string) error {
+	log.Infof("Pausing container '%s'", containerToPause)
+
+	err := dm.Cli.ContainerPause(ctx, containerToPause)
+	if err != nil {
+		log.Errorf("failed to pause container %s: %s", containerToPause, err)
+		return err
+	}
+
+	return nil
+}
+
+// UnpauseContainer unpauses a paused Docker container.
+// This method unpauses a paused Docker container specified by `containerToUnpause`. It uses the Docker API
+// to send an unpause signal to the container, allowing its processes to resume. If any errors occur during
+// the process, an error is returned. Otherwise, nil is returned to indicate successful unpausing.
+func (dm *DockerManager) UnpauseContainer(ctx context.Context, containerToUnpause string) error {
+	log.Infof("Unpausing container '%s'", containerToUnpause)
+
+	err := dm.Cli.ContainerUnpause(ctx, containerToUnpause)
+	if err != nil {
+		log.Errorf("failed to unpause container %s: %s", containerToUnpause, err)
+		return err
+	}
+
+	return nil
+}
+
+// RestartContainer restarts a Docker container.
+// This method restarts a Docker container specified by `containerToRestart`. It uses the Docker API
+// to send a restart signal to the container, which stops and starts it again. The `timeout` parameter
+// specifies the maximum amount of time (in seconds) to wait for the container to stop before forcefully
+// terminating it. If any errors occur during the process, an error is returned. Otherwise, nil is returned
+// to indicate successful restarting.
+func (dm *DockerManager) RestartContainer(ctx context.Context, containerToRestart string, timeout int) error {
+	log.Infof("Restating container '%s'", containerToRestart)
+
+	options := container.StopOptions{
+		Timeout: &timeout,
+	}
+
+	err := dm.Cli.ContainerRestart(ctx, containerToRestart, options)
+	if err != nil {
+		log.Errorf("failed to restart container %s: %s", containerToRestart, err)
+		return err
+	}
+
+	return nil
 }
