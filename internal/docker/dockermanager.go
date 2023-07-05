@@ -320,11 +320,14 @@ func (dm *DockerManager) ExecCommandInContainerInDetachMode(ctx context.Context,
 	}
 	defer resp.Close()
 
-	output, err := io.ReadAll(resp.Reader)
+	var outBuf, errBuf bytes.Buffer
+	_, err = stdcopy.StdCopy(&outBuf, &errBuf, resp.Reader)
 	if err != nil {
-		log.Errorf("Reading response error: %s\n", err)
-		return output, err
+		log.Printf("Reading response error: %s\n", err)
+		return nil, err
 	}
+
+	output := outBuf.Bytes()
 
 	log.Infoln("Reading successfully")
 	return output, err
@@ -356,12 +359,14 @@ func (dm *DockerManager) ExecCommandInContainer(ctx context.Context, containerID
 	}
 	defer resp.Close()
 
-	output, err := io.ReadAll(resp.Reader)
+	var outBuf, errBuf bytes.Buffer
+	_, err = stdcopy.StdCopy(&outBuf, &errBuf, resp.Reader)
 	if err != nil {
 		log.Errorf("Reading response error: %s\n", err)
-		return output, err
+		return nil, err
 	}
 
+	output := outBuf.Bytes()
 	log.Infof("Running '%s' successfully\n", strings.Join(command, " "))
 	return output, err
 }
