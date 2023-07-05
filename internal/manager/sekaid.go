@@ -435,7 +435,7 @@ func (s *SekaidManager) CheckAccountPermission(ctx context.Context, permissionTo
 	command := fmt.Sprintf("sekaid query customgov permissions %s --output=json --home=%s", address, sekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
-		log.Errorf("")
+		log.Errorf(`error when executing "%s" command in %s container`, command, sekaidContainerName)
 		return false, err
 	}
 
@@ -491,24 +491,77 @@ func (s *SekaidManager) UpdateIdentityRegistrar(ctx context.Context, account, se
 	log := logging.Log
 	nodeStruct, err := s.GetSekaidStatus(sekaidContainerName, rpcPorrt)
 	if err != nil {
-		log.Errorf("")
+		log.Errorf("Error when trying to get sekaid status %s\n", err)
 		return err
 	}
 
-	s.UpsertIdentityRecord(ctx, account, "description", "This is genesis validator account of the KIRA Team", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "social", "https://tg.kira.network,twitter.kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "contact", "https://support.kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "website", "https://kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "username", "KIRA", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "logo", "https://kira-network.s3-eu-west-1.amazonaws.com/assets/img/tokens/kex.svg", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "avatar", "https://kira-network.s3-eu-west-1.amazonaws.com/assets/img/tokens/kex.svg", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "pentest1", "<iframe src=javascript:alert(1)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "pentest2", "<img/src=x a='' onerror=alert(2)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "pentest3", "<img src=1 onerror=alert(3)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	s.UpsertIdentityRecord(ctx, account, "validator_node_id", nodeStruct.Result.NodeInfo.ID, sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	err = s.UpsertIdentityRecord(ctx, account, "description", "This is genesis validator account of the KIRA Team", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "social", "https://tg.kira.network,twitter.kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "contact", "https://support.kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "website", "https://kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "username", "KIRA", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "logo", "https://kira-network.s3-eu-west-1.amazonaws.com/assets/img/tokens/kex.svg", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "avatar", "https://kira-network.s3-eu-west-1.amazonaws.com/assets/img/tokens/kex.svg", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "pentest1", "<iframe src=javascript:alert(1)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "pentest2", "<img/src=x a='' onerror=alert(2)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "pentest3", "<img src=1 onerror=alert(3)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, account, "validator_node_id", nodeStruct.Result.NodeInfo.ID, sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
 
-	// s.UpsertIdentityRecord(ctx, "test", "username", "test", sekaidContainerName, sekaidHome, keyringBackend, networkName)
-	// s.UpsertIdentityRecord(ctx, "signer", "username", "faucet", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	//not sure if this needed
+	// err = s.UpsertIdentityRecord(ctx, "signer", "username", "faucet", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	// if err != nil {
+	// 	log.Errorf("Error when upserting identity record: %s\n", err)
+	// 	return err
+	// }
+	// s.UpsertIdentityRecord(ctx, "test", "username", "test", sekaidContainerName, sekaidHome, keyringBackend, networkName).
+	// if err != nil {
+	// 	log.Errorf("Error when upserting identity record: %s\n", err)
+	// 	return err
+	// }
 	return nil
 }
 
@@ -517,7 +570,7 @@ func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, account, key, 
 	log := logging.Log
 	address, err := s.GetAddressByName(ctx, account, sekaidContainerName, sekaidHome, keyringBackend)
 	if err != nil {
-		log.Errorf("")
+		log.Errorf("Error while getting kira addres from keyring %s\n", err)
 		return err
 	}
 	var out []byte
@@ -525,7 +578,7 @@ func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, account, key, 
 		command := fmt.Sprintf(`sekaid tx customgov register-identity-records --infos-json="{\"%s\":\"%s\"}" --from=%s --keyring-backend=%s --home=%s --chain-id=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, key, value, address, keyringBackend, sekaidHome, networkName)
 		out, err = s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 		if err != nil {
-			log.Errorf("")
+			log.Errorf("Error while executing command %s\n in %s container", command, sekaidContainerName)
 			return err
 		}
 		log.Printf("%s\n", string(out))
@@ -534,7 +587,7 @@ func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, account, key, 
 		command := fmt.Sprintf(`sekaid tx customgov delete-identity-records --keys="%s" --from=%s --keyring-backend=%s --home=%s --chain-id=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, key, address, keyringBackend, sekaidHome, networkName)
 		out, err = s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 		if err != nil {
-			log.Errorf("")
+			log.Errorf("Error while executing command %s\n in %s container", command, sekaidContainerName)
 			return err
 		}
 		log.Printf("%s\n", string(out))
@@ -549,11 +602,11 @@ func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, account, key, 
 
 	txData, err := s.GetTxQuery(ctx, data.Txhash, sekaidContainerName)
 	if err != nil {
-		log.Errorf("")
+		log.Errorf("Error while gettind tx data from %shash\n", data.Txhash)
 		return err
 	}
 	if txData.Code != 0 {
-		log.Errorf("")
+		log.Errorf("the %s transaction was executed with error. Code %v", data.Txhash, txData.Code)
 		return fmt.Errorf("the %s transaction was executed with error. Code %v", data.Txhash, txData.Code)
 	}
 	return nil
