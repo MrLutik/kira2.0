@@ -4,12 +4,14 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/cosign"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager"
+	"github.com/mrlutik/kira2.0/internal/systemd"
 	"github.com/sirupsen/logrus"
 )
 
@@ -38,13 +40,52 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/IrzBQYeMwvKa44/DF/HB7XDpnE+
 f+mU9F/Qbfq25bBWV2+NlYMJv3KvKHNtu3Jknt6yizZjUV4b8WGfKBzFYw==
 -----END PUBLIC KEY-----`
 
+const waitingForServiceStatusTime = 3 * time.Second
+
 var log = logging.Log
 
 func main() {
-	// TODO: Instead of consts - usign config file
+	// TODO: Instead of consts - using config file
 
 	// TODO: change level by flag
 	log.SetLevel(logrus.DebugLevel)
+
+	// 'docker.service' management
+	dockerServiceManager, err := systemd.NewServiceManager(context.Background(), "docker.service", "replace")
+	if err != nil {
+		log.Fatalf("Can't create instance of service manager: %s", err)
+	}
+
+	dockerServiceContext, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	exists, err := dockerServiceManager.CheckServiceExists(dockerServiceContext)
+	if err != nil {
+		log.Fatalf("Can't reach the service, error: %s", err)
+	}
+	if !exists {
+		log.Fatalln("'docker.service' is not available")
+	}
+
+	status, err := dockerServiceManager.GetServiceStatus(dockerServiceContext)
+	if err != nil {
+		log.Fatalf("Can't get the 'docker.service' status, error: %s", err)
+	}
+	if status != "active" {
+		log.Errorln("'docker.service' is not active")
+		log.Infof("Trying to restart it")
+		err = dockerServiceManager.RestartService(dockerServiceContext)
+		if err != nil {
+			log.Fatalf("Can't restart 'docker.service', error: %s", err)
+		}
+	}
+
+	err = dockerServiceManager.WaitForServiceStatus(dockerServiceContext, "active", waitingForServiceStatusTime)
+	if err != nil {
+		log.Fatalf("Waiting for status error: %s", err)
+	}
+
+	// End of 'docker.service' management
 
 	dockerManager, err := docker.NewTestDockerManager()
 	if err != nil {
