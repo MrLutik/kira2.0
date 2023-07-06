@@ -291,6 +291,43 @@ func (s *SekaidManager) GetTxQuery(ctx context.Context, transactionHash, sekaidC
 	return data, nil
 }
 
+func (s *SekaidManager) awaitTx(ctx context.Context, transactionHash, sekaidContainerName, sekaidHome string, timeout time.Duration) (types.TxData, error) {
+	log := logging.Log
+
+	ticker := time.NewTicker(time.Second)
+	startTime := time.Now()
+	for {
+		select {
+		case <-ticker.C:
+			elapsed := time.Since(startTime)
+			txData, err := s.GetTxQuery(ctx, transactionHash, sekaidContainerName, sekaidHome)
+			if err != nil {
+				if err.Error() == "unexpected end of JSON input" {
+					log.Warningf("WAITING: Transaction is NOT confirmed yet, elapsed %0.2f / %0.2f s\n", elapsed.Seconds(), timeout.Seconds())
+					continue
+				}
+				return types.TxData{}, fmt.Errorf("getting tx query error: %s", err)
+			}
+
+			if elapsed > timeout {
+				log.Errorln("Transaction query response was NOT received")
+				return types.TxData{}, fmt.Errorf("timeout, failed to confirm tx hash '%s' within %0.2f s limit", txData.Txhash, timeout.Seconds())
+			}
+
+			log.Infoln("Transaction query response received")
+			if txData.Code != 0 {
+				return types.TxData{}, fmt.Errorf("transaction failed with exit code '%d'", txData.Code)
+			}
+
+			log.Infof("Transaction '%s' was confirmed successfully!", transactionHash)
+			return txData, nil
+
+		case <-ctx.Done():
+			return types.TxData{}, fmt.Errorf("awaiting timeout error: %s", ctx.Err())
+		}
+	}
+}
+
 // Giving permission for chosen address.
 // Permissions are ints thats have 0-65 range
 //
