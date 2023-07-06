@@ -46,7 +46,7 @@ func main() {
 	// TODO: change level by flag
 	log.SetLevel(logrus.InfoLevel)
 
-	dockerManager, err := docker.NewTestDockerManager()
+	dockerManager, err := docker.NewTestDockerManagerWithVersion("1.41")
 	if err != nil {
 		log.Fatalln("Can't create instance of docker manager", err)
 	}
