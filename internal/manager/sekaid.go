@@ -24,8 +24,10 @@ type SekaidManager struct {
 	dockerManager          *docker.DockerManager
 }
 
-const timeWaitBetweenBlocks = time.Millisecond * 10700
-const validatorAccountName = "validator"
+const (
+	timeWaitBetweenBlocks = time.Second * 10
+	validatorAccountName  = "validator"
+)
 
 // Returns configured SekaidManager.
 // *docker.DockerManager: The pointer for docker.DockerManager instance.
@@ -127,7 +129,7 @@ func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context, moniker, s
 		return err
 	}
 
-	command = fmt.Sprintf(`sekaid add-genesis-account %s 150000000000000ukex,300000000000000test,2000000000000000000000000000samolean,1000000lol --keyring-backend=%v --home=%v`, validatorAccountName, keyringBackend, sekaidHome)
+	command = fmt.Sprintf(`sekaid add-genesis-account %s 150000000000000ukex,300000000000000test,2000000000000000000000000000samolean,1000000lol --keyring-backend=%s --home=%s`, validatorAccountName, keyringBackend, sekaidHome)
 	_, err = s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s\n", command, err)
@@ -228,14 +230,15 @@ func (s *SekaidManager) RunSekaidContainer(ctx context.Context, moniker, sekaidC
 }
 
 // Post genesis proposals after launching new network from KM1 await-validator-init.sh file.
-// Adding required permitions for validator.
+// Adding required permissions for validator.
 // First getting validator address with GetAddressByName.
 // Then in loop calling GivePermissionsToAddress func with delay between calls 10 sec because tx can be propagated once per 10 sec
 func (s *SekaidManager) PostGenesisProposals(ctx context.Context, sekaidContainerName, sekaidHome, networkName string) error {
 	log := logging.Log
 	address, err := s.GetAddressByName(ctx, validatorAccountName, sekaidContainerName, sekaidHome)
 	if err != nil {
-		log.Fatalf("Error while getting address in '%s' container: %s\n", sekaidContainerName, err)
+		log.Errorf("Error while getting address in '%s' container: %s", sekaidContainerName, err)
+		return fmt.Errorf("error while getting address in '%s' container: %s", sekaidContainerName, err)
 	}
 	permissions := []int{
 		types.PermWhitelistAccountPermissionProposal,
@@ -247,24 +250,31 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context, sekaidContaine
 		types.PermVoteUpsertTokenAliasProposal,
 		types.PermVoteSoftwareUpgradeProposal,
 	}
-	log.Printf("Permissions to add:%v to: %s", permissions, address)
-	//waiting 10 sec to first block to be propagated
+	log.Printf("Permissions to add: '%d' for: '%s'", permissions, address)
+
+	// waiting 10 sec to first block to be propagated
+	// TODO await block propagated?
+
 	time.Sleep(timeWaitBetweenBlocks)
 	for _, perm := range permissions {
-		log.Printf("\n\n\nAdding permission %v, approximately duration: %v\n", perm, timeWaitBetweenBlocks*2)
+		log.Printf("Adding permission: '%d'", perm)
 		err = s.GivePermissionsToAddress(ctx, perm, address, sekaidContainerName, sekaidHome, networkName)
 		if err != nil {
 			log.Errorf("%s\n", err)
 		}
-		log.Printf("Checking if %s has %v permission\n", address, perm)
+
+		log.Printf("Checking if '%s' address has '%d' permission\n", address, perm)
 		check, err := s.CheckAccountPermission(ctx, perm, address, sekaidContainerName, sekaidHome)
 		if err != nil {
-			log.Errorf("%s\n", err)
+			log.Errorf("Checking account permission error: %s", err)
+
+			// TODO skip error?
 		}
 		if !check {
-			log.Errorf("Could not find  %v with %s\n", perm, address)
+			log.Errorf("Could not find '%d' permission for '%s'\n", perm, address)
+
+			// TODO skip error?
 		}
-		time.Sleep(timeWaitBetweenBlocks)
 
 	}
 	return nil
@@ -278,16 +288,17 @@ func (s *SekaidManager) GetTxQuery(ctx context.Context, transactionHash, sekaidC
 	command := fmt.Sprintf(`sekaid query tx %s  --home=%s -output=json`, transactionHash, sekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
-		log.Errorf("error when checking tx:  %s.  Command: %s. Error:%s\n", transactionHash, command, err)
-		return data, err
+		log.Errorf("Couldn't checking tx: '%s'. Command: '%s'. Error:%s\n", transactionHash, command, err)
+		return types.TxData{}, err
 	}
-	err = json.Unmarshal(out, &data)
 
+	err = json.Unmarshal(out, &data)
 	if err != nil {
-		log.Errorf("error when unmarshaling tx:  %s \ndata to unmarshal:\n%s\n error: %s\n", transactionHash, string(out), err)
-		return data, err
+		log.Errorf("Cannot unmarshaling tx: '%s'\nData to unmarshal: %s\nError: %s", transactionHash, string(out), err)
+		return types.TxData{}, err
 	}
-	log.Printf("CheckTransactionStatus: \n %+v \n", data)
+
+	log.Debugf("Checking transaction status: %+v", data)
 	return data, nil
 }
 
@@ -337,30 +348,30 @@ func (s *SekaidManager) awaitTx(ctx context.Context, transactionHash, sekaidCont
 // Then waiting timeWaitBetweenBlocks for tx to propagate in blockchain and checking status code of Tx with GetTxQuery
 func (s *SekaidManager) GivePermissionsToAddress(ctx context.Context, permissionToAdd int, address, sekaidContainerName, sekaidHome, networkName string) error {
 	log := logging.Log
-	command := fmt.Sprintf(`sekaid tx customgov permission whitelist --from %s --keyring-backend=test --permission=%v --addr=%s --chain-id=%s --home=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, address, permissionToAdd, address, networkName, sekaidHome)
+	command := fmt.Sprintf(`sekaid tx customgov permission whitelist --from %s --keyring-backend=test --permission=%d --addr=%s --chain-id=%s --home=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, address, permissionToAdd, address, networkName, sekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
-		log.Errorf("error when giving  %v permission. Command: %s", permissionToAdd, command)
+		log.Errorf("error when giving '%d' permission. Command: '%s'", permissionToAdd, command)
 	}
-	log.Printf("permission voted to address %s, perm: %v\n", address, permissionToAdd)
+	log.Printf("Permission '%d' is pushed to network for address '%s'", permissionToAdd, address)
 
 	var data types.TxData
 	err = json.Unmarshal(out, &data)
 	if err != nil {
-		log.Errorf("Error unmarshaling:%s \n%s", string(out), err)
+		log.Errorf("Error unmarshaling: %s\n%s", string(out), err)
 		return err
 	}
-	log.Printf("GivePermissionToAddress: \n %+v \n", data)
-	time.Sleep(timeWaitBetweenBlocks)
+	log.Debugf("Give permission to address output: %+v", data)
 
-	txData, err := s.GetTxQuery(ctx, data.Txhash, sekaidContainerName, sekaidHome)
+	txData, err := s.awaitTx(ctx, data.Txhash, sekaidContainerName, sekaidHome, timeWaitBetweenBlocks)
 	if err != nil {
-		log.Errorf("Error Checking transaction status:%s", err)
-		return err
+		log.Errorf("Awaiting error: %s", err)
+		return fmt.Errorf("awaiting error: %s", err)
 	}
+
 	if txData.Code != 0 {
-		log.Errorf("ERROR IN PROPAGATING TRANSACTION \nTRANSACTION STATUS:%v\n", txData.Code)
-		return fmt.Errorf("error in adding %v permission to %s address.\nTxHash:%s\nCode: %v", permissionToAdd, address, data.Txhash, txData.Code)
+		log.Errorf("ERROR IN PROPAGATING TRANSACTION\nTRANSACTION STATUS:%d\n", txData.Code)
+		return fmt.Errorf("error in adding '%d' permission to '%s' address.\nTxHash: '%s'\nCode: '%d'", permissionToAdd, address, data.Txhash, txData.Code)
 	}
 	return nil
 }
@@ -376,28 +387,31 @@ func (s *SekaidManager) GivePermissionsToAddress(ctx context.Context, permission
 // address has to be kira address(not name) : kira12tptcuw0cp9fccng80vkmqen96npyyrvh2nw5q for example, you can get it from local keyring by func GetAddressByName()
 func (s *SekaidManager) CheckAccountPermission(ctx context.Context, permissionToCheck int, address, sekaidContainerName, sekaidHome string) (bool, error) {
 	log := logging.Log
-	log.Printf("Looking for %v permission \n", permissionToCheck)
+
 	command := fmt.Sprintf("sekaid query customgov permissions %s --output=json --home=%s", address, sekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("")
 		return false, err
 	}
+
 	var perms types.AddressPermissions
 	err = json.Unmarshal(out, &perms)
 	if err != nil {
 		log.Errorf("Error unmarshaling:%s \n%s", string(out), err)
 		return false, err
 	}
-	log.Printf("CheckAccountPermission: \n %+v \n", perms)
+
+	log.Debugf("Checking account permission: %+v", perms)
 	for _, perm := range perms.WhiteList {
 		if permissionToCheck == perm {
-			log.Printf("Permission %v was found with %s address. \n", permissionToCheck, address)
+			log.Printf("Permission '%d' was found with '%s' address", permissionToCheck, address)
 
 			return true, nil
 		}
 	}
-	log.Printf("No %v permission were found with %s address. \n", permissionToCheck, address)
+
+	log.Printf("No '%d' permission were found with %s address", permissionToCheck, address)
 	return false, nil
 }
 
@@ -406,19 +420,22 @@ func (s *SekaidManager) CheckAccountPermission(ctx context.Context, permissionTo
 // sekaid keys show validator --keyring-backend=test --home=test
 func (s *SekaidManager) GetAddressByName(ctx context.Context, addressName, sekaidContainerName, sekaidHome string) (string, error) {
 	log := logging.Log
+
 	command := fmt.Sprintf("sekaid keys show %s --keyring-backend=test --home=%s", addressName, sekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
-		log.Errorf("Can't get address by %s name. Command: %s. Error: %s", addressName, command, err)
+		log.Errorf("Can't get address by '%s' name. Command: '%s'. Error: %s", addressName, command, err)
 		return "", err
 	}
+	log.Debugf("'keys show %s' command's output:\n%s", addressName, string(out))
+
 	var key []types.SekaidKey
-	log.Println(string(out))
 	err = yaml.Unmarshal([]byte(out), &key)
 	if err != nil {
-		log.Fatalf("error, cannot unmarshal yaml: %v", err)
+		log.Fatalf("Cannot unmarshal output to yaml, error: %s", err)
 		return "", err
 	}
-	log.Printf("val address: %s\n", key[0].Address)
+
+	log.Printf("Validator address: '%s'\n", key[0].Address)
 	return key[0].Address, nil
 }

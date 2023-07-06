@@ -44,7 +44,7 @@ func main() {
 	// TODO: Instead of consts - usign config file
 
 	// TODO: change level by flag
-	log.SetLevel(logrus.InfoLevel)
+	log.SetLevel(logrus.DebugLevel)
 
 	dockerManager, err := docker.NewTestDockerManager()
 	if err != nil {
