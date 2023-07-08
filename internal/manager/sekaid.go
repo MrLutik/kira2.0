@@ -260,10 +260,10 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context, sekaidContaine
 		log.Printf("Adding permission: '%d'", perm)
 		err = s.GivePermissionsToAddress(ctx, perm, address, sekaidContainerName, sekaidHome, networkName)
 		if err != nil {
-			log.Errorf("%s\n", err)
+			log.Errorf("Giving permission error: %s", err)
 		}
 
-		log.Printf("Checking if '%s' address has '%d' permission\n", address, perm)
+		log.Printf("Checking if '%s' address has '%d' permission", address, perm)
 		check, err := s.CheckAccountPermission(ctx, perm, address, sekaidContainerName, sekaidHome)
 		if err != nil {
 			log.Errorf("Checking account permission error: %s", err)
@@ -271,7 +271,7 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context, sekaidContaine
 			// TODO skip error?
 		}
 		if !check {
-			log.Errorf("Could not find '%d' permission for '%s'\n", perm, address)
+			log.Errorf("Could not find '%d' permission for '%s'", perm, address)
 
 			// TODO skip error?
 		}
@@ -281,11 +281,11 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context, sekaidContaine
 }
 
 // Getting TX by parsing json output of `sekaid query tx <TXhash>`
-func (s *SekaidManager) GetTxQuery(ctx context.Context, transactionHash, sekaidContainerName, sekaidHome string) (types.TxData, error) {
+func (s *SekaidManager) GetTxQuery(ctx context.Context, transactionHash, sekaidContainerName string) (types.TxData, error) {
 	log := logging.Log
 	var data types.TxData
 
-	command := fmt.Sprintf(`sekaid query tx %s  --home=%s -output=json`, transactionHash, sekaidHome)
+	command := fmt.Sprintf(`sekaid query tx %s -output=json`, transactionHash)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("Couldn't checking tx: '%s'. Command: '%s'. Error:%s\n", transactionHash, command, err)
@@ -302,41 +302,69 @@ func (s *SekaidManager) GetTxQuery(ctx context.Context, transactionHash, sekaidC
 	return data, nil
 }
 
-func (s *SekaidManager) awaitTx(ctx context.Context, transactionHash, sekaidContainerName, sekaidHome string, timeout time.Duration) (types.TxData, error) {
+func (s *SekaidManager) awaitNextBlock(ctx context.Context, sekaidContainerName string, timeout time.Duration) error {
 	log := logging.Log
 
+	currentBlockHeight, err := s.getBlockHeight(ctx, sekaidContainerName)
+	if err != nil {
+		return fmt.Errorf("getting current block height error: %s", err)
+	}
+
 	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
 	startTime := time.Now()
 	for {
 		select {
 		case <-ticker.C:
 			elapsed := time.Since(startTime)
-			txData, err := s.GetTxQuery(ctx, transactionHash, sekaidContainerName, sekaidHome)
-			if err != nil {
-				if err.Error() == "unexpected end of JSON input" {
-					log.Warningf("WAITING: Transaction is NOT confirmed yet, elapsed %0.2f / %0.2f s\n", elapsed.Seconds(), timeout.Seconds())
-					continue
-				}
-				return types.TxData{}, fmt.Errorf("getting tx query error: %s", err)
-			}
-
 			if elapsed > timeout {
-				log.Errorln("Transaction query response was NOT received")
-				return types.TxData{}, fmt.Errorf("timeout, failed to confirm tx hash '%s' within %0.2f s limit", txData.Txhash, timeout.Seconds())
+				log.Errorf("Awaiting next block reached timeout: %0.0f seconds", timeout.Seconds())
+				return fmt.Errorf("timeout, failed to await next block within %0.2f s limit", timeout.Seconds())
 			}
 
-			log.Infoln("Transaction query response received")
-			if txData.Code != 0 {
-				return types.TxData{}, fmt.Errorf("transaction failed with exit code '%d'", txData.Code)
+			blockHeight, err := s.getBlockHeight(ctx, sekaidContainerName)
+			if err != nil {
+				return fmt.Errorf("getting next block height error: %s", err)
 			}
 
-			log.Infof("Transaction '%s' was confirmed successfully!", transactionHash)
-			return txData, nil
+			if blockHeight == currentBlockHeight {
+				log.Warningf("WAITING: Block is NOT propagated yet: elapsed %0.0f / %0.0f seconds\n", elapsed.Seconds(), timeout.Seconds())
+				continue
+			}
+
+			// exit awaiting block
+			return nil
 
 		case <-ctx.Done():
-			return types.TxData{}, fmt.Errorf("awaiting timeout error: %s", ctx.Err())
+			return fmt.Errorf("awaiting timeout error: %s", ctx.Err())
 		}
 	}
+}
+
+type NodeStatus struct {
+	SyncInfo struct {
+		LatestBlockHeight string `json:"latest_block_height"`
+	} `json:"SyncInfo"`
+}
+
+func (s *SekaidManager) getBlockHeight(ctx context.Context, sekaidContainerName string) (string, error) {
+	log := logging.Log
+
+	cmd := "sekaid status"
+	statusOutput, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{"bash", "-c", cmd})
+	if err != nil {
+		return "", fmt.Errorf("getting '%s' error: %s", cmd, err)
+	}
+
+	var status NodeStatus
+	err = json.Unmarshal(statusOutput, &status)
+	if err != nil {
+		log.Errorf("Parsing JSON output of '%s' error: %s", cmd, err)
+		return "", fmt.Errorf("parsing '%s' error: %s", cmd, err)
+	}
+
+	return status.SyncInfo.LatestBlockHeight, nil
 }
 
 // Giving permission for chosen address.
@@ -358,20 +386,26 @@ func (s *SekaidManager) GivePermissionsToAddress(ctx context.Context, permission
 	var data types.TxData
 	err = json.Unmarshal(out, &data)
 	if err != nil {
-		log.Errorf("Error unmarshaling: %s\n%s", string(out), err)
+		log.Errorf("Unmarshaling [%s]\nError: %s", string(out), err)
 		return err
 	}
 	log.Debugf("Give permission to address output: %+v", data)
 
-	txData, err := s.awaitTx(ctx, data.Txhash, sekaidContainerName, sekaidHome, timeWaitBetweenBlocks)
+	err = s.awaitNextBlock(ctx, sekaidContainerName, timeWaitBetweenBlocks)
 	if err != nil {
 		log.Errorf("Awaiting error: %s", err)
 		return fmt.Errorf("awaiting error: %s", err)
 	}
 
+	txData, err := s.GetTxQuery(ctx, data.Txhash, sekaidContainerName)
+	if err != nil {
+		log.Errorf("Getting transaction query error: %s", err)
+		return fmt.Errorf("getting tx query error: %s", err)
+	}
+
 	if txData.Code != 0 {
-		log.Errorf("ERROR IN PROPAGATING TRANSACTION\nTRANSACTION STATUS:%d\n", txData.Code)
-		return fmt.Errorf("error in adding '%d' permission to '%s' address.\nTxHash: '%s'\nCode: '%d'", permissionToAdd, address, data.Txhash, txData.Code)
+		log.Errorf("Propagating transaction. Transaction status: %d", txData.Code)
+		return fmt.Errorf("error in adding '%d' permission to '%s' address.\nTransaction hash: '%s'\nCode: '%d'", permissionToAdd, address, data.Txhash, txData.Code)
 	}
 	return nil
 }
