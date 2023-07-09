@@ -108,7 +108,7 @@ func (m *MonitoringService) GetPublicIP() (string, error) {
 	}
 
 	queryDNS := func(qname string, qtype uint16, server string) (string, error) {
-		log.Infof("Trying the query '%s' and server '%s'\n", qname, server)
+		log.Infof("Trying the query '%s' and server '%s'", qname, server)
 
 		message := new(dns.Msg)
 		message.SetQuestion(dns.Fqdn(qname), qtype)
@@ -152,7 +152,7 @@ func (m *MonitoringService) GetInterfacesIP() (map[string]string, error) {
 			return nil, err
 		}
 
-		log.Infof("Found interface: %s\n", iface.Name)
+		log.Infof("Found interface: %s", iface.Name)
 
 		ipNet, ok := addrs[0].(*net.IPNet)
 		if !ok {
