@@ -417,7 +417,7 @@ func (s *SekaidManager) GivePermissionsToAddress(ctx context.Context, permission
 		log.Errorf("Unmarshaling [%s]Error: %s", string(out), err)
 		return err
 	}
-	log.Debugf("Give permission to address output: Hash: '%s'. Code: %d", data.Txhash, data.Code)
+	log.Debugf("Give permission to address output: Hash: '%s'.Code: %d", data.Txhash, data.Code)
 
 	err = s.awaitNextBlock(ctx, sekaidContainerName, timeWaitBetweenBlocks)
 	if err != nil {
