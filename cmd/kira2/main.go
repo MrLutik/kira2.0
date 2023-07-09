@@ -161,8 +161,26 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	config := manager.NewConfig(
+		NETWORK_NAME,
+		SEKAID_HOME,
+		INTERXD_HOME,
+		KEYRING_BACKEND,
+		DOCKER_IMAGE_NAME,
+		DOCKER_IMAGE_VERSION,
+		DOCKER_NETWORK_NAME,
+		SEKAI_VERSION,
+		INTERX_VERSION,
+		SEKAID_CONTAINER_NAME,
+		INTERX_CONTAINER_NAME,
+		VOLUME_NAME,
+		MNEMONIC_FOLDER,
+		strconv.Itoa(RPC_PORT),
+		strconv.Itoa(GRPC_PORT),
+		strconv.Itoa(INTERX_PORT),
+		MONIKER)
 
-	sekaidManager, err := manager.NewSekaidManager(dockerManager, strconv.Itoa(GRPC_PORT), strconv.Itoa(RPC_PORT), dockerBaseImageName, VOLUME_NAME, DOCKER_NETWORK_NAME, SEKAID_CONTAINER_NAME)
+	sekaidManager, err := manager.NewSekaidManager(dockerManager, config)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -172,7 +190,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	interxManager, err := manager.NewInterxManager(dockerManager, strconv.Itoa(INTERX_PORT), dockerBaseImageName, VOLUME_NAME, DOCKER_NETWORK_NAME, INTERX_CONTAINER_NAME)
+	interxManager, err := manager.NewInterxManager(dockerManager, config)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -199,11 +217,11 @@ func main() {
 		log.Fatalln("Error while installing dep package:", err)
 	}
 
-	err = sekaidManager.RunSekaidContainer(ctx, MONIKER, SEKAID_CONTAINER_NAME, NETWORK_NAME, SEKAID_HOME, KEYRING_BACKEND, strconv.Itoa(RPC_PORT), MNEMONIC_FOLDER)
+	err = sekaidManager.RunSekaidContainer(ctx)
 	if err != nil {
 		log.Fatalf("Error while setup '%s' container: %s\n", SEKAID_CONTAINER_NAME, err)
 	}
-	err = interxManager.RunInterxContainer(ctx, SEKAID_CONTAINER_NAME, INTERX_CONTAINER_NAME, strconv.Itoa(RPC_PORT), strconv.Itoa(GRPC_PORT), INTERXD_HOME)
+	err = interxManager.RunInterxContainer(ctx)
 	if err != nil {
 		log.Fatalf("Error while setup '%s' container: %s\n", INTERX_CONTAINER_NAME, err)
 	}
