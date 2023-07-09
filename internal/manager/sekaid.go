@@ -127,8 +127,7 @@ func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context) error {
 	return nil
 }
 
-// StartSekaidBinInContainer starts sekaid binary inside SekaidContainerName var
-// ctx: The context for the operation.
+// StartSekaidBinInContainer starts sekaid binary inside sekaid container name
 // Returns an error if any issue occurs during the start process.
 func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
@@ -148,14 +147,6 @@ func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context) error {
 // If not initialized new one, then starting again.
 // If no sekaid bin running inside container second time - return error.
 // Then starting propagating transactions for permissions as in sekai-env.sh
-// ctx: The context for the operation.
-// Moniker: The Moniker for the 'sekaid' container.
-// SekaidContainerName: The name of the 'sekaid' container.
-// sekaidNetworkName: The name of the network associated with the 'sekaid' container.
-// SekaidHome: The home directory for 'sekaid'.
-// KeyringBackend: The keyring backend to use.
-// RpcPort: The RPC port for 'sekaid'.
-// MnemonicDir: The directory to store the generated mnemonics.
 // Returns an error if any issue occurs during the run process.
 func (s *SekaidManager) RunSekaidContainer(ctx context.Context) error {
 	log := logging.Log
@@ -185,6 +176,11 @@ func (s *SekaidManager) RunSekaidContainer(ctx context.Context) error {
 	return nil
 }
 
+// initializeSekaid initializes the sekaid node by performing several setup steps.
+// It starts the sekaid binary for the first time in the specified container,
+// initializes a new instance, and waits for it to start.
+// If any errors occur during the initialization process, an error is returned.
+// The method also propagates genesis proposals and updates the identity registrar from the validator account.
 func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 	log := logging.Log
 
@@ -216,7 +212,7 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 		return fmt.Errorf("propagating transaction error: %w", err)
 	}
 
-	err = s.UpdateIdentityRegistrarFromValidator(ctx, validatorAccountName)
+	err = s.updateIdentityRegistrarFromValidator(ctx, validatorAccountName)
 	if err != nil {
 		log.Errorf("updating identity registrar error: %s", err)
 		return fmt.Errorf("updating identity registrar error: %w", err)
@@ -232,7 +228,7 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 func (s *SekaidManager) PostGenesisProposals(ctx context.Context) error {
 	log := logging.Log
 
-	address, err := s.GetAddressByName(ctx, validatorAccountName)
+	address, err := s.getAddressByName(ctx, validatorAccountName)
 	if err != nil {
 		log.Errorf("Getting address in '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("getting address in '%s' container error: %w", s.config.SekaidContainerName, err)
@@ -258,14 +254,14 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context) error {
 	for _, perm := range permissions {
 		log.Printf("Adding permission: '%d'", perm)
 
-		err = s.GivePermissionsToAddress(ctx, perm, address)
+		err = s.givePermissionsToAddress(ctx, perm, address)
 		if err != nil {
 			log.Errorf("Giving permission '%d' error: %s", perm, err)
 			return fmt.Errorf("giving permission '%d' error: %w", perm, err)
 		}
 
 		log.Printf("Checking if '%s' address has '%d' permission", address, perm)
-		check, err := s.CheckAccountPermission(ctx, perm, address)
+		check, err := s.checkAccountPermission(ctx, perm, address)
 		if err != nil {
 			log.Errorf("Checking account permission error: %s", err)
 
@@ -282,7 +278,7 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context) error {
 }
 
 // Getting TX by parsing json output of `sekaid query tx <TXhash>`
-func (s *SekaidManager) GetTxQuery(ctx context.Context, transactionHash string) (types.TxData, error) {
+func (s *SekaidManager) getTxQuery(ctx context.Context, transactionHash string) (types.TxData, error) {
 	log := logging.Log
 	var data types.TxData
 
@@ -304,11 +300,16 @@ func (s *SekaidManager) GetTxQuery(ctx context.Context, transactionHash string) 
 	return data, nil
 }
 
+// awaitNextBlock waits for the next block to be propagated and reached by the sekaid node.
+// It continuously checks the current block height and compares it with the initial height.
+// The method waits for a specified timeout duration for the next block to be reached,
+// and returns an error if the timeout is exceeded.
+// If the next block is reached within the timeout, the method returns nil.
 func (s *SekaidManager) awaitNextBlock(ctx context.Context, timeout time.Duration) error {
 	log := logging.Log
 
 	log.Infof("Checking current block height")
-	currentBlockHeight, err := s.getBlockHeight(ctx, s.config.SekaidContainerName)
+	currentBlockHeight, err := s.getBlockHeight(ctx)
 	if err != nil {
 		return fmt.Errorf("getting current block height error: %w", err)
 	}
@@ -328,7 +329,7 @@ func (s *SekaidManager) awaitNextBlock(ctx context.Context, timeout time.Duratio
 				return fmt.Errorf("timeout, failed to await next block within %0.2f s limit", timeout.Seconds())
 			}
 
-			blockHeight, err := s.getBlockHeight(ctx, s.config.SekaidContainerName)
+			blockHeight, err := s.getBlockHeight(ctx)
 			if err != nil {
 				return fmt.Errorf("getting next block height error: %w", err)
 			}
@@ -348,22 +349,28 @@ func (s *SekaidManager) awaitNextBlock(ctx context.Context, timeout time.Duratio
 	}
 }
 
-type NodeStatus struct {
+// nodeStatus is a structure which represents the partial response from `sekaid status`
+type nodeStatus struct {
 	SyncInfo struct {
 		LatestBlockHeight string `json:"latest_block_height"`
 	} `json:"SyncInfo"`
 }
 
-func (s *SekaidManager) getBlockHeight(ctx context.Context, sekaidContainerName string) (string, error) {
+// getBlockHeight retrieves the latest block height from the sekaid node.
+// It executes the "sekaid status" command in the specified container
+// and parses the JSON output to extract the block height.
+// If successful, it returns the latest block height as a string.
+// Otherwise, it returns an error.
+func (s *SekaidManager) getBlockHeight(ctx context.Context) (string, error) {
 	log := logging.Log
 
 	cmd := "sekaid status"
-	statusOutput, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{"bash", "-c", cmd})
+	statusOutput, err := s.dockerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", cmd})
 	if err != nil {
 		return "", fmt.Errorf("getting '%s' error: %s", cmd, err)
 	}
 
-	var status NodeStatus
+	var status nodeStatus
 	err = json.Unmarshal(statusOutput, &status)
 	if err != nil {
 		log.Errorf("Parsing JSON output of '%s' error: %s", cmd, err)
@@ -380,7 +387,7 @@ func (s *SekaidManager) getBlockHeight(ctx context.Context, sekaidContainerName 
 //
 // Then unmarshaling json output and checking sekaid hex of tx
 // Then waiting timeWaitBetweenBlocks for tx to propagate in blockchain and checking status code of Tx with GetTxQuery
-func (s *SekaidManager) GivePermissionsToAddress(ctx context.Context, permissionToAdd int, address string) error {
+func (s *SekaidManager) givePermissionsToAddress(ctx context.Context, permissionToAdd int, address string) error {
 	log := logging.Log
 	command := fmt.Sprintf(`sekaid tx customgov permission whitelist --from %s --keyring-backend=test --permission=%v --addr=%s --chain-id=%s --home=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, address, permissionToAdd, address, s.config.NetworkName, s.config.SekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{`bash`, `-c`, command})
@@ -404,7 +411,7 @@ func (s *SekaidManager) GivePermissionsToAddress(ctx context.Context, permission
 		return fmt.Errorf("awaiting error: %s", err)
 	}
 
-	txData, err := s.GetTxQuery(ctx, data.Txhash)
+	txData, err := s.getTxQuery(ctx, data.Txhash)
 	if err != nil {
 		log.Errorf("Getting transaction query error: %s", err)
 		return fmt.Errorf("getting tx query error: %w", err)
@@ -427,7 +434,7 @@ func (s *SekaidManager) GivePermissionsToAddress(ctx context.Context, permission
 //	permissionToCheck  is a int with 0-65 range
 //
 // address has to be kira address(not name) : kira12tptcuw0cp9fccng80vkmqen96npyyrvh2nw5q for example, you can get it from local keyring by func GetAddressByName()
-func (s *SekaidManager) CheckAccountPermission(ctx context.Context, permissionToCheck int, address string) (bool, error) {
+func (s *SekaidManager) checkAccountPermission(ctx context.Context, permissionToCheck int, address string) (bool, error) {
 	log := logging.Log
 
 	command := fmt.Sprintf("sekaid query customgov permissions %s --output=json", address)
@@ -462,7 +469,7 @@ func (s *SekaidManager) CheckAccountPermission(ctx context.Context, permissionTo
 // Getting address from keyring.
 //
 // sekaid keys show validator --keyring-backend=test --home=test
-func (s *SekaidManager) GetAddressByName(ctx context.Context, addressName string) (string, error) {
+func (s *SekaidManager) getAddressByName(ctx context.Context, addressName string) (string, error) {
 	log := logging.Log
 	command := fmt.Sprintf("sekaid keys show %s --keyring-backend=%s --home=%s", addressName, s.config.KeyringBackend, s.config.SekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{`bash`, `-c`, command})
@@ -485,16 +492,16 @@ func (s *SekaidManager) GetAddressByName(ctx context.Context, addressName string
 }
 
 // Updating identity registrar from KM1 await-validator-init.sh file.
-func (s *SekaidManager) UpdateIdentityRegistrarFromValidator(ctx context.Context, accountName string) error {
+func (s *SekaidManager) updateIdentityRegistrarFromValidator(ctx context.Context, accountName string) error {
 	log := logging.Log
 
-	nodeStruct, err := s.GetSekaidStatus(s.config.SekaidContainerName, s.config.RpcPort)
+	nodeStruct, err := s.getSekaidStatus()
 	if err != nil {
 		log.Errorf("Getting sekaid status error: %s", err)
 		return err
 	}
 
-	address, err := s.GetAddressByName(ctx, accountName)
+	address, err := s.getAddressByName(ctx, accountName)
 	if err != nil {
 		log.Errorf("Getting kira address from keyring error: %s", err)
 		return err
@@ -518,7 +525,7 @@ func (s *SekaidManager) UpdateIdentityRegistrarFromValidator(ctx context.Context
 	}
 
 	for _, record := range records {
-		err = s.UpsertIdentityRecord(ctx, address, accountName, record.key, record.value)
+		err = s.upsertIdentityRecord(ctx, address, accountName, record.key, record.value)
 		if err != nil {
 			log.Errorf("Upserting identity record '%+v' error: %s", record, err)
 			return err
@@ -532,7 +539,7 @@ func (s *SekaidManager) UpdateIdentityRegistrarFromValidator(ctx context.Context
 }
 
 // upsertIdentityRecord  from sekai-utils.sh
-func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, address, account, key, value string) error {
+func (s *SekaidManager) upsertIdentityRecord(ctx context.Context, address, account, key, value string) error {
 	var (
 		log = logging.Log
 		err error
@@ -561,7 +568,8 @@ func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, address, accou
 	var data types.TxData
 	err = json.Unmarshal(out, &data)
 	if err != nil {
-		log.Errorf("Unmarshaling data: [%s]Error: %s", string(out), err)
+		log.Errorf("Unmarshaling data error: %s", err)
+		log.Errorf("Data: %s", string(out))
 		return err
 	}
 
@@ -573,7 +581,7 @@ func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, address, accou
 		return fmt.Errorf("awaiting error: %s", err)
 	}
 
-	txData, err := s.GetTxQuery(ctx, data.Txhash)
+	txData, err := s.getTxQuery(ctx, data.Txhash)
 	if err != nil {
 		log.Errorf("Getting transaction query error: %s", err)
 		return fmt.Errorf("getting tx query error: %w", err)
@@ -589,15 +597,15 @@ func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, address, accou
 
 // func to get status of sekaid node
 // same as curl localhost:26657/status (port for sekaid's rpc endpoint)
-func (s *SekaidManager) GetSekaidStatus(SekaidContainerName, RpcPort string) (*types.Status, error) {
+func (s *SekaidManager) getSekaidStatus() (*types.Status, error) {
 	log := logging.Log
 
-	url := fmt.Sprintf("http://localhost:%s/status", RpcPort)
+	url := fmt.Sprintf("http://localhost:%s/status", s.config.RpcPort)
 	log.Println(url)
 	response, err := http.Get(url)
 	if err != nil {
 		log.Errorf("Failed to send GET request: %s", err)
-		return &types.Status{}, err
+		return nil, err
 	}
 	defer response.Body.Close()
 
@@ -605,14 +613,14 @@ func (s *SekaidManager) GetSekaidStatus(SekaidContainerName, RpcPort string) (*t
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Errorf("Failed to read response body: %s", err)
-		return &types.Status{}, err
+		return nil, err
 	}
 
 	var statusData *types.Status
 	err = json.Unmarshal(body, &statusData)
 	if err != nil {
 		log.Errorf("Failed to parse JSON: %s", err)
-		return &types.Status{}, err
+		return nil, err
 	}
 
 	return statusData, nil

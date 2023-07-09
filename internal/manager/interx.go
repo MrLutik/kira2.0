@@ -61,9 +61,9 @@ func NewInterxManager(dockerClient *docker.DockerManager, config *Config) (*Inte
 	return &InterxManager{interxContainerConfig, interxHostConfig, interxNetworkingConfig, dockerClient, config}, err
 }
 
-// InitInterxBinInContainer sets up the 'interx' container with the specified configurations.
+// initInterxBinInContainer sets up the 'interx' container with the specified configurations.
 // Returns an error if any issue occurs during the init process.
-func (i *InterxManager) InitInterxBinInContainer(ctx context.Context) error {
+func (i *InterxManager) initInterxBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' (interx) container", i.config.InterxContainerName)
 
@@ -79,9 +79,9 @@ func (i *InterxManager) InitInterxBinInContainer(ctx context.Context) error {
 	return err
 }
 
-// StartInterxBinInContainer starts interx binary inside InterxContainerName
+// startInterxBinInContainer starts interx binary inside InterxContainerName
 // Returns an error if any issue occurs during the start process.
-func (i *InterxManager) StartInterxBinInContainer(ctx context.Context) error {
+func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	command := fmt.Sprintf("interx start -home=%s", i.config.InterxHome)
 	_, err := i.dockerClient.ExecCommandInContainerInDetachMode(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
@@ -103,7 +103,7 @@ func (i *InterxManager) RunInterxContainer(ctx context.Context) error {
 	log := logging.Log
 	const delay = time.Second
 
-	err := i.StartInterxBinInContainer(ctx)
+	err := i.startInterxBinInContainer(ctx)
 	if err != nil {
 		log.Errorf("Starting 'interx' bin in '%s' container error: %s", i.config.InterxContainerName, err)
 		return err
@@ -120,13 +120,13 @@ func (i *InterxManager) RunInterxContainer(ctx context.Context) error {
 
 	if !check {
 		log.Warningf("Error starting 'interx' binary first time in '%s' container, initialization new instance", i.config.InterxContainerName)
-		err = i.InitInterxBinInContainer(ctx)
+		err = i.initInterxBinInContainer(ctx)
 		if err != nil {
 			log.Errorf("Initialization '%s' in container error: %s", i.config.InterxContainerName, err)
 			return err
 		}
 
-		err := i.StartInterxBinInContainer(ctx)
+		err := i.startInterxBinInContainer(ctx)
 		if err != nil {
 			log.Errorf("Running 'interx' bin in '%s' container error: %s", i.config.InterxContainerName, err)
 			return fmt.Errorf("running 'interx' bin in '%s' container error: %w", i.config.InterxContainerName, err)
