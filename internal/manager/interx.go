@@ -29,11 +29,11 @@ type InterxManager struct {
 // containerName: The name of a container that interx will have.
 func NewInterxManager(dockerClient *docker.DockerManager, interxPort, imageName, volumeName, dockerNetworkName, containerName string) (*InterxManager, error) {
 	log := logging.Log
-	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network\n", interxPort, imageName, volumeName, dockerNetworkName)
+	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network", interxPort, imageName, volumeName, dockerNetworkName)
 
 	natInterxPort, err := nat.NewPort("tcp", interxPort)
 	if err != nil {
-		log.Errorf("Creating NAT interx port error: %s\n", err)
+		log.Errorf("Creating NAT interx port error: %s", err)
 		return nil, err
 	}
 
@@ -74,16 +74,16 @@ func NewInterxManager(dockerClient *docker.DockerManager, interxPort, imageName,
 // Returns an error if any issue occurs during the init process.
 func (i *InterxManager) InitInterxBinInContainer(ctx context.Context, sekaidContainerName, interxContainerName, rpc_port, grpc_port, interxHome string) error {
 	log := logging.Log
-	log.Infoln("Setting up 'interx' container")
+	log.Infof("Setting up '%s' (interx) container", interxContainerName)
 
 	command := fmt.Sprintf(`interx init --rpc="http://%s:%s" --grpc="dns:///%s:%s" -home=%s`, sekaidContainerName, rpc_port, sekaidContainerName, grpc_port, interxHome)
 	_, err := i.DockerClient.ExecCommandInContainer(ctx, interxContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
-		log.Errorf("Command '%s' execution error: %s\n", command, err)
+		log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
 	}
 
-	log.Infoln("interx inited")
+	log.Infoln("'interx' is initialized")
 	return err
 }
 
@@ -99,10 +99,10 @@ func (i *InterxManager) StartInterxBinInContainer(ctx context.Context, interxCon
 	command := fmt.Sprintf(`interx start -home=%s`, interxHome)
 	_, err := i.DockerClient.ExecCommandInContainerInDetachMode(ctx, interxContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
-		log.Errorf("Command '%s' execution error: %s\n", command, err)
+		log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
 	}
-	log.Infoln("interx started")
+	log.Infoln("'interx' started")
 	return nil
 }
 
@@ -123,34 +123,34 @@ func (i *InterxManager) RunInterxContainer(ctx context.Context, sekaidContainerN
 	log := logging.Log
 	err := i.StartInterxBinInContainer(ctx, interxContainerName, rpc_port, grpc_port, interxHome)
 	if err != nil {
-		log.Errorf("Error while starting interex bin in '%s' container: %s\n", interxContainerName, err)
+		log.Errorf("Starting 'interx' bin in '%s' container error: %s", interxContainerName, err)
 	}
 	time.Sleep(time.Second * 1)
 	check, _, err := i.DockerClient.CheckIfProcessIsRunningInContainer(ctx, "interx", interxContainerName)
 	if err != nil {
-		log.Errorf("Error while starting '%s' container: %s\n", interxContainerName, err)
+		log.Errorf("Starting '%s' container error: %s", interxContainerName, err)
 		return err
 	}
 	if !check {
-		log.Infof("Error starting interx binary first time in '%s' container, initing new instance\n", interxContainerName)
+		log.Warningf("Error starting interx binary first time in '%s' container, initialization new instance", interxContainerName)
 		err = i.InitInterxBinInContainer(ctx, sekaidContainerName, interxContainerName, rpc_port, grpc_port, interxHome)
 		if err != nil {
-			log.Errorf("Error while initing '%s' container: %s\n", interxContainerName, err)
+			log.Errorf("Initialization '%s' in container error: %s", interxContainerName, err)
 			return err
 		}
 		err := i.StartInterxBinInContainer(ctx, interxContainerName, rpc_port, grpc_port, interxHome)
 		if err != nil {
-			log.Errorf("Error while running interx bin in '%s' container: %s\n", interxContainerName, err)
+			log.Errorf("Error while running 'interx' bin in '%s' container: %s", interxContainerName, err)
 		}
 		time.Sleep(time.Second * 1)
 		check, _, err := i.DockerClient.CheckIfProcessIsRunningInContainer(ctx, "interx", interxContainerName)
 		if err != nil {
-			log.Errorf("Error while checking if procces is running in '%s' container: %s\n", interxContainerName, err)
+			log.Errorf("Error while checking if process is running in '%s' container: %s", interxContainerName, err)
 			return err
 		}
 		if !check {
-			log.Errorf("Error starting interex binary second time in '%s' container\n", interxContainerName)
-			return fmt.Errorf("cannot start interex bin in %s container", interxContainerName)
+			log.Errorf("Error starting 'interx' binary second time in '%s' container", interxContainerName)
+			return fmt.Errorf("cannot start 'interx' bin in %s container", interxContainerName)
 		}
 	}
 	return nil
