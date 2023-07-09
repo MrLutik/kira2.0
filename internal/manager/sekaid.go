@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -39,7 +41,7 @@ func NewSekaidManager(dockerManager *docker.DockerManager, grpcPort, rpcPort, im
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n", grpcPort, rpcPort, imageName, volumeName, dockerNetworkName)
 
-	natGrcpPort, err := nat.NewPort("tcp", grpcPort)
+	natGrpcPort, err := nat.NewPort("tcp", grpcPort)
 	if err != nil {
 		log.Errorf("Creating NAT GRPC port error: %s\n", err)
 		return nil, err
@@ -60,7 +62,7 @@ func NewSekaidManager(dockerManager *docker.DockerManager, grpcPort, rpcPort, im
 		StdinOnce:   true,
 		Hostname:    fmt.Sprintf("%s.local", containerName),
 		ExposedPorts: nat.PortSet{
-			natGrcpPort: struct{}{},
+			natGrpcPort: struct{}{},
 			natRpcPort:  struct{}{},
 		},
 	}
@@ -70,7 +72,7 @@ func NewSekaidManager(dockerManager *docker.DockerManager, grpcPort, rpcPort, im
 			volumeName,
 		},
 		PortBindings: nat.PortMap{
-			natGrcpPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: grpcPort}},
+			natGrpcPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: grpcPort}},
 			natRpcPort:  []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: rpcPort}},
 		},
 		Privileged: true,
@@ -92,10 +94,10 @@ func NewSekaidManager(dockerManager *docker.DockerManager, grpcPort, rpcPort, im
 // sekaidNetworkName: The name of the network associated with the 'sekaid' container.
 // sekaidHome: The home directory for 'sekaid'.
 // keyringBackend: The keyring backend to use.
-// rcpPort: The RPC port for 'sekaid'.
+// rpcPort: The RPC port for 'sekaid'.
 // mnemonicDir: The directory to store the generated mnemonics.
 // Returns an error if any issue occurs during the init process.
-func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir string) error {
+func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rpcPort, mnemonicDir string) error {
 	log := logging.Log
 	log.Infoln("Setting up 'sekaid' container")
 
@@ -152,13 +154,13 @@ func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context, moniker, s
 // sekaidNetworkName: The name of the network associated with the 'sekaid' container.
 // sekaidHome: The home directory for 'sekaid'.
 // keyringBackend: The keyring backend to use.
-// rcpPort: The RPC port for 'sekaid'.
+// rpcPort: The RPC port for 'sekaid'.
 // mnemonicDir: The directory to store the generated mnemonics.
 // Returns an error if any issue occurs during the start process.
-func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir string) error {
+func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rpcPort, mnemonicDir string) error {
 	log := logging.Log
 	log.Infoln("Starting 'sekaid' container")
-	command := fmt.Sprintf(`sekaid start --rpc.laddr "tcp://0.0.0.0:%s" --home=%s`, rcpPort, sekaidHome)
+	command := fmt.Sprintf(`sekaid start --rpc.laddr "tcp://0.0.0.0:%s" --home=%s`, rpcPort, sekaidHome)
 	_, err := s.dockerManager.ExecCommandInContainerInDetachMode(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s\n", command, err)
@@ -180,12 +182,12 @@ func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context, moniker, 
 // sekaidNetworkName: The name of the network associated with the 'sekaid' container.
 // sekaidHome: The home directory for 'sekaid'.
 // keyringBackend: The keyring backend to use.
-// rcpPort: The RPC port for 'sekaid'.
+// rpcPort: The RPC port for 'sekaid'.
 // mnemonicDir: The directory to store the generated mnemonics.
 // Returns an error if any issue occurs during the run process.
-func (s *SekaidManager) RunSekaidContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir string) error {
+func (s *SekaidManager) RunSekaidContainer(ctx context.Context, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rpcPort, mnemonicDir string) error {
 	log := logging.Log
-	err := s.StartSekaidBinInContainer(ctx, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir)
+	err := s.StartSekaidBinInContainer(ctx, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rpcPort, mnemonicDir)
 	if err != nil {
 		log.Errorf("Cannot start sekaid bin in %s container", sekaidContainerName)
 	}
@@ -197,12 +199,12 @@ func (s *SekaidManager) RunSekaidContainer(ctx context.Context, moniker, sekaidC
 	}
 	if !check {
 		log.Infof("Error starting sekaid binary first time in '%s' container, initing new instance\n", sekaidContainerName)
-		err = s.InitSekaidBinInContainer(ctx, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir)
+		err = s.InitSekaidBinInContainer(ctx, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rpcPort, mnemonicDir)
 		if err != nil {
 			log.Errorf("Error while setup '%s' container: %s\n", sekaidContainerName, err)
 			return err
 		}
-		err := s.StartSekaidBinInContainer(ctx, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rcpPort, mnemonicDir)
+		err := s.StartSekaidBinInContainer(ctx, moniker, sekaidContainerName, sekaidNetworkName, sekaidHome, keyringBackend, rpcPort, mnemonicDir)
 		if err != nil {
 			log.Errorf("Cannot start sekaid bin in %s container", sekaidContainerName)
 		}
@@ -218,12 +220,19 @@ func (s *SekaidManager) RunSekaidContainer(ctx context.Context, moniker, sekaidC
 			log.Errorf("Error starting sekaid bin second time in '%s' container\n", sekaidContainerName)
 			return fmt.Errorf("couldn't start sekaid bin second time")
 		}
-		err = s.PostGenesisProposals(ctx, sekaidContainerName, sekaidHome, sekaidNetworkName)
+		err = s.PostGenesisProposals(ctx, sekaidContainerName, sekaidHome, sekaidNetworkName, keyringBackend)
 		if err != nil {
 			log.Errorf("Error while propagating transaction: %s \n", err)
 			return err
 		}
+		err = s.UpdateIdentityRegistrar(ctx, validatorAccountName, sekaidContainerName, sekaidHome, keyringBackend, sekaidNetworkName, rpcPort)
+		if err != nil {
+			log.Errorf("Error while updating identity registrar %s \n", err)
+			return err
+		}
+
 	}
+	log.Printf("SEKAID CONTAINER STARTED\n\n\n")
 	return nil
 }
 
@@ -231,9 +240,9 @@ func (s *SekaidManager) RunSekaidContainer(ctx context.Context, moniker, sekaidC
 // Adding required permitions for validator.
 // First getting validator address with GetAddressByName.
 // Then in loop calling GivePermissionsToAddress func with delay between calls 10 sec because tx can be propagated once per 10 sec
-func (s *SekaidManager) PostGenesisProposals(ctx context.Context, sekaidContainerName, sekaidHome, networkName string) error {
+func (s *SekaidManager) PostGenesisProposals(ctx context.Context, sekaidContainerName, sekaidHome, networkName, keyringBackend string) error {
 	log := logging.Log
-	address, err := s.GetAddressByName(ctx, validatorAccountName, sekaidContainerName, sekaidHome)
+	address, err := s.GetAddressByName(ctx, validatorAccountName, sekaidContainerName, sekaidHome, keyringBackend)
 	if err != nil {
 		log.Fatalf("Error while getting address in '%s' container: %s\n", sekaidContainerName, err)
 	}
@@ -264,7 +273,7 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context, sekaidContaine
 		if !check {
 			log.Errorf("Could not find  %v with %s\n", perm, address)
 		}
-		time.Sleep(timeWaitBetweenBlocks)
+		// time.Sleep(timeWaitBetweenBlocks)
 
 	}
 	return nil
@@ -343,7 +352,7 @@ func (s *SekaidManager) CheckAccountPermission(ctx context.Context, permissionTo
 	command := fmt.Sprintf("sekaid query customgov permissions %s --output=json --home=%s", address, sekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
-		log.Errorf("")
+		log.Errorf(`error when executing "%s" command in %s container`, command, sekaidContainerName)
 		return false, err
 	}
 	var perms types.AddressPermissions
@@ -367,9 +376,9 @@ func (s *SekaidManager) CheckAccountPermission(ctx context.Context, permissionTo
 // Getting address from keyring.
 //
 // sekaid keys show validator --keyring-backend=test --home=test
-func (s *SekaidManager) GetAddressByName(ctx context.Context, addressName, sekaidContainerName, sekaidHome string) (string, error) {
+func (s *SekaidManager) GetAddressByName(ctx context.Context, addressName, sekaidContainerName, sekaidHome, keyringBackend string) (string, error) {
 	log := logging.Log
-	command := fmt.Sprintf("sekaid keys show %s --keyring-backend=test --home=%s", addressName, sekaidHome)
+	command := fmt.Sprintf("sekaid keys show %s --keyring-backend=%s --home=%s", addressName, keyringBackend, sekaidHome)
 	out, err := s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("Can't get address by %s name. Command: %s. Error: %s", addressName, command, err)
@@ -382,6 +391,165 @@ func (s *SekaidManager) GetAddressByName(ctx context.Context, addressName, sekai
 		log.Fatalf("error, cannot unmarshal yaml: %v", err)
 		return "", err
 	}
+	if len(key) <= 0 {
+		log.Errorf(`no keys were found in keyring with "%s" name`, addressName)
+		return "", fmt.Errorf("no keys were found in keyring with %s name", addressName)
+	}
 	log.Printf("val address: %s\n", key[0].Address)
 	return key[0].Address, nil
+}
+
+// Updating identity registrar from KM1 await-validator-init.sh file.
+func (s *SekaidManager) UpdateIdentityRegistrar(ctx context.Context, accountName, sekaidContainerName, sekaidHome, keyringBackend, networkName, rpcPort string) error {
+	log := logging.Log
+	nodeStruct, err := s.GetSekaidStatus(sekaidContainerName, rpcPort)
+	if err != nil {
+		log.Errorf("Error when trying to get sekaid status %s\n", err)
+		return err
+	}
+
+	err = s.UpsertIdentityRecord(ctx, accountName, "description", "This is genesis validator account of the KIRA Team", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "social", "https://tg.kira.network,twitter.kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "contact", "https://support.kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "website", "https://kira.network", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "username", "KIRA", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "logo", "https://kira-network.s3-eu-west-1.amazonaws.com/assets/img/tokens/kex.svg", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "avatar", "https://kira-network.s3-eu-west-1.amazonaws.com/assets/img/tokens/kex.svg", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "pentest1", "<iframe src=javascript:alert(1)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "pentest2", "<img/src=x a='' onerror=alert(2)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "pentest3", "<img src=1 onerror=alert(3)>", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+	err = s.UpsertIdentityRecord(ctx, accountName, "validator_node_id", nodeStruct.Result.NodeInfo.ID, sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	if err != nil {
+		log.Errorf("Error when upserting identity record: %s\n", err)
+		return err
+	}
+
+	//not sure if this needed
+	// err = s.UpsertIdentityRecord(ctx, "signer", "username", "faucet", sekaidContainerName, sekaidHome, keyringBackend, networkName)
+	// if err != nil {
+	// 	log.Errorf("Error when upserting identity record: %s\n", err)
+	// 	return err
+	// }
+	// s.UpsertIdentityRecord(ctx, "test", "username", "test", sekaidContainerName, sekaidHome, keyringBackend, networkName).
+	// if err != nil {
+	// 	log.Errorf("Error when upserting identity record: %s\n", err)
+	// 	return err
+	// }
+	return nil
+}
+
+// upsertIdentityRecord  from sekai-utils.sh
+func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, account, key, value, sekaidContainerName, sekaidHome, keyringBackend, networkName string) error {
+	log := logging.Log
+	address, err := s.GetAddressByName(ctx, account, sekaidContainerName, sekaidHome, keyringBackend)
+	if err != nil {
+		log.Errorf("Error while getting kira address from keyring %s\n", err)
+		return err
+	}
+	var out []byte
+	if value != "" {
+		command := fmt.Sprintf(`sekaid tx customgov register-identity-records --infos-json="{\"%s\":\"%s\"}" --from=%s --keyring-backend=%s --home=%s --chain-id=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, key, value, address, keyringBackend, sekaidHome, networkName)
+		out, err = s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
+		if err != nil {
+			log.Errorf("Error while executing command %s\n in %s container", command, sekaidContainerName)
+			return err
+		}
+		log.Printf("%s\n", string(out))
+
+	} else {
+		command := fmt.Sprintf(`sekaid tx customgov delete-identity-records --keys="%s" --from=%s --keyring-backend=%s --home=%s --chain-id=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, key, address, keyringBackend, sekaidHome, networkName)
+		out, err = s.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{`bash`, `-c`, command})
+		if err != nil {
+			log.Errorf("Error while executing command %s\n in %s container", command, sekaidContainerName)
+			return err
+		}
+		log.Printf("%s\n", string(out))
+	}
+	var data types.TxData
+	err = json.Unmarshal(out, &data)
+	if err != nil {
+		log.Errorf("Error unmarshaling:%s \n%s", string(out), err)
+		return err
+	}
+	time.Sleep(timeWaitBetweenBlocks)
+
+	txData, err := s.GetTxQuery(ctx, data.Txhash, sekaidContainerName, sekaidHome)
+	if err != nil {
+		log.Errorf("Error while gettind tx data from %s hash\n", data.Txhash)
+		return err
+	}
+	if txData.Code != 0 {
+		log.Errorf("the %s transaction was executed with error. Code %v", data.Txhash, txData.Code)
+		return fmt.Errorf("the %s transaction was executed with error. Code %v", data.Txhash, txData.Code)
+	}
+	return nil
+}
+
+// func to get status of sekaid node
+// same as curl localhost:26657/status (port for sekaid's rpc endpoint)
+func (s *SekaidManager) GetSekaidStatus(sekaidContainerName, rpcPort string) (*types.Status, error) {
+	log := logging.Log
+
+	url := fmt.Sprintf("http://localhost:%s/status", rpcPort)
+	log.Println(url)
+	response, err := http.Get(url)
+	if err != nil {
+		log.Println("Failed to send GET request:", err)
+		return &types.Status{}, err
+	}
+	defer response.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Println("Failed to read response body:", err)
+		return &types.Status{}, err
+	}
+
+	var statusData *types.Status
+	if err := json.Unmarshal(body, &statusData); err != nil {
+		log.Println("Failed to parse JSON:", err)
+		return &types.Status{}, err
+	}
+	return statusData, nil
 }
