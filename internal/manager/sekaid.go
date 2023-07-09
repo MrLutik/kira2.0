@@ -32,30 +32,10 @@ const (
 	validatorAccountName  = "validator"
 )
 
-type Config struct {
-	NetworkName         string
-	SekaidHome          string
-	InterxHome          string
-	KeyringBackend      string
-	DockerImageName     string
-	DockerImageVersion  string
-	DockerNetworkName   string
-	SekaiVersion        string
-	InterxVersion       string
-	SekaidContainerName string
-	InterxContainerName string
-	VolumeName          string
-	MnemonicDir         string
-	RpcPort             string
-	GrpcPort            string
-	InterxPort          string
-	Moniker             string
-}
-
 // Returns configured SekaidManager.
 //
 //	*docker.DockerManager // The pointer for docker.DockerManager instance.
-//	*config	//Pointer to config struct, can create new instance by calling NewConfig() function
+//	*config	// Pointer to config struct, can create new instance by calling NewConfig() function
 func NewSekaidManager(dockerManager *docker.DockerManager, config *Config) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
@@ -182,7 +162,7 @@ func (s *SekaidManager) RunSekaidContainer(ctx context.Context) error {
 
 	if err := s.StartSekaidBinInContainer(ctx); err != nil {
 		log.Errorf("Cannot start 'sekaid' bin in '%s' container, error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("cannot start 'sekaid' bin in '%s' container, error: %s", s.config.SekaidContainerName, err)
+		return fmt.Errorf("cannot start 'sekaid' bin in '%s' container, error: %w", s.config.SekaidContainerName, err)
 	}
 
 	const delay = time.Second * 1
@@ -230,12 +210,14 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 		return fmt.Errorf("starting 'sekaid' bin second time in '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
-	if err := s.PostGenesisProposals(ctx); err != nil {
+	err = s.PostGenesisProposals(ctx)
+	if err != nil {
 		log.Errorf("propagating transaction error: %s", err)
 		return fmt.Errorf("propagating transaction error: %w", err)
 	}
 
-	if err := s.UpdateIdentityRegistrarFromValidator(ctx, validatorAccountName); err != nil {
+	err = s.UpdateIdentityRegistrarFromValidator(ctx, validatorAccountName)
+	if err != nil {
 		log.Errorf("updating identity registrar error: %s", err)
 		return fmt.Errorf("updating identity registrar error: %w", err)
 	}
@@ -253,7 +235,7 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context) error {
 	address, err := s.GetAddressByName(ctx, validatorAccountName)
 	if err != nil {
 		log.Errorf("Getting address in '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("getting address in '%s' container error: %s", s.config.SekaidContainerName, err)
+		return fmt.Errorf("getting address in '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
 	permissions := []int{
@@ -328,7 +310,7 @@ func (s *SekaidManager) awaitNextBlock(ctx context.Context, timeout time.Duratio
 	log.Infof("Checking current block height")
 	currentBlockHeight, err := s.getBlockHeight(ctx, s.config.SekaidContainerName)
 	if err != nil {
-		return fmt.Errorf("getting current block height error: %s", err)
+		return fmt.Errorf("getting current block height error: %w", err)
 	}
 
 	log.Infof("Current block height: %s", currentBlockHeight)
@@ -348,7 +330,7 @@ func (s *SekaidManager) awaitNextBlock(ctx context.Context, timeout time.Duratio
 
 			blockHeight, err := s.getBlockHeight(ctx, s.config.SekaidContainerName)
 			if err != nil {
-				return fmt.Errorf("getting next block height error: %s", err)
+				return fmt.Errorf("getting next block height error: %w", err)
 			}
 
 			if blockHeight == currentBlockHeight {
@@ -361,7 +343,7 @@ func (s *SekaidManager) awaitNextBlock(ctx context.Context, timeout time.Duratio
 			return nil
 
 		case <-ctx.Done():
-			return fmt.Errorf("awaiting context timeout error: %s", ctx.Err())
+			return fmt.Errorf("awaiting context timeout error: %w", ctx.Err())
 		}
 	}
 }
@@ -385,7 +367,7 @@ func (s *SekaidManager) getBlockHeight(ctx context.Context, sekaidContainerName 
 	err = json.Unmarshal(statusOutput, &status)
 	if err != nil {
 		log.Errorf("Parsing JSON output of '%s' error: %s", cmd, err)
-		return "", fmt.Errorf("parsing '%s' error: %s", cmd, err)
+		return "", fmt.Errorf("parsing '%s' error: %w", cmd, err)
 	}
 
 	return status.SyncInfo.LatestBlockHeight, nil
@@ -425,7 +407,7 @@ func (s *SekaidManager) GivePermissionsToAddress(ctx context.Context, permission
 	txData, err := s.GetTxQuery(ctx, data.Txhash)
 	if err != nil {
 		log.Errorf("Getting transaction query error: %s", err)
-		return fmt.Errorf("getting tx query error: %s", err)
+		return fmt.Errorf("getting tx query error: %w", err)
 	}
 
 	if txData.Code != 0 {
@@ -594,7 +576,7 @@ func (s *SekaidManager) UpsertIdentityRecord(ctx context.Context, address, accou
 	txData, err := s.GetTxQuery(ctx, data.Txhash)
 	if err != nil {
 		log.Errorf("Getting transaction query error: %s", err)
-		return fmt.Errorf("getting tx query error: %s", err)
+		return fmt.Errorf("getting tx query error: %w", err)
 	}
 
 	if txData.Code != 0 {

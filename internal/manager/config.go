@@ -1,5 +1,25 @@
 package manager
 
+type Config struct {
+	NetworkName         string
+	SekaidHome          string
+	InterxHome          string
+	KeyringBackend      string
+	DockerImageName     string
+	DockerImageVersion  string
+	DockerNetworkName   string
+	SekaiVersion        string
+	InterxVersion       string
+	SekaidContainerName string
+	InterxContainerName string
+	VolumeName          string
+	MnemonicDir         string
+	RpcPort             string
+	GrpcPort            string
+	InterxPort          string
+	Moniker             string
+}
+
 // # Create new config file for sekaidManager
 //
 //	NetworkName // name of a blockchain name (chandID)
