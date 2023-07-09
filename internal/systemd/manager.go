@@ -21,7 +21,7 @@ type ServiceManager struct {
 func NewServiceManager(ctx context.Context, serviceName, mode string) (*ServiceManager, error) {
 	conn, err := dbus.NewWithContext(ctx)
 	if err != nil {
-		log.Printf("Failed to connect to D-Bus: %s\n", err.Error())
+		log.Printf("Failed to connect to D-Bus: %s", err)
 		return nil, err
 	}
 
@@ -87,7 +87,7 @@ func (s *ServiceManager) RestartService(ctx context.Context) error {
 		return fmt.Errorf("failed to restart service: %s", err.Error())
 	}
 
-	log.Infof("Job path: %d\n", job)
+	log.Infof("Job path: %d", job)
 
 	done := make(chan struct{})
 
@@ -97,7 +97,7 @@ func (s *ServiceManager) RestartService(ctx context.Context) error {
 		defer close(ch)
 
 		for res := range ch {
-			log.Infof("Restart service operation: %s\n", res)
+			log.Infof("Restart service operation: %s", res)
 			if res != "done" {
 				log.Infof("Failed to restart service: %s", s.serviceName)
 			} else {
@@ -124,7 +124,7 @@ func (s *ServiceManager) StopService(ctx context.Context) error {
 		return fmt.Errorf("failed to stop service: %s", err.Error())
 	}
 
-	log.Infof("Job path: %d\n", job)
+	log.Infof("Job path: %d", job)
 
 	done := make(chan struct{})
 
@@ -134,7 +134,7 @@ func (s *ServiceManager) StopService(ctx context.Context) error {
 		defer close(ch)
 
 		for res := range ch {
-			log.Infof("Stop service operation: %s\n", res)
+			log.Infof("Stop service operation: %s", res)
 			if res != "done" {
 				log.Infof("Failed to stop service: %s", s.serviceName)
 			} else {
@@ -166,7 +166,7 @@ func (s *ServiceManager) EnableService(ctx context.Context, runtime bool, force 
 	}
 
 	for i, change := range changes {
-		log.Infof("Change [%d]: %+v\n", i, change)
+		log.Infof("Change [%d]: %+v", i, change)
 	}
 
 	return nil

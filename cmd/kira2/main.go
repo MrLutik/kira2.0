@@ -48,7 +48,7 @@ func main() {
 	// TODO: Instead of consts - using config file
 
 	// TODO: change level by flag
-	log.SetLevel(logrus.InfoLevel)
+	log.SetLevel(logrus.DebugLevel)
 
 	// 'docker.service' management
 	dockerServiceManager, err := systemd.NewServiceManager(context.Background(), "docker.service", "replace")
