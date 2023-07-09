@@ -87,7 +87,7 @@ func main() {
 
 	// End of 'docker.service' management
 
-	dockerManager, err := docker.NewTestDockerManager()
+	dockerManager, err := docker.NewTestDockerManagerWithVersion("1.41")
 	if err != nil {
 		log.Fatalln("Can't create instance of docker manager", err)
 	}

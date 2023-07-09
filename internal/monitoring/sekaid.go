@@ -21,10 +21,7 @@ func (m *MonitoringService) GetValidatorAddress(ctx context.Context, sekaidConta
 		return "", err
 	}
 
-	// Actual output: `,kira1k3mmwgsr9pcfgf5zqd655kgvsn2evd225d7e8q\n`
-	// TODO Do we need to fix output without comma symbol?
-	result := strings.Split(string(output), ",")[1]
-	result = strings.ReplaceAll(result, "\n", "")
+	result := strings.ReplaceAll(string(output), "\n", "")
 	return result, nil
 }
 
