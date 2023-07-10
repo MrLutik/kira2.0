@@ -21,26 +21,7 @@ func InitAndRunSekaid(ctx context.Context, dockerManager *docker.DockerManager, 
 	err = dockerManager.CheckOrCreateNetwork(ctx, cfg.DockerNetworkName)
 	errors.HandleErr("Docker networking", err)
 
-	config := NewConfig(
-		cfg.NetworkName,
-		cfg.SekaidHome,
-		cfg.InterxdHome,
-		cfg.KeyringBackend,
-		cfg.DockerImageName,
-		cfg.DockerImageVersion,
-		cfg.DockerNetworkName,
-		cfg.SekaiVersion,
-		cfg.InterxVersion,
-		cfg.SekaidContainerName,
-		cfg.InterxContainerName,
-		cfg.VolumeName,
-		cfg.MnemonicFolder,
-		cfg.RpcPort,
-		cfg.GrpcPort,
-		cfg.InterxPort,
-		cfg.Moniker)
-
-	sekaidManager, err := NewSekaidManager(dockerManager, config)
+	sekaidManager, err := NewSekaidManager(dockerManager, cfg)
 	errors.HandleErr("Sekaid managing", err)
 	err = dockerManager.InitAndCreateContainer(ctx, sekaidManager.ContainerConfig, sekaidManager.SekaidNetworkingConfig, sekaidManager.SekaiHostConfig, cfg.SekaidContainerName)
 	errors.HandleErr("Sekaid initialization", err)
@@ -63,26 +44,7 @@ func InitAndRunInterxd(ctx context.Context, dockerManager *docker.DockerManager,
 		errors.HandleErr("Deleting container", err)
 	}
 
-	config := NewConfig(
-		cfg.NetworkName,
-		cfg.SekaidHome,
-		cfg.InterxdHome,
-		cfg.KeyringBackend,
-		cfg.DockerImageName,
-		cfg.DockerImageVersion,
-		cfg.DockerNetworkName,
-		cfg.SekaiVersion,
-		cfg.InterxVersion,
-		cfg.SekaidContainerName,
-		cfg.InterxContainerName,
-		cfg.VolumeName,
-		cfg.MnemonicFolder,
-		cfg.RpcPort,
-		cfg.GrpcPort,
-		cfg.InterxPort,
-		cfg.Moniker)
-
-	interxManager, err := NewInterxManager(dockerManager, config)
+	interxManager, err := NewInterxManager(dockerManager, cfg)
 	errors.HandleErr("Interx managing", err)
 	err = dockerManager.InitAndCreateContainer(ctx, interxManager.ContainerConfig, interxManager.SekaidNetworkingConfig, interxManager.SekaiHostConfig, cfg.InterxContainerName)
 	errors.HandleErr("Interx initialization", err)

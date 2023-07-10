@@ -8,6 +8,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
+
+	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
 )
@@ -18,11 +20,11 @@ type InterxManager struct {
 	SekaiHostConfig        *container.HostConfig
 	SekaidNetworkingConfig *network.NetworkingConfig
 	dockerClient           *docker.DockerManager
-	config                 *Config
+	config                 *config.KiraConfig
 }
 
 // Returns configured InterxManager.
-func NewInterxManager(dockerClient *docker.DockerManager, config *Config) (*InterxManager, error) {
+func NewInterxManager(dockerClient *docker.DockerManager, config *config.KiraConfig) (*InterxManager, error) {
 	log := logging.Log
 	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
 		config.InterxPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)

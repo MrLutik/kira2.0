@@ -8,9 +8,10 @@ import (
 	"sync"
 
 	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
+
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/logging"
-	"golang.org/x/oauth2"
 )
 
 var log = logging.Log

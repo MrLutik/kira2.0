@@ -13,6 +13,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"sigs.k8s.io/yaml"
 
+	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/types"
@@ -24,7 +25,7 @@ type SekaidManager struct {
 	SekaiHostConfig        *container.HostConfig
 	SekaidNetworkingConfig *network.NetworkingConfig
 	dockerManager          *docker.DockerManager
-	config                 *Config
+	config                 *config.KiraConfig
 }
 
 const (
@@ -36,7 +37,7 @@ const (
 //
 //	*docker.DockerManager // The pointer for docker.DockerManager instance.
 //	*config	// Pointer to config struct, can create new instance by calling NewConfig() function
-func NewSekaidManager(dockerManager *docker.DockerManager, config *Config) (*SekaidManager, error) {
+func NewSekaidManager(dockerManager *docker.DockerManager, config *config.KiraConfig) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
 		config.GrpcPort, config.RpcPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)

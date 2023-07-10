@@ -10,6 +10,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager"
 	"github.com/mrlutik/kira2.0/internal/systemd"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,10 +32,29 @@ func main() {
 	defer dockerManager.Cli.Close()
 
 	ctx := context.Background()
-	// TODO: Instead of HARDCODE - using config file
-	cfg := config.NewKiraConfig()
 
-	docker.VerifyingDockerImage(ctx, dockerManager, cfg)
+	// TODO: Instead of HARDCODE - reading config file
+	cfg := config.NewConfig(
+		"testnet-1",
+		"/data/.sekai",
+		"/data/.interx",
+		"test",
+		"ghcr.io/kiracore/docker/kira-base",
+		"v0.13.11",
+		"kira_network",
+		"latest", // or v0.3.16
+		"latest", // or v0.4.33
+		"sekaid",
+		"interx",
+		"kira_volume:/data",
+		"~/mnemonics",
+		"26657",
+		"9090",
+		"11000",
+		"VALIDATOR",
+	)
+
+	docker.VerifyingDockerImage(ctx, dockerManager, cfg.DockerImageName+":"+cfg.DockerImageVersion)
 
 	adapters.DownloadBinaries(ctx, cfg, sekaiDebFileName, interxDebFileName)
 
