@@ -8,54 +8,83 @@ import (
 	"sync"
 
 	"github.com/google/go-github/github"
-	"github.com/mrlutik/kira2.0/internal/logging"
 	"golang.org/x/oauth2"
+
+	"github.com/mrlutik/kira2.0/internal/config"
+	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
 var log = logging.Log
 
-// GitHubAdapter is a struct to hold the GitHub client
-type GitHubAdapter struct {
+const (
+	envGithubTokenVariableName = "GITHUB_TOKEN"
+	kiraGit                    = "KiraCore"
+	sekaiRepo                  = "sekai"
+	interxRepo                 = "interx"
+)
+
+func DownloadBinaries(ctx context.Context, cfg *config.KiraConfig, sekaiDebFileName, interxDebFileName string) {
+	repositories := repositories{}
+
+	repositories.Set(kiraGit, sekaiRepo, cfg.SekaiVersion)
+	repositories.Set(kiraGit, interxRepo, cfg.InterxVersion)
+	log.Infof("Getting repositories: %+v", repositories.Get())
+
+	token, exists := os.LookupEnv(envGithubTokenVariableName)
+	if !exists {
+		log.Fatalf("'%s' variable is not set", envGithubTokenVariableName)
+	}
+
+	repositories = fetch(repositories, token)
+
+	gitHubAdapter := newGitHubAdapter(token)
+
+	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, sekaiRepo, sekaiDebFileName, cfg.SekaiVersion)
+	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, interxRepo, interxDebFileName, cfg.InterxVersion)
+}
+
+// gitHubAdapter is a struct to hold the GitHub client
+type gitHubAdapter struct {
 	client *github.Client
 }
-type Repository struct {
+type repository struct {
 	Owner   string
 	Repo    string
 	Version string
 }
 
-type Repositories struct {
-	repos []Repository
+type repositories struct {
+	repos []repository
 }
 
 // Add a new Repository to Repositories, version can be = ""
-func (r *Repositories) Set(owner, repo, version string) {
-	newRepo := Repository{Owner: owner, Repo: repo, Version: version}
+func (r *repositories) Set(owner, repo, version string) {
+	newRepo := repository{Owner: owner, Repo: repo, Version: version}
 	r.repos = append(r.repos, newRepo)
 }
 
-func (r *Repositories) Get() []Repository {
+func (r *repositories) Get() []repository {
 	return r.repos
 }
 
-func Fetch(r Repositories, accessToken string) Repositories {
-	adapter := NewGitHubAdapter(accessToken)
+func fetch(r repositories, accessToken string) repositories {
+	adapter := newGitHubAdapter(accessToken)
 
 	var wg sync.WaitGroup
-	results := make(chan Repository)
+	results := make(chan repository)
 
 	for _, repo := range r.repos {
 		wg.Add(1)
 		go func(owner, repo string) {
 			defer wg.Done()
 
-			latestRelease, err := adapter.GetLatestRelease(owner, repo)
+			latestRelease, err := adapter.getLatestRelease(owner, repo)
 			if err != nil {
 				log.Errorf("Error fetching latest release for %s/%s: %s\n", owner, repo, err)
 				return
 			}
 
-			results <- Repository{Owner: owner, Repo: repo, Version: *latestRelease.TagName}
+			results <- repository{Owner: owner, Repo: repo, Version: *latestRelease.TagName}
 		}(repo.Owner, repo.Repo)
 	}
 
@@ -64,28 +93,28 @@ func Fetch(r Repositories, accessToken string) Repositories {
 		close(results)
 	}()
 
-	var updatedRepos []Repository
+	var updatedRepos []repository
 	for result := range results {
 		updatedRepos = append(updatedRepos, result)
 	}
 
-	return Repositories{repos: updatedRepos}
+	return repositories{repos: updatedRepos}
 }
 
-// NewGitHubAdapter initializes a new GitHubAdapter instance
-func NewGitHubAdapter(accessToken string) *GitHubAdapter {
+// newGitHubAdapter initializes a new GitHubAdapter instance
+func newGitHubAdapter(accessToken string) *gitHubAdapter {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: accessToken},
 	)
 	tc := oauth2.NewClient(context.Background(), ts)
 
-	return &GitHubAdapter{
+	return &gitHubAdapter{
 		client: github.NewClient(tc),
 	}
 }
 
-// GetLatestRelease fetches the latest release from the specified repository
-func (gh *GitHubAdapter) GetLatestRelease(owner, repo string) (*github.RepositoryRelease, error) {
+// getLatestRelease fetches the latest release from the specified repository
+func (gh *gitHubAdapter) getLatestRelease(owner, repo string) (*github.RepositoryRelease, error) {
 	release, _, err := gh.client.Repositories.GetLatestRelease(context.Background(), owner, repo)
 	if err != nil {
 		return nil, err
@@ -93,13 +122,13 @@ func (gh *GitHubAdapter) GetLatestRelease(owner, repo string) (*github.Repositor
 	return release, nil
 }
 
-// DownloadBinaryFromRepo downloads a binary file from a GitHub repository.
+// downloadBinaryFromRepo downloads a binary file from a GitHub repository.
 // ctx: The context for the operation.
 // owner: The owner of the GitHub repository.
 // repo: The name of the GitHub repository.
 // binaryName: The name of the binary file to download.
 // tag: The tag or version of the release containing the binary file.
-func (gh *GitHubAdapter) DownloadBinaryFromRepo(ctx context.Context, owner, repo, binaryName, tag string) {
+func (gh *gitHubAdapter) downloadBinaryFromRepo(ctx context.Context, owner, repo, binaryName, tag string) {
 	var release *github.RepositoryRelease
 	var err error
 	log.Printf("downloading %s from %s/%s, tag:%s\n", binaryName, owner, repo, tag)

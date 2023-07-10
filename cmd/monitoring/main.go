@@ -31,7 +31,7 @@ var log = logging.Log
 func main() {
 	log.SetLevel(logrus.DebugLevel)
 
-	dockerManager, err := docker.NewTestDockerManagerWithVersion("1.41")
+	dockerManager, err := docker.NewTestDockerManager()
 	if err != nil {
 		log.Fatalf("Can't create instance of docker manager: %s", err)
 	}

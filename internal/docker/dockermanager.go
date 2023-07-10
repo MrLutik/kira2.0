@@ -66,15 +66,7 @@ func NewDockerManager(r io.Reader) (*DockerManager, error) {
 }
 
 func NewTestDockerManager() (*DockerManager, error) {
-	client, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return nil, err
-	}
-	return &DockerManager{Cli: client}, err
-}
-
-func NewTestDockerManagerWithVersion(version string) (*DockerManager, error) {
-	client, err := client.NewClientWithOpts(client.WithVersion(version))
+	client, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
 	}
