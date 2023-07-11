@@ -31,6 +31,8 @@ func (s *SekaidManager) InitAndRun(ctx context.Context) {
 	err = s.dockerManager.SendFileToContainer(ctx, s.config.SekaiDebFileName, debFileDestInContainer, s.config.SekaidContainerName)
 	errors.HandleFatalErr("Sending file to container", err)
 
+	// TODO Do we need to delete file after sending?
+
 	err = s.dockerManager.InstallDebPackage(ctx, s.config.SekaidContainerName, debFileDestInContainer+s.config.SekaiDebFileName)
 	errors.HandleFatalErr("Installing dep package in container", err)
 

@@ -21,54 +21,10 @@ type KiraConfig struct {
 	GrpcPort            string        // sekaid's grpc port
 	InterxPort          string        // interx endpoint port
 	Moniker             string        // Moniker
-	SekaiDebFileName    string        //fileName of sekai deb file
-	InterxDebFileName   string        //fileName of interx deb file
-	TimeBetweenBlocks   time.Duration // wait time between blocks,(if time set in kira = 10 sec then it has to be little bit more (+500 miliseconds))
-}
-
-// NewConfig creates a new Config with provided values.
-func NewConfig(
-	networkName,
-	sekaidHome,
-	interxHome,
-	keyringBackend,
-	dockerImageName,
-	dockerImageVersion,
-	dockerNetworkName,
-	sekaiVersion,
-	interxVersion,
-	sekaidContainerName,
-	interxContainerName,
-	volumeName,
-	mnemonicDir,
-	rpcPort,
-	grpcPort,
-	interxPort,
-	moniker,
-	sekaiDebFileName,
-	interxDebFileName string,
-	timeBetweenBlocks int,
-) *KiraConfig {
-	return &KiraConfig{
-		NetworkName:         networkName,
-		SekaidHome:          sekaidHome,
-		InterxHome:          interxHome,
-		KeyringBackend:      keyringBackend,
-		DockerImageName:     dockerImageName,
-		DockerImageVersion:  dockerImageVersion,
-		DockerNetworkName:   dockerNetworkName,
-		SekaiVersion:        sekaiVersion,
-		InterxVersion:       interxVersion,
-		SekaidContainerName: sekaidContainerName,
-		InterxContainerName: interxContainerName,
-		VolumeName:          volumeName,
-		MnemonicDir:         mnemonicDir,
-		RpcPort:             rpcPort,
-		GrpcPort:            grpcPort,
-		InterxPort:          interxPort,
-		Moniker:             moniker,
-		SekaiDebFileName:    sekaiDebFileName,
-		InterxDebFileName:   interxDebFileName,
-		TimeBetweenBlocks:   time.Millisecond * time.Duration(timeBetweenBlocks),
-	}
+	SekaiDebFileName    string        // fileName of sekai deb file
+	InterxDebFileName   string        // fileName of interx deb file
+	TimeBetweenBlocks   time.Duration // Awaiting time between blocks
+	// NOTE Default time of block is ~5 seconds!
+	// Check (m *MonitoringService) GetConsensusInfo method
+	// from cmd/monitoring/main.go
 }
