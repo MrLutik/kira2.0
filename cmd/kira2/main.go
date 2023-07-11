@@ -52,12 +52,21 @@ func main() {
 		"9090",
 		"11000",
 		"VALIDATOR",
+		10500,
 	)
 
 	docker.VerifyingDockerImage(ctx, dockerManager, cfg.DockerImageName+":"+cfg.DockerImageVersion)
 
 	adapters.DownloadBinaries(ctx, cfg, sekaiDebFileName, interxDebFileName)
 
-	manager.InitAndRunSekaid(ctx, dockerManager, cfg, sekaiDebFileName)
-	manager.InitAndRunInterxd(ctx, dockerManager, cfg, interxDebFileName)
+	// manager.InitAndRunSekaid(ctx, dockerManager, cfg, sekaiDebFileName)
+	// manager.InitAndRunInterxd(ctx, dockerManager, cfg, interxDebFileName)
+	sekai, err := manager.NewSekaidManager(dockerManager, cfg)
+	errors.HandleErr("Error making new sekai manager", err)
+	sekai.InitAndRun(ctx, dockerManager, cfg, sekaiDebFileName)
+
+	interx, err := manager.NewInterxManager(dockerManager, cfg)
+	errors.HandleErr("Error making new interx manager", err)
+	interx.InitAndRun(ctx, dockerManager, cfg, interxDebFileName)
+
 }
