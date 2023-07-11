@@ -3,63 +3,58 @@ package manager
 import (
 	"context"
 
-	"github.com/mrlutik/kira2.0/internal/config"
-	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
 )
 
 const debFileDestInContainer = "/tmp/"
 
 type Repository interface {
-	InitAndRun()
-	Stop()
+	InitAndRun(context.Context)
 }
 
-func (s *SekaidManager) InitAndRun(ctx context.Context, dockerManager *docker.DockerManager, cfg *config.KiraConfig, sekaiDebFileName string) {
-	check, err := dockerManager.CheckForContainersName(ctx, cfg.SekaidContainerName)
+func (s *SekaidManager) InitAndRun(ctx context.Context) {
+	check, err := s.dockerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
 	errors.HandleErr("Checking container names", err)
 	if check {
-		err = dockerManager.StopAndDeleteContainer(ctx, cfg.SekaidContainerName)
+		err = s.dockerManager.StopAndDeleteContainer(ctx, s.config.SekaidContainerName)
 		errors.HandleErr("Deleting container", err)
 	}
 
-	err = dockerManager.CheckOrCreateNetwork(ctx, cfg.DockerNetworkName)
+	err = s.dockerManager.CheckOrCreateNetwork(ctx, s.config.DockerNetworkName)
 	errors.HandleErr("Docker networking", err)
 
-	sekaidManager, err := NewSekaidManager(dockerManager, cfg)
 	errors.HandleErr("Sekaid managing", err)
-	err = dockerManager.InitAndCreateContainer(ctx, sekaidManager.ContainerConfig, sekaidManager.SekaidNetworkingConfig, sekaidManager.SekaiHostConfig, cfg.SekaidContainerName)
+	err = s.dockerManager.InitAndCreateContainer(ctx, s.ContainerConfig, s.SekaidNetworkingConfig, s.SekaiHostConfig, s.config.SekaidContainerName)
 	errors.HandleErr("Sekaid initialization", err)
 
-	err = dockerManager.SendFileToContainer(ctx, sekaiDebFileName, debFileDestInContainer, cfg.SekaidContainerName)
+	err = s.dockerManager.SendFileToContainer(ctx, s.config.SekaiDebFileName, debFileDestInContainer, s.config.SekaidContainerName)
 	errors.HandleErr("Sending file to container", err)
 
-	err = dockerManager.InstallDebPackage(ctx, cfg.SekaidContainerName, debFileDestInContainer+sekaiDebFileName)
+	err = s.dockerManager.InstallDebPackage(ctx, s.config.SekaidContainerName, debFileDestInContainer+s.config.SekaiDebFileName)
 	errors.HandleErr("Installing dep package in container", err)
 
-	err = sekaidManager.RunSekaidContainer(ctx)
+	err = s.RunSekaidContainer(ctx)
 	errors.HandleErr("Setup container", err)
 }
 
-func (i *InterxManager) InitAndRun(ctx context.Context, dockerManager *docker.DockerManager, cfg *config.KiraConfig, interxDebFileName string) {
-	check, err := dockerManager.CheckForContainersName(ctx, cfg.InterxContainerName)
+func (i *InterxManager) InitAndRun(ctx context.Context) {
+	check, err := i.dockerClient.CheckForContainersName(ctx, i.config.InterxContainerName)
 	errors.HandleErr("Checking container names", err)
 	if check {
-		dockerManager.StopAndDeleteContainer(ctx, cfg.InterxContainerName)
+		i.dockerClient.StopAndDeleteContainer(ctx, i.config.InterxContainerName)
 		errors.HandleErr("Deleting container", err)
 	}
 
-	interxManager, err := NewInterxManager(dockerManager, cfg)
 	errors.HandleErr("Interx managing", err)
-	err = dockerManager.InitAndCreateContainer(ctx, interxManager.ContainerConfig, interxManager.SekaidNetworkingConfig, interxManager.SekaiHostConfig, cfg.InterxContainerName)
+	err = i.dockerClient.InitAndCreateContainer(ctx, i.ContainerConfig, i.SekaidNetworkingConfig, i.SekaiHostConfig, i.config.InterxContainerName)
 	errors.HandleErr("Interx initialization", err)
 
-	err = dockerManager.SendFileToContainer(ctx, interxDebFileName, debFileDestInContainer, cfg.InterxContainerName)
+	err = i.dockerClient.SendFileToContainer(ctx, i.config.InterxDebFileName, debFileDestInContainer, i.config.InterxContainerName)
 	errors.HandleErr("Sending file to container", err)
 
-	err = dockerManager.InstallDebPackage(ctx, cfg.InterxContainerName, debFileDestInContainer+interxDebFileName)
+	err = i.dockerClient.InstallDebPackage(ctx, i.config.InterxContainerName, debFileDestInContainer+i.config.InterxDebFileName)
 	errors.HandleErr("Installing dep package in container", err)
 
-	err = interxManager.RunInterxContainer(ctx)
+	err = i.RunInterxContainer(ctx)
 	errors.HandleErr("Setup container", err)
 }
