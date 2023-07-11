@@ -10,7 +10,12 @@ import (
 
 const debFileDestInContainer = "/tmp/"
 
-func InitAndRunSekaid(ctx context.Context, dockerManager *docker.DockerManager, cfg *config.KiraConfig, sekaiDebFileName string) {
+type Repository interface {
+	InitAndRun()
+	Stop()
+}
+
+func (s *SekaidManager) InitAndRun(ctx context.Context, dockerManager *docker.DockerManager, cfg *config.KiraConfig, sekaiDebFileName string) {
 	check, err := dockerManager.CheckForContainersName(ctx, cfg.SekaidContainerName)
 	errors.HandleErr("Checking container names", err)
 	if check {
@@ -36,7 +41,7 @@ func InitAndRunSekaid(ctx context.Context, dockerManager *docker.DockerManager, 
 	errors.HandleErr("Setup container", err)
 }
 
-func InitAndRunInterxd(ctx context.Context, dockerManager *docker.DockerManager, cfg *config.KiraConfig, interxDebFileName string) {
+func (i *InterxManager) InitAndRun(ctx context.Context, dockerManager *docker.DockerManager, cfg *config.KiraConfig, interxDebFileName string) {
 	check, err := dockerManager.CheckForContainersName(ctx, cfg.InterxContainerName)
 	errors.HandleErr("Checking container names", err)
 	if check {
