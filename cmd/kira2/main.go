@@ -54,7 +54,7 @@ func main() {
 
 	docker.VerifyingDockerImage(ctx, dockerManager, cfg.DockerImageName+":"+cfg.DockerImageVersion)
 
-	adapters.DownloadBinaries(ctx, cfg, cfg.SekaiDebFileName, cfg.InterxDebFileName)
+	adapters.DownloadBinaries(ctx, cfg)
 
 	sekaiManager, err := manager.NewSekaidManager(dockerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
