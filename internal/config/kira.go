@@ -19,6 +19,7 @@ type KiraConfig struct {
 	GrpcPort            string // sekaid's grpc port
 	InterxPort          string // interx endpoint port
 	Moniker             string // Moniker
+	TimeBetweenBlocks   int    // wait time between blocks in millisecond,(if time set in kira = 10 sec then it has to be little bit more (+500 miliseconds))
 }
 
 // NewConfig creates a new Config with provided values.
@@ -40,6 +41,7 @@ func NewConfig(
 	grpcPort,
 	interxPort,
 	moniker string,
+	timeBetweenBlocks int,
 ) *KiraConfig {
 	return &KiraConfig{
 		NetworkName:         networkName,
@@ -59,5 +61,6 @@ func NewConfig(
 		GrpcPort:            grpcPort,
 		InterxPort:          interxPort,
 		Moniker:             moniker,
+		TimeBetweenBlocks:   timeBetweenBlocks,
 	}
 }
