@@ -3,58 +3,61 @@ package manager
 import (
 	"context"
 
-	"github.com/mrlutik/kira2.0/internal/config"
-	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
 )
 
 const debFileDestInContainer = "/tmp/"
 
-func InitAndRunSekaid(ctx context.Context, dockerManager *docker.DockerManager, cfg *config.KiraConfig, sekaiDebFileName string) {
-	check, err := dockerManager.CheckForContainersName(ctx, cfg.SekaidContainerName)
-	errors.HandleErr("Checking container names", err)
-	if check {
-		err = dockerManager.StopAndDeleteContainer(ctx, cfg.SekaidContainerName)
-		errors.HandleErr("Deleting container", err)
-	}
-
-	err = dockerManager.CheckOrCreateNetwork(ctx, cfg.DockerNetworkName)
-	errors.HandleErr("Docker networking", err)
-
-	sekaidManager, err := NewSekaidManager(dockerManager, cfg)
-	errors.HandleErr("Sekaid managing", err)
-	err = dockerManager.InitAndCreateContainer(ctx, sekaidManager.ContainerConfig, sekaidManager.SekaidNetworkingConfig, sekaidManager.SekaiHostConfig, cfg.SekaidContainerName)
-	errors.HandleErr("Sekaid initialization", err)
-
-	err = dockerManager.SendFileToContainer(ctx, sekaiDebFileName, debFileDestInContainer, cfg.SekaidContainerName)
-	errors.HandleErr("Sending file to container", err)
-
-	err = dockerManager.InstallDebPackage(ctx, cfg.SekaidContainerName, debFileDestInContainer+sekaiDebFileName)
-	errors.HandleErr("Installing dep package in container", err)
-
-	err = sekaidManager.RunSekaidContainer(ctx)
-	errors.HandleErr("Setup container", err)
+// ContainerRunner describe public methods of container managers
+type ContainerRunner interface {
+	InitAndRun(context.Context)
 }
 
-func InitAndRunInterxd(ctx context.Context, dockerManager *docker.DockerManager, cfg *config.KiraConfig, interxDebFileName string) {
-	check, err := dockerManager.CheckForContainersName(ctx, cfg.InterxContainerName)
-	errors.HandleErr("Checking container names", err)
+func (s *SekaidManager) InitAndRun(ctx context.Context) {
+	check, err := s.dockerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
+	errors.HandleFatalErr("Checking container names", err)
 	if check {
-		dockerManager.StopAndDeleteContainer(ctx, cfg.InterxContainerName)
-		errors.HandleErr("Deleting container", err)
+		err = s.dockerManager.StopAndDeleteContainer(ctx, s.config.SekaidContainerName)
+		errors.HandleFatalErr("Deleting container", err)
 	}
 
-	interxManager, err := NewInterxManager(dockerManager, cfg)
-	errors.HandleErr("Interx managing", err)
-	err = dockerManager.InitAndCreateContainer(ctx, interxManager.ContainerConfig, interxManager.SekaidNetworkingConfig, interxManager.SekaiHostConfig, cfg.InterxContainerName)
-	errors.HandleErr("Interx initialization", err)
+	err = s.dockerManager.CheckOrCreateNetwork(ctx, s.config.DockerNetworkName)
+	errors.HandleFatalErr("Docker networking", err)
 
-	err = dockerManager.SendFileToContainer(ctx, interxDebFileName, debFileDestInContainer, cfg.InterxContainerName)
-	errors.HandleErr("Sending file to container", err)
+	errors.HandleFatalErr("Sekaid managing", err)
+	err = s.dockerManager.InitAndCreateContainer(ctx, s.ContainerConfig, s.SekaidNetworkingConfig, s.SekaiHostConfig, s.config.SekaidContainerName)
+	errors.HandleFatalErr("Sekaid initialization", err)
 
-	err = dockerManager.InstallDebPackage(ctx, cfg.InterxContainerName, debFileDestInContainer+interxDebFileName)
-	errors.HandleErr("Installing dep package in container", err)
+	err = s.dockerManager.SendFileToContainer(ctx, s.config.SekaiDebFileName, debFileDestInContainer, s.config.SekaidContainerName)
+	errors.HandleFatalErr("Sending file to container", err)
 
-	err = interxManager.RunInterxContainer(ctx)
-	errors.HandleErr("Setup container", err)
+	// TODO Do we need to delete file after sending?
+
+	err = s.dockerManager.InstallDebPackage(ctx, s.config.SekaidContainerName, debFileDestInContainer+s.config.SekaiDebFileName)
+	errors.HandleFatalErr("Installing dep package in container", err)
+
+	err = s.runSekaidContainer(ctx)
+	errors.HandleFatalErr("Setup container", err)
+}
+
+func (i *InterxManager) InitAndRun(ctx context.Context) {
+	check, err := i.dockerClient.CheckForContainersName(ctx, i.config.InterxContainerName)
+	errors.HandleFatalErr("Checking container names", err)
+	if check {
+		i.dockerClient.StopAndDeleteContainer(ctx, i.config.InterxContainerName)
+		errors.HandleFatalErr("Deleting container", err)
+	}
+
+	errors.HandleFatalErr("Interx managing", err)
+	err = i.dockerClient.InitAndCreateContainer(ctx, i.ContainerConfig, i.SekaidNetworkingConfig, i.SekaiHostConfig, i.config.InterxContainerName)
+	errors.HandleFatalErr("Interx initialization", err)
+
+	err = i.dockerClient.SendFileToContainer(ctx, i.config.InterxDebFileName, debFileDestInContainer, i.config.InterxContainerName)
+	errors.HandleFatalErr("Sending file to container", err)
+
+	err = i.dockerClient.InstallDebPackage(ctx, i.config.InterxContainerName, debFileDestInContainer+i.config.InterxDebFileName)
+	errors.HandleFatalErr("Installing dep package in container", err)
+
+	err = i.runInterxContainer(ctx)
+	errors.HandleFatalErr("Setup container", err)
 }

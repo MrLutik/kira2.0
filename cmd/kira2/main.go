@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/config"
@@ -14,11 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	sekaiDebFileName  = "sekai-linux-amd64.deb"
-	interxDebFileName = "interx-linux-amd64.deb"
-)
-
 var log = logging.Log
 
 func main() {
@@ -28,36 +24,48 @@ func main() {
 	systemd.DockerServiceManagement()
 
 	dockerManager, err := docker.NewTestDockerManager()
-	errors.HandleErr("Can't create instance of docker manager", err)
+	errors.HandleFatalErr("Can't create instance of docker manager", err)
 	defer dockerManager.Cli.Close()
 
 	ctx := context.Background()
 
 	// TODO: Instead of HARDCODE - reading config file
-	cfg := config.NewConfig(
-		"testnet-1",
-		"/data/.sekai",
-		"/data/.interx",
-		"test",
-		"ghcr.io/kiracore/docker/kira-base",
-		"v0.13.11",
-		"kira_network",
-		"latest", // or v0.3.16
-		"latest", // or v0.4.33
-		"sekaid",
-		"interx",
-		"kira_volume:/data",
-		"~/mnemonics",
-		"26657",
-		"9090",
-		"11000",
-		"VALIDATOR",
-	)
+	// Note: we do not need the constructor for config, it is not readable right now
+	// Using initialization of structure on the way reads better
+	cfg := &config.KiraConfig{
+		NetworkName:         "testnet-1",
+		SekaidHome:          "/data/.sekai",
+		InterxHome:          "/data/.interx",
+		KeyringBackend:      "test",
+		DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
+		DockerImageVersion:  "v0.13.11",
+		DockerNetworkName:   "kira_network",
+		SekaiVersion:        "latest", // or v0.3.16
+		InterxVersion:       "latest", // or v0.4.33
+		SekaidContainerName: "sekaid",
+		InterxContainerName: "interx",
+		VolumeName:          "kira_volume:/data",
+		MnemonicDir:         "~/mnemonics",
+		RpcPort:             "26657",
+		GrpcPort:            "9090",
+		InterxPort:          "11000",
+		Moniker:             "VALIDATOR",
+		SekaiDebFileName:    "sekai-linux-amd64.deb",
+		InterxDebFileName:   "interx-linux-amd64.deb",
+		TimeBetweenBlocks:   time.Second * 10,
+	}
 
 	docker.VerifyingDockerImage(ctx, dockerManager, cfg.DockerImageName+":"+cfg.DockerImageVersion)
 
-	adapters.DownloadBinaries(ctx, cfg, sekaiDebFileName, interxDebFileName)
+	// TODO Do we need to safe deb packages in temporary directory?
+	// Right now the files are downloaded in current directory, where the program starts
+	adapters.DownloadBinaries(ctx, cfg)
 
-	manager.InitAndRunSekaid(ctx, dockerManager, cfg, sekaiDebFileName)
-	manager.InitAndRunInterxd(ctx, dockerManager, cfg, interxDebFileName)
+	sekaiManager, err := manager.NewSekaidManager(dockerManager, cfg)
+	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
+	sekaiManager.InitAndRun(ctx)
+
+	interxManager, err := manager.NewInterxManager(dockerManager, cfg)
+	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
+	interxManager.InitAndRun(ctx)
 }

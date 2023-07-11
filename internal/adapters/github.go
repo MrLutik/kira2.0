@@ -23,7 +23,7 @@ const (
 	interxRepo                 = "interx"
 )
 
-func DownloadBinaries(ctx context.Context, cfg *config.KiraConfig, sekaiDebFileName, interxDebFileName string) {
+func DownloadBinaries(ctx context.Context, cfg *config.KiraConfig) {
 	repositories := repositories{}
 
 	repositories.Set(kiraGit, sekaiRepo, cfg.SekaiVersion)
@@ -39,8 +39,8 @@ func DownloadBinaries(ctx context.Context, cfg *config.KiraConfig, sekaiDebFileN
 
 	gitHubAdapter := newGitHubAdapter(token)
 
-	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, sekaiRepo, sekaiDebFileName, cfg.SekaiVersion)
-	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, interxRepo, interxDebFileName, cfg.InterxVersion)
+	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, sekaiRepo, cfg.SekaiDebFileName, cfg.SekaiVersion)
+	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, interxRepo, cfg.InterxDebFileName, cfg.InterxVersion)
 }
 
 // gitHubAdapter is a struct to hold the GitHub client

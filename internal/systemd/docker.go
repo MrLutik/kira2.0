@@ -16,26 +16,26 @@ const (
 
 func DockerServiceManagement() {
 	dockerServiceManager, err := NewServiceManager(context.Background(), dockerServiceName, "replace")
-	errors.HandleErr("Can't create instance of service manager", err)
+	errors.HandleFatalErr("Can't create instance of service manager", err)
 
 	dockerServiceContext, cancel := context.WithTimeout(context.Background(), allTimeForDockerServiceOperation)
 	defer cancel()
 
 	exists, err := dockerServiceManager.CheckServiceExists(dockerServiceContext)
-	errors.HandleErr("Can't reach the service", err)
+	errors.HandleFatalErr("Can't reach the service", err)
 	if !exists {
 		log.Fatalf("'%s' is not available", dockerServiceName)
 	}
 
 	status, err := dockerServiceManager.GetServiceStatus(dockerServiceContext)
-	errors.HandleErr(fmt.Sprintf("Can't get the '%s' status", dockerServiceName), err)
+	errors.HandleFatalErr(fmt.Sprintf("Can't get the '%s' status", dockerServiceName), err)
 	if status != "active" {
 		log.Errorf("'%s' is not active", dockerServiceName)
 		log.Infof("Trying to restart it")
 		err = dockerServiceManager.RestartService(dockerServiceContext)
-		errors.HandleErr(fmt.Sprintf("Can't restart '%s'", dockerServiceName), err)
+		errors.HandleFatalErr(fmt.Sprintf("Can't restart '%s'", dockerServiceName), err)
 	}
 
 	err = dockerServiceManager.WaitForServiceStatus(dockerServiceContext, "active", waitingForServiceStatusTime)
-	errors.HandleErr("Waiting for status", err)
+	errors.HandleFatalErr("Waiting for status", err)
 }
