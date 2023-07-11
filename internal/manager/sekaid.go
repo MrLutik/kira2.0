@@ -30,15 +30,11 @@ const (
 	validatorAccountName = "validator"
 )
 
-func NewSekaiInterface(sekaidManager *SekaidManager) Repository {
-	return sekaidManager
-}
-
 // Returns configured SekaidManager.
 //
 //	*docker.DockerManager // The pointer for docker.DockerManager instance.
-//	*config	// Pointer to config struct, can create new instance by calling NewConfig() function
-func NewSekaidManager(dockerManager *docker.DockerManager, config *config.KiraConfig) (*SekaidManager, error) {
+//	*config	// Config of Kira application struct
+func NewSekaidManager(dockerManager *docker.DockerManager, config *config.KiraConfig) (ContainerRunner, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
 		config.GrpcPort, config.RpcPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
@@ -96,36 +92,32 @@ func NewSekaidManager(dockerManager *docker.DockerManager, config *config.KiraCo
 	}, err
 }
 
-// InitSekaidBinInContainer sets up the 'sekaid' container with the specified configurations.
-// ctx: The context for the operation.
-// Moniker: The Moniker for the 'sekaid' container.
-// SekaidContainerName: The name of the 'sekaid' container.
-// sekaidNetworkName: The name of the network associated with the 'sekaid' container.
-// SekaidHome: The home directory for 'sekaid'.
-// KeyringBackend: The keyring backend to use.
-// RpcPort: The RPC port for 'sekaid'.
-// MnemonicDir: The directory to store the generated mnemonics.
-// Returns an error if any issue occurs during the init process.
-func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context) error {
+// initSekaidBinInContainer initializes the sekaid binary within the specified container.
+// It sets up the container by executing a series of commands, including initializing the sekaid with the provided chain ID and home folder,
+// creating mnemonics for the validator and faucet accounts, adding genesis accounts, and generating a genesis transaction claim.
+// Each command is executed in the container using the docker manager.
+// If any errors occur during the setup process, an error is returned.
+// Upon successful initialization, the method indicates that the 'sekaid' container has started.
+func (s *SekaidManager) initSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' (sekaid) container", s.config.SekaidContainerName)
 
 	commands := []string{
 		fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`,
 			s.config.NetworkName, s.config.SekaidHome, s.config.Moniker),
-		fmt.Sprintf(`mkdir %s`, s.config.MnemonicDir),
+		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
 		fmt.Sprintf(`sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/sekai.mnemonic`,
 			validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf(`sekaid keys add "faucet" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/faucet.mnemonic`,
 			s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
-		fmt.Sprintf(`sekaid add-genesis-account %s 150000000000000ukex,300000000000000test,2000000000000000000000000000samolean,1000000lol --keyring-backend=%v --home=%v`,
+		fmt.Sprintf("sekaid add-genesis-account %s 150000000000000ukex,300000000000000test,2000000000000000000000000000samolean,1000000lol --keyring-backend=%s --home=%s",
 			validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome),
 		fmt.Sprintf(`sekaid gentx-claim %s --keyring-backend=%s --moniker="%s" --home=%s`,
 			validatorAccountName, s.config.KeyringBackend, s.config.Moniker, s.config.SekaidHome),
 	}
 
 	for _, command := range commands {
-		_, err := s.dockerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{`bash`, `-c`, command})
+		_, err := s.dockerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 		if err != nil {
 			log.Errorf("Command '%s' execution error: %s", command, err)
 			return err
@@ -136,13 +128,13 @@ func (s *SekaidManager) InitSekaidBinInContainer(ctx context.Context) error {
 	return nil
 }
 
-// StartSekaidBinInContainer starts sekaid binary inside sekaid container name
+// startSekaidBinInContainer starts sekaid binary inside sekaid container name
 // Returns an error if any issue occurs during the start process.
-func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context) error {
+func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infoln("Starting 'sekaid' container")
 	command := fmt.Sprintf(`sekaid start --rpc.laddr "tcp://0.0.0.0:%s" --home=%s`, s.config.RpcPort, s.config.SekaidHome)
-	_, err := s.dockerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{`bash`, `-c`, command})
+	_, err := s.dockerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 	}
@@ -150,17 +142,15 @@ func (s *SekaidManager) StartSekaidBinInContainer(ctx context.Context) error {
 	return nil
 }
 
-// Combine SetupSekaidBinInContainer and StartSekaidBinInContainer together.
-// First trying to run sekaid bin from previous state if exist.
-// Then checking if sekaid bin running inside container.
-// If not initialized new one, then starting again.
-// If no sekaid bin running inside container second time - return error.
-// Then starting propagating transactions for permissions as in sekai-env.sh
-// Returns an error if any issue occurs during the run process.
-func (s *SekaidManager) RunSekaidContainer(ctx context.Context) error {
+// runSekaidContainer starts the 'sekaid' container and checks if the process is running.
+// If the 'sekaid' process is not running, it initializes the sekaid node using the `initializeSekaid` method.
+// The method waits for a specified duration before checking if the 'sekaid' process is running.
+// If any errors occur during the process, an error is returned.
+// Upon successful start of the 'sekaid' container, the method indicates that the container has started.
+func (s *SekaidManager) runSekaidContainer(ctx context.Context) error {
 	log := logging.Log
 
-	if err := s.StartSekaidBinInContainer(ctx); err != nil {
+	if err := s.startSekaidBinInContainer(ctx); err != nil {
 		log.Errorf("Cannot start 'sekaid' bin in '%s' container, error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("cannot start 'sekaid' bin in '%s' container, error: %w", s.config.SekaidContainerName, err)
 	}
@@ -195,12 +185,12 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance", s.config.SekaidContainerName)
 
-	if err := s.InitSekaidBinInContainer(ctx); err != nil {
+	if err := s.initSekaidBinInContainer(ctx); err != nil {
 		log.Errorf("Setup '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("setup '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
-	if err := s.StartSekaidBinInContainer(ctx); err != nil {
+	if err := s.startSekaidBinInContainer(ctx); err != nil {
 		log.Errorf("Starting 'sekaid' bin in '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("starting 'sekaid' bin in '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
@@ -215,7 +205,7 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 		return fmt.Errorf("starting 'sekaid' bin second time in '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
-	err = s.PostGenesisProposals(ctx)
+	err = s.postGenesisProposals(ctx)
 	if err != nil {
 		log.Errorf("propagating transaction error: %s", err)
 		return fmt.Errorf("propagating transaction error: %w", err)
@@ -230,11 +220,12 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 	return nil
 }
 
-// Post genesis proposals after launching new network from KM1 await-validator-init.sh file.
-// Adding required permissions for validator.
-// First getting validator address with GetAddressByName.
-// Then in loop calling GivePermissionsToAddress func with delay between calls 10 sec because tx can be propagated once per 10 sec
-func (s *SekaidManager) PostGenesisProposals(ctx context.Context) error {
+// postGenesisProposals posts genesis proposals by giving permissions to the validator account.
+// It retrieves the address of the validator account and adds a set of predefined permissions to it.
+// The method waits for a specified duration before the first block is propagated.
+// For each permission, it gives the permission to the address and checks if the permission is assigned successfully.
+// If any errors occur during the process, an error is returned.
+func (s *SekaidManager) postGenesisProposals(ctx context.Context) error {
 	log := logging.Log
 
 	address, err := s.helper.GetAddressByName(ctx, validatorAccountName)

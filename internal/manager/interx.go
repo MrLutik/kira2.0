@@ -23,12 +23,8 @@ type InterxManager struct {
 	config                 *config.KiraConfig
 }
 
-func NewInterxInterface(interxManager *InterxManager) Repository {
-	return interxManager
-}
-
-// Returns configured InterxManager.
-func NewInterxManager(dockerClient *docker.DockerManager, config *config.KiraConfig) (*InterxManager, error) {
+// NewInterxManager returns configured InterxManager.
+func NewInterxManager(dockerClient *docker.DockerManager, config *config.KiraConfig) (ContainerRunner, error) {
 	log := logging.Log
 	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
 		config.InterxPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
@@ -99,13 +95,12 @@ func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
 	return nil
 }
 
-// Combine SetupInterxContainer and StartInterxBinInContainer together.
-// First trying to run interx bin from previous state if exist.
-// Then checking if interx bin running inside container.
-// If no, initialize new one then starting again.
-// If no interx bin running inside container second time - return error.
-// Returns an error if any issue occurs during the run process.
-func (i *InterxManager) RunInterxContainer(ctx context.Context) error {
+// runInterxContainer starts the 'interx' container and checks if the process is running.
+// If the 'interx' process is not running, it initializes the 'interx' binary in the container
+// and starts it again. It checks if the process is running after the initialization.
+// The method waits for a specified duration before checking if the process is running.
+// If any errors occur during the process, an error is returned.
+func (i *InterxManager) runInterxContainer(ctx context.Context) error {
 	log := logging.Log
 	const delay = time.Second
 

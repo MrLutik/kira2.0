@@ -14,13 +14,13 @@ f+mU9F/Qbfq25bBWV2+NlYMJv3KvKHNtu3Jknt6yizZjUV4b8WGfKBzFYw==
 
 func VerifyingDockerImage(ctx context.Context, dockerManager *DockerManager, dockerBaseImageName string) {
 	err := dockerManager.VerifyDockerInstallation(ctx)
-	errors.HandleErr("Docker is not available", err)
+	errors.HandleFatalErr("Docker is not available", err)
 
 	err = dockerManager.PullImage(ctx, dockerBaseImageName)
-	errors.HandleErr("Pulling image", err)
+	errors.HandleFatalErr("Pulling image", err)
 
 	checkBool, err := cosign.VerifyImageSignature(ctx, dockerBaseImageName, DockerImagePubKey)
-	errors.HandleErr("Verifying image signature", err)
+	errors.HandleFatalErr("Verifying image signature", err)
 
 	log.Infoln("Verified:", checkBool)
 }

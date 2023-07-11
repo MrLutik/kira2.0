@@ -23,7 +23,7 @@ func main() {
 	systemd.DockerServiceManagement()
 
 	dockerManager, err := docker.NewTestDockerManager()
-	errors.HandleErr("Can't create instance of docker manager", err)
+	errors.HandleFatalErr("Can't create instance of docker manager", err)
 	defer dockerManager.Cli.Close()
 
 	ctx := context.Background()
@@ -57,13 +57,10 @@ func main() {
 	adapters.DownloadBinaries(ctx, cfg, cfg.SekaiDebFileName, cfg.InterxDebFileName)
 
 	sekaiManager, err := manager.NewSekaidManager(dockerManager, cfg)
-	errors.HandleErr("Error making new sekai manager", err)
-	sekaiInterface := manager.NewSekaiInterface(sekaiManager)
-	sekaiInterface.InitAndRun(ctx)
+	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
+	sekaiManager.InitAndRun(ctx)
 
 	interxManager, err := manager.NewInterxManager(dockerManager, cfg)
-	errors.HandleErr("Error making new interx manager", err)
-	interxInterface := manager.NewInterxInterface(interxManager)
-	interxInterface.InitAndRun(ctx)
-
+	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
+	interxManager.InitAndRun(ctx)
 }
