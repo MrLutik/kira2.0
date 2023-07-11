@@ -23,6 +23,10 @@ type InterxManager struct {
 	config                 *config.KiraConfig
 }
 
+func NewInterxInterface(interxManager *InterxManager) Repository {
+	return interxManager
+}
+
 // Returns configured InterxManager.
 func NewInterxManager(dockerClient *docker.DockerManager, config *config.KiraConfig) (*InterxManager, error) {
 	log := logging.Log

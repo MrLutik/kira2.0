@@ -12,7 +12,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/manager/helpers"
+	"github.com/mrlutik/kira2.0/internal/manager/utils"
 	"github.com/mrlutik/kira2.0/internal/types"
 )
 
@@ -23,13 +23,16 @@ type SekaidManager struct {
 	SekaidNetworkingConfig *network.NetworkingConfig
 	dockerManager          *docker.DockerManager
 	config                 *config.KiraConfig
-	helper                 *helpers.HelperManager
+	helper                 *utils.HelperManager
 }
 
 const (
-	// timeWaitBetweenBlocks = time.Second * 10
 	validatorAccountName = "validator"
 )
+
+func NewSekaiInterface(sekaidManager *SekaidManager) Repository {
+	return sekaidManager
+}
 
 // Returns configured SekaidManager.
 //
@@ -82,8 +85,15 @@ func NewSekaidManager(dockerManager *docker.DockerManager, config *config.KiraCo
 			config.DockerNetworkName: {},
 		},
 	}
-	helper := helpers.NewHelperManager(dockerManager, config)
-	return &SekaidManager{sekaiContainerConfig, sekaiHostConfig, sekaidNetworkingConfig, dockerManager, config, helper}, err
+	helper := utils.NewHelperManager(dockerManager, config)
+	return &SekaidManager{
+		sekaiContainerConfig,
+		sekaiHostConfig,
+		sekaidNetworkingConfig,
+		dockerManager,
+		config,
+		helper,
+	}, err
 }
 
 // InitSekaidBinInContainer sets up the 'sekaid' container with the specified configurations.
@@ -246,13 +256,13 @@ func (s *SekaidManager) PostGenesisProposals(ctx context.Context) error {
 	log.Printf("Permissions to add: '%d' for: '%s'", permissions, address)
 
 	// waiting 10 sec to first block to be propagated
-	log.Infof("Waiting for %0.0f seconds before first block be propagated", time.Duration.Seconds(time.Millisecond*time.Duration(s.config.TimeBetweenBlocks)))
-	time.Sleep(time.Millisecond * time.Duration(s.config.TimeBetweenBlocks))
+	log.Infof("Waiting for %0.0f seconds before first block be propagated", time.Duration.Seconds(s.config.TimeBetweenBlocks))
+	time.Sleep(s.config.TimeBetweenBlocks)
 
 	for _, perm := range permissions {
 		log.Printf("Adding permission: '%d'", perm)
 
-		err = s.helper.GivePermissionsToAddress(ctx, perm, address)
+		err = s.helper.GivePermissionToAddress(ctx, perm, address)
 		if err != nil {
 			log.Errorf("Giving permission '%d' error: %s", perm, err)
 			return fmt.Errorf("giving permission '%d' error: %w", perm, err)
