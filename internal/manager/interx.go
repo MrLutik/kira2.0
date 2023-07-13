@@ -16,15 +16,15 @@ import (
 
 // InterxManager represents a manager for Interx container and its associated configurations.
 type InterxManager struct {
-	ContainerConfig        *container.Config
-	SekaiHostConfig        *container.HostConfig
-	SekaidNetworkingConfig *network.NetworkingConfig
-	dockerClient           *docker.DockerManager
-	config                 *config.KiraConfig
+	ContainerConfig     *container.Config
+	InterxHostConfig    *container.HostConfig
+	InterxNetworkConfig *network.NetworkingConfig
+	containerManager    *docker.ContainerManager
+	config              *config.KiraConfig
 }
 
 // NewInterxManager returns configured InterxManager.
-func NewInterxManager(dockerClient *docker.DockerManager, config *config.KiraConfig) (ContainerRunner, error) {
+func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (ContainerRunner, error) {
 	log := logging.Log
 	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
 		config.InterxPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
@@ -60,7 +60,13 @@ func NewInterxManager(dockerClient *docker.DockerManager, config *config.KiraCon
 		Privileged: true,
 	}
 
-	return &InterxManager{interxContainerConfig, interxHostConfig, interxNetworkingConfig, dockerClient, config}, err
+	return &InterxManager{
+		ContainerConfig:     interxContainerConfig,
+		InterxHostConfig:    interxHostConfig,
+		InterxNetworkConfig: interxNetworkingConfig,
+		containerManager:    containerManager,
+		config:              config,
+	}, err
 }
 
 // initInterxBinInContainer sets up the 'interx' container with the specified configurations.
@@ -71,7 +77,7 @@ func (i *InterxManager) initInterxBinInContainer(ctx context.Context) error {
 
 	command := fmt.Sprintf(`interx init --rpc="http://%s:%s" --grpc="dns:///%s:%s" -home=%s`,
 		i.config.SekaidContainerName, i.config.RpcPort, i.config.SekaidContainerName, i.config.GrpcPort, i.config.InterxHome)
-	_, err := i.dockerClient.ExecCommandInContainer(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
+	_, err := i.containerManager.ExecCommandInContainer(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
@@ -86,7 +92,7 @@ func (i *InterxManager) initInterxBinInContainer(ctx context.Context) error {
 func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	command := fmt.Sprintf("interx start -home=%s", i.config.InterxHome)
-	_, err := i.dockerClient.ExecCommandInContainerInDetachMode(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
+	_, err := i.containerManager.ExecCommandInContainerInDetachMode(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
@@ -113,7 +119,7 @@ func (i *InterxManager) runInterxContainer(ctx context.Context) error {
 	log.Warningf("Waiting for %0.0f seconds for process", delay.Seconds())
 	time.Sleep(time.Second * 1)
 
-	check, _, err := i.dockerClient.CheckIfProcessIsRunningInContainer(ctx, "interx", i.config.InterxContainerName)
+	check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, "interx", i.config.InterxContainerName)
 	if err != nil {
 		log.Errorf("Starting '%s' container error: %s", i.config.InterxContainerName, err)
 		return err
@@ -136,7 +142,7 @@ func (i *InterxManager) runInterxContainer(ctx context.Context) error {
 		log.Warningf("Waiting for %0.0f seconds for process", delay.Seconds())
 		time.Sleep(delay)
 
-		check, _, err := i.dockerClient.CheckIfProcessIsRunningInContainer(ctx, "interx", i.config.InterxContainerName)
+		check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, "interx", i.config.InterxContainerName)
 		if err != nil {
 			log.Errorf("Checking 'interx' process in '%s' container error: %s", i.config.InterxContainerName, err)
 			return fmt.Errorf("checking 'interx' process in '%s' container error: %w", i.config.InterxContainerName, err)

@@ -15,7 +15,7 @@ import (
 // sekaid container name, keyring backend, and home directory.
 func (m *MonitoringService) GetValidatorAddress(ctx context.Context, sekaidContainerName, keyringBackend, homeDir string) (string, error) {
 	cmd := fmt.Sprintf("sekaid keys show validator -a --keyring-backend=%s --home=%s", keyringBackend, homeDir)
-	output, err := m.dockerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{"bash", "-c", cmd})
+	output, err := m.containerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{"bash", "-c", cmd})
 	if err != nil {
 		log.Errorf("Can't execute command '%s', error: '%s'", cmd, err)
 		return "", err

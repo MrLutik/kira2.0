@@ -23,14 +23,16 @@ var log = logging.Log
 
 // MonitoringService represents a monitoring service that interacts with the Docker and HTTP clients.
 type MonitoringService struct {
-	dockerManager *docker.DockerManager
-	httpClient    *http.Client
+	dockerManager    *docker.DockerManager
+	containerManager *docker.ContainerManager
+	httpClient       *http.Client
 }
 
-func NewMonitoringService(dm *docker.DockerManager) *MonitoringService {
+func NewMonitoringService(dm *docker.DockerManager, cm *docker.ContainerManager) *MonitoringService {
 	return &MonitoringService{
-		dockerManager: dm,
-		httpClient:    &http.Client{},
+		dockerManager:    dm,
+		containerManager: cm,
+		httpClient:       &http.Client{},
 	}
 }
 

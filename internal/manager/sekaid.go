@@ -21,7 +21,7 @@ type SekaidManager struct {
 	ContainerConfig        *container.Config
 	SekaiHostConfig        *container.HostConfig
 	SekaidNetworkingConfig *network.NetworkingConfig
-	dockerManager          *docker.DockerManager
+	containerManager       *docker.ContainerManager
 	config                 *config.KiraConfig
 	helper                 *utils.HelperManager
 }
@@ -34,7 +34,7 @@ const (
 //
 //	*docker.DockerManager // The pointer for docker.DockerManager instance.
 //	*config	// Config of Kira application struct
-func NewSekaidManager(dockerManager *docker.DockerManager, config *config.KiraConfig) (ContainerRunner, error) {
+func NewSekaidManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (ContainerRunner, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
 		config.GrpcPort, config.RpcPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
@@ -81,14 +81,14 @@ func NewSekaidManager(dockerManager *docker.DockerManager, config *config.KiraCo
 			config.DockerNetworkName: {},
 		},
 	}
-	helper := utils.NewHelperManager(dockerManager, config)
+	helper := utils.NewHelperManager(containerManager, config)
 	return &SekaidManager{
-		sekaiContainerConfig,
-		sekaiHostConfig,
-		sekaidNetworkingConfig,
-		dockerManager,
-		config,
-		helper,
+		ContainerConfig:        sekaiContainerConfig,
+		SekaiHostConfig:        sekaiHostConfig,
+		SekaidNetworkingConfig: sekaidNetworkingConfig,
+		containerManager:       containerManager,
+		config:                 config,
+		helper:                 helper,
 	}, err
 }
 
@@ -117,7 +117,7 @@ func (s *SekaidManager) initSekaidBinInContainer(ctx context.Context) error {
 	}
 
 	for _, command := range commands {
-		_, err := s.dockerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
+		_, err := s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 		if err != nil {
 			log.Errorf("Command '%s' execution error: %s", command, err)
 			return err
@@ -134,7 +134,7 @@ func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infoln("Starting 'sekaid' container")
 	command := fmt.Sprintf(`sekaid start --rpc.laddr "tcp://0.0.0.0:%s" --home=%s`, s.config.RpcPort, s.config.SekaidHome)
-	_, err := s.dockerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
+	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 	}
@@ -159,7 +159,7 @@ func (s *SekaidManager) runSekaidContainer(ctx context.Context) error {
 	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
 	time.Sleep(delay)
 
-	check, _, err := s.dockerManager.CheckIfProcessIsRunningInContainer(ctx, "sekaid", s.config.SekaidContainerName)
+	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, "sekaid", s.config.SekaidContainerName)
 	if err != nil {
 		log.Errorf("Setup '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("setup '%s' container error: %w", s.config.SekaidContainerName, err)
@@ -199,7 +199,7 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
 	time.Sleep(delay)
 
-	check, _, err := s.dockerManager.CheckIfProcessIsRunningInContainer(ctx, "sekaid", s.config.SekaidContainerName)
+	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, "sekaid", s.config.SekaidContainerName)
 	if err != nil || !check {
 		log.Errorf("Starting 'sekaid' bin second time in '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("starting 'sekaid' bin second time in '%s' container error: %w", s.config.SekaidContainerName, err)

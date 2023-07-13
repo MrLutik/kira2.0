@@ -66,7 +66,7 @@ type ContainerInfo struct {
 // If the network specified by `dockerNetworkName` does not exist in the container's network settings,
 // an error is returned indicating the absence of the network.
 func (m *MonitoringService) GetContainerInfo(ctx context.Context, containerName, dockerNetworkName string) (*ContainerInfo, error) {
-	resultInspect, err := m.dockerManager.GetInspectOfContainer(ctx, containerName)
+	resultInspect, err := m.containerManager.GetInspectOfContainer(ctx, containerName)
 	if err != nil {
 		log.Errorf("Getting containers inspection error: %s", err)
 		return nil, err
