@@ -37,6 +37,12 @@ func main() {
 	}
 	defer dockerManager.Cli.Close()
 
+	containerManager, err := docker.NewTestContainerManager()
+	if err != nil {
+		log.Fatalf("Can't create instance of container docker manager: %s", err)
+	}
+	defer dockerManager.Cli.Close()
+
 	ctx := context.Background()
 
 	err = dockerManager.VerifyDockerInstallation(ctx)
@@ -44,7 +50,7 @@ func main() {
 		log.Fatalf("Docker is not available: %s", err)
 	}
 
-	monitoring := monitoring.NewMonitoringService(dockerManager)
+	monitoring := monitoring.NewMonitoringService(dockerManager, containerManager)
 
 	networkResource, _ := monitoring.GetDockerNetwork(ctx, DOCKER_NETWORK_NAME)
 	log.Infof("%+v", networkResource)

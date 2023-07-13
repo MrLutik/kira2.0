@@ -27,6 +27,10 @@ func main() {
 	errors.HandleFatalErr("Can't create instance of docker manager", err)
 	defer dockerManager.Cli.Close()
 
+	containerManager, err := docker.NewTestContainerManager()
+	errors.HandleFatalErr("Can't create instance of container docker manager", err)
+	defer containerManager.Cli.Close()
+
 	ctx := context.Background()
 
 	// TODO: Instead of HARDCODE - reading config file
@@ -55,17 +59,17 @@ func main() {
 		TimeBetweenBlocks:   time.Second * 10,
 	}
 
-	docker.VerifyingDockerImage(ctx, dockerManager, cfg.DockerImageName+":"+cfg.DockerImageVersion)
+	docker.VerifyingDockerImage(ctx, dockerManager, cfg)
 
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
 	adapters.DownloadBinaries(ctx, cfg)
 
-	sekaiManager, err := manager.NewSekaidManager(dockerManager, cfg)
+	sekaiManager, err := manager.NewSekaidManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
 	sekaiManager.InitAndRun(ctx)
 
-	interxManager, err := manager.NewInterxManager(dockerManager, cfg)
+	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
 	interxManager.InitAndRun(ctx)
 }
