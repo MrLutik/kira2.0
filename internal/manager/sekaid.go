@@ -205,17 +205,19 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context) error {
 		return fmt.Errorf("starting 'sekaid' bin second time in '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
-	err = s.postGenesisProposals(ctx)
-	if err != nil {
-		log.Errorf("propagating transaction error: %s", err)
-		return fmt.Errorf("propagating transaction error: %w", err)
-	}
+	// TODO temporary skip this part
 
-	err = s.helper.UpdateIdentityRegistrarFromValidator(ctx, validatorAccountName)
-	if err != nil {
-		log.Errorf("updating identity registrar error: %s", err)
-		return fmt.Errorf("updating identity registrar error: %w", err)
-	}
+	// err = s.postGenesisProposals(ctx)
+	// if err != nil {
+	// 	log.Errorf("propagating transaction error: %s", err)
+	// 	return fmt.Errorf("propagating transaction error: %w", err)
+	// }
+
+	// err = s.helper.UpdateIdentityRegistrarFromValidator(ctx, validatorAccountName)
+	// if err != nil {
+	// 	log.Errorf("updating identity registrar error: %s", err)
+	// 	return fmt.Errorf("updating identity registrar error: %w", err)
+	// }
 
 	return nil
 }
