@@ -24,7 +24,7 @@ type InterxManager struct {
 }
 
 // NewInterxManager returns configured InterxManager.
-func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (ContainerRunner, error) {
+func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*InterxManager, error) {
 	log := logging.Log
 	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
 		config.InterxPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)

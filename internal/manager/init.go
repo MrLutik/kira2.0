@@ -8,12 +8,7 @@ import (
 
 const debFileDestInContainer = "/tmp/"
 
-// ContainerRunner describe public methods of container managers
-type ContainerRunner interface {
-	InitAndRun(context.Context)
-}
-
-func (s *SekaidManager) InitAndRun(ctx context.Context) {
+func (s *SekaidManager) InitAndRunGenesisValidator(ctx context.Context) {
 	check, err := s.containerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
 	errors.HandleFatalErr("Checking container names", err)
 	if check {
@@ -21,7 +16,6 @@ func (s *SekaidManager) InitAndRun(ctx context.Context) {
 		errors.HandleFatalErr("Deleting container", err)
 	}
 
-	errors.HandleFatalErr("Sekaid managing", err)
 	err = s.containerManager.InitAndCreateContainer(ctx, s.ContainerConfig, s.SekaidNetworkingConfig, s.SekaiHostConfig, s.config.SekaidContainerName)
 	errors.HandleFatalErr("Sekaid initialization", err)
 
@@ -37,7 +31,11 @@ func (s *SekaidManager) InitAndRun(ctx context.Context) {
 	errors.HandleFatalErr("Setup container", err)
 }
 
-func (i *InterxManager) InitAndRun(ctx context.Context) {
+func (s *SekaidManager) InitAndRunJoiner(ctx context.Context) {
+	// TODO run sekaid instance with joiner configuration
+}
+
+func (i *InterxManager) InitAndRunInterx(ctx context.Context) {
 	check, err := i.containerManager.CheckForContainersName(ctx, i.config.InterxContainerName)
 	errors.HandleFatalErr("Checking container names", err)
 	if check {

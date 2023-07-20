@@ -35,7 +35,7 @@ const (
 var log = logging.Log
 
 func Monitoring() *cobra.Command {
-	log.Debugln("Adding `monitoring` command...")
+	log.Info("Adding `monitoring` command...")
 	monitoringCmd := &cobra.Command{
 		Use:   use,
 		Short: short,

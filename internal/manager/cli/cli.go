@@ -6,6 +6,7 @@ import (
 
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/logging"
+	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/join"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/monitoring"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/start"
 	"github.com/spf13/cobra"
@@ -20,7 +21,7 @@ const (
 var log = logging.Log
 
 func NewKiraCLI(commands []*cobra.Command) *cobra.Command {
-	log.Debug("Creating new Kira manager CLI...")
+	log.Info("Creating new Kira manager CLI...")
 	rootCmd := &cobra.Command{
 		Use:   use,
 		Short: short,
@@ -42,7 +43,7 @@ func NewKiraCLI(commands []*cobra.Command) *cobra.Command {
 }
 
 func Start() {
-	commands := []*cobra.Command{start.Start(), monitoring.Monitoring()}
+	commands := []*cobra.Command{start.Start(), monitoring.Monitoring(), join.Join()}
 	c := NewKiraCLI(commands)
 	if err := c.Execute(); err != nil {
 		errors.HandleFatalErr("Failed to execute command", err)

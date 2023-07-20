@@ -34,7 +34,7 @@ const (
 //
 //	*docker.DockerManager // The pointer for docker.DockerManager instance.
 //	*config	// Config of Kira application struct
-func NewSekaidManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (ContainerRunner, error) {
+func NewSekaidManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
 		config.GrpcPort, config.RpcPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)

@@ -23,7 +23,7 @@ const (
 var log = logging.Log
 
 func Start() *cobra.Command {
-	log.Debugln("Adding `start` command...")
+	log.Info("Adding `start` command...")
 	startCmd := &cobra.Command{
 		Use:   use,
 		Short: short,
@@ -75,7 +75,7 @@ func mainStart() {
 		TimeBetweenBlocks:   time.Second * 10,
 	}
 
-	docker.VerifyingDockerImage(ctx, dockerManager, cfg)
+	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
@@ -83,9 +83,9 @@ func mainStart() {
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
-	sekaiManager.InitAndRun(ctx)
+	sekaiManager.InitAndRunGenesisValidator(ctx)
 
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
-	interxManager.InitAndRun(ctx)
+	interxManager.InitAndRunInterx(ctx)
 }
