@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/mrlutik/kira2.0/internal/types"
 )
 
 // ValopersInfo represents the information about Valopers returned by the Valopers API.
@@ -115,28 +117,16 @@ func (m *MonitoringService) GetConsensusInfo(ctx context.Context, interxPort str
 	}, nil
 }
 
-// ResponseInterxStatus represents the JSON response structure for the InterxStatus API.
-type ResponseInterxStatus struct {
-	NodeInfo struct {
-		ID string `json:"id"`
-	} `json:"node_info"`
-	SyncInfo struct {
-		LatestBlockHeight string    `json:"latest_block_height"`
-		LatestBlockTime   time.Time `json:"latest_block_time"`
-		CatchingUp        bool      `json:"catching_up"`
-	} `json:"sync_info"`
-}
-
 // doGetInterxStatusQuery performs the InterxStatus query using the provided HTTP client,
 // interxPort, and timeout duration, and returns the parsed response or an error.
-func doGetInterxStatusQuery(ctx context.Context, httpClient *http.Client, interxPort string, timeout time.Duration) (*ResponseInterxStatus, error) {
-	var response ResponseInterxStatus
+func doGetInterxStatusQuery(ctx context.Context, httpClient *http.Client, interxPort string, timeout time.Duration) (*types.ResponseInterxStatus, error) {
+	var response *types.ResponseInterxStatus
 	err := doHTTPGetQuery(ctx, httpClient, interxPort, timeout, "api/kira/status", &response)
 	if err != nil {
 		return nil, err
 	}
 
-	return &response, nil
+	return response, nil
 }
 
 // InterxInfo represents the information about Interx.

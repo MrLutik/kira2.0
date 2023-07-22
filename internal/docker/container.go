@@ -319,6 +319,45 @@ func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, 
 	return nil
 }
 
+func (dm *ContainerManager) WriteFileDataToContainer(ctx context.Context, fileData []byte, fileName, destPath, containerID string) error {
+	log.Infof("Writing file to container '%s'", containerID)
+
+	tarBuffer := new(bytes.Buffer)
+	tw := tar.NewWriter(tarBuffer)
+
+	header := &tar.Header{
+		Name: fileName,
+		Mode: 0o644,
+		Size: int64(len(fileData)),
+	}
+	if err := tw.WriteHeader(header); err != nil {
+		log.Errorf("Writing tar header error: %s", err)
+		return err
+	}
+
+	if _, err := tw.Write(fileData); err != nil {
+		log.Errorf("Writing file data to tar error: %s", err)
+		return err
+	}
+
+	if err := tw.Close(); err != nil {
+		log.Errorf("Closing tar writer error: %s", err)
+		return err
+	}
+
+	err := dm.Cli.CopyToContainer(ctx, containerID, destPath, tarBuffer, types.CopyToContainerOptions{
+		AllowOverwriteDirWithFile: true,
+	})
+	if err != nil {
+		log.Errorf("Failed to copy file to container '%s': %s", containerID, err)
+		return err
+	}
+
+	log.Infof("File '%s' is successfully written on '%s' in container '%s'", fileName, destPath, containerID)
+
+	return nil
+}
+
 // SendFileToContainer sends a file from the host machine to a specified directory inside a Docker container.
 // ctx: The context for the operation.
 // filePathOnHostMachine: The path of the file on the host machine.

@@ -19,11 +19,13 @@ type KiraConfig struct {
 	MnemonicDir         string        // destination where mnemonics file will be saved
 	RpcPort             string        // sekaid's rpc port
 	GrpcPort            string        // sekaid's grpc port
+	P2PPort             string        // sekaid's p2p port
 	InterxPort          string        // interx endpoint port
 	Moniker             string        // Moniker
 	SekaiDebFileName    string        // fileName of sekai deb file
 	InterxDebFileName   string        // fileName of interx deb file
 	TimeBetweenBlocks   time.Duration // Awaiting time between blocks
+	Seed                string        // P2P seed value
 	// NOTE Default time of block is ~5 seconds!
 	// Check (m *MonitoringService) GetConsensusInfo method
 	// from cmd/monitoring/main.go

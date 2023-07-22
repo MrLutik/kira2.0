@@ -67,6 +67,7 @@ func mainStart() {
 		VolumeName:          "kira_volume:/data",
 		MnemonicDir:         "~/mnemonics",
 		RpcPort:             "26657",
+		P2PPort:             "26656",
 		GrpcPort:            "9090",
 		InterxPort:          "11000",
 		Moniker:             "VALIDATOR",

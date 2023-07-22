@@ -10,26 +10,99 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/logging"
+	"github.com/mrlutik/kira2.0/internal/types"
 )
 
-type JoinerKiraConfig struct {
+type SeedKiraConfig struct {
 	IpAddress     string
 	InterxPort    string
 	SekaidRPCPort string
+	SekaidP2PPort string
 }
 
 type JoinerManager struct {
 	client *http.Client
-	config *JoinerKiraConfig
+	config *SeedKiraConfig
 }
 
-func NewJoinerManager(config *JoinerKiraConfig) *JoinerManager {
+func NewJoinerManager(config *SeedKiraConfig) *JoinerManager {
 	return &JoinerManager{
 		client: &http.Client{},
 		config: config,
 	}
+}
+
+func (j *JoinerManager) GenerateConfig(ctx context.Context) (*config.KiraConfig, error) {
+	log := logging.Log
+
+	genesisJsonData, err := j.GetGenesis(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var genesisData types.GenesisData
+	err = json.Unmarshal(genesisJsonData, &genesisData)
+	if err != nil {
+		log.Errorf("Parsing JSON error: %s", err)
+		return nil, err
+	}
+
+	seeds, err := j.getSeeds(ctx)
+	if err != nil {
+		log.Errorf("Can't get seeds, error: %s", err)
+		return nil, err
+	}
+
+	cfg := &config.KiraConfig{
+		NetworkName:         genesisData.ChainID,
+		SekaidHome:          "/joiner_data/.sekai",
+		InterxHome:          "/joiner_data/.interx",
+		KeyringBackend:      "test",
+		DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
+		DockerImageVersion:  "v0.13.11",
+		DockerNetworkName:   "joiner_kira_network",
+		SekaiVersion:        "latest", // or v0.3.16
+		InterxVersion:       "latest", // or v0.4.33
+		SekaidContainerName: "joiner_sekaid",
+		InterxContainerName: "joiner_interx",
+		VolumeName:          "joiner_kira_volume:/joiner_data",
+		MnemonicDir:         "~/mnemonics",
+		RpcPort:             "36657",
+		P2PPort:             "36656",
+		InterxPort:          "21000",
+		Moniker:             "JOINER_VALIDATOR",
+		SekaiDebFileName:    "sekai-linux-amd64.deb",
+		InterxDebFileName:   "interx-linux-amd64.deb",
+		TimeBetweenBlocks:   time.Second * 10,
+		Seed:                seeds,
+	}
+
+	return cfg, nil
+}
+
+func (j *JoinerManager) getSeeds(ctx context.Context) (string, error) {
+	log := logging.Log
+
+	url := fmt.Sprintf("http://%s:%s/%s", j.config.IpAddress, j.config.SekaidRPCPort, "status")
+
+	body, err := j.doQuery(ctx, url)
+	if err != nil {
+		log.Errorf("Querying error: %s", err)
+		return "", err
+	}
+
+	var response *types.ResponseSekaidStatus
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		log.Errorf("Can't parse JSON response: %s", err)
+		return "", err
+	}
+
+	return fmt.Sprintf("tcp://%s@%s:%s", response.Result.NodeInfo.ID, j.config.IpAddress, j.config.SekaidP2PPort), nil
 }
 
 func (j *JoinerManager) GetGenesis(ctx context.Context) ([]byte, error) {
