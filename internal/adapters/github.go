@@ -23,7 +23,7 @@ const (
 	interxRepo                 = "interx"
 )
 
-func DownloadBinaries(ctx context.Context, cfg *config.KiraConfig) {
+func MustDownloadBinaries(ctx context.Context, cfg *config.KiraConfig) {
 	repositories := repositories{}
 
 	repositories.Set(kiraGit, sekaiRepo, cfg.SekaiVersion)

@@ -319,6 +319,9 @@ func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, 
 	return nil
 }
 
+// WriteFileDataToContainer writes the provided fileData as a file with the given fileName into the specified container.
+// It creates a tar archive containing the file data and sends it to the container using the Docker client's CopyToContainer method.
+// The destination path in the container is determined by the destPath parameter.
 func (dm *ContainerManager) WriteFileDataToContainer(ctx context.Context, fileData []byte, fileName, destPath, containerID string) error {
 	log.Infof("Writing file to container '%s'", containerID)
 

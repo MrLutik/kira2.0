@@ -80,13 +80,13 @@ func mainStart() {
 
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
-	adapters.DownloadBinaries(ctx, cfg)
+	adapters.MustDownloadBinaries(ctx, cfg)
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
-	sekaiManager.InitAndRunGenesisValidator(ctx)
+	sekaiManager.MustInitAndRunGenesisValidator(ctx)
 
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
-	interxManager.InitAndRunInterx(ctx)
+	interxManager.MustInitAndRunInterx(ctx)
 }
