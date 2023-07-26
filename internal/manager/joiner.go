@@ -36,10 +36,11 @@ func NewJoinerManager(config *SeedKiraConfig) *JoinerManager {
 	}
 }
 
+// GenerateKiraConfig generates KiraConfig with target information for future connection
 func (j *JoinerManager) GenerateKiraConfig(ctx context.Context) (*config.KiraConfig, error) {
 	log := logging.Log
 
-	chainID, err := j.getChainIDFromGenesis(ctx)
+	chainID, err := j.getChainID(ctx)
 	if err != nil {
 		log.Errorf("Can't get network name (chain-id) from genesis, error: %s", err)
 		return nil, err
@@ -51,7 +52,7 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context) (*config.KiraCon
 		return nil, err
 	}
 
-	// TODO How to provide this config from launcher?
+	// TODO How to provide this config from kira_launcher?
 	cfg := &config.KiraConfig{
 		NetworkName:         chainID,
 		SekaidHome:          "/joiner_data/.sekai",
@@ -80,45 +81,7 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context) (*config.KiraCon
 	return cfg, nil
 }
 
-func (j *JoinerManager) getChainIDFromGenesis(ctx context.Context) (string, error) {
-	log := logging.Log
-
-	genesisJsonData, err := j.GetVerifiedGenesisFile(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	var genesisData types.GenesisData
-	err = json.Unmarshal(genesisJsonData, &genesisData)
-	if err != nil {
-		log.Errorf("Parsing JSON error: %s", err)
-		return "", err
-	}
-
-	return genesisData.ChainID, nil
-}
-
-func (j *JoinerManager) getSeeds(ctx context.Context) (string, error) {
-	log := logging.Log
-
-	url := fmt.Sprintf("http://%s:%s/%s", j.targetConfig.IpAddress, j.targetConfig.SekaidRPCPort, "status")
-
-	body, err := j.doQuery(ctx, url)
-	if err != nil {
-		log.Errorf("Querying error: %s", err)
-		return "", err
-	}
-
-	var response *types.ResponseSekaidStatus
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		log.Errorf("Can't parse JSON response: %s", err)
-		return "", err
-	}
-
-	return fmt.Sprintf("tcp://%s@%s:%s", response.Result.NodeInfo.ID, j.targetConfig.IpAddress, j.targetConfig.SekaidP2PPort), nil
-}
-
+// GetVerifiedGenesisFile fetches and verifies the Genesis file from both the 'sekaid' and 'interx' target sources.
 func (j *JoinerManager) GetVerifiedGenesisFile(ctx context.Context) ([]byte, error) {
 	log := logging.Log
 
@@ -147,6 +110,51 @@ func (j *JoinerManager) GetVerifiedGenesisFile(ctx context.Context) ([]byte, err
 	return genesisSekaid, nil
 }
 
+// getChainID retrieves the Chain ID from a target Sekaid node's status endpoint.
+func (j *JoinerManager) getChainID(ctx context.Context) (string, error) {
+	log := logging.Log
+
+	url := fmt.Sprintf("http://%s:%s/%s", j.targetConfig.IpAddress, j.targetConfig.SekaidRPCPort, "status")
+
+	body, err := j.doGetHttpQuery(ctx, url)
+	if err != nil {
+		log.Errorf("Querying error: %s", err)
+		return "", err
+	}
+
+	var response *types.ResponseSekaidStatus
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		log.Errorf("Can't parse JSON response: %s", err)
+		return "", err
+	}
+
+	return response.Result.NodeInfo.Network, nil
+}
+
+// getSeeds retrieves the Seed node information from a target Sekaid node's status endpoint.
+func (j *JoinerManager) getSeeds(ctx context.Context) (string, error) {
+	log := logging.Log
+
+	url := fmt.Sprintf("http://%s:%s/%s", j.targetConfig.IpAddress, j.targetConfig.SekaidRPCPort, "status")
+
+	body, err := j.doGetHttpQuery(ctx, url)
+	if err != nil {
+		log.Errorf("Querying error: %s", err)
+		return "", err
+	}
+
+	var response *types.ResponseSekaidStatus
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		log.Errorf("Can't parse JSON response: %s", err)
+		return "", err
+	}
+
+	return fmt.Sprintf("tcp://%s@%s:%s", response.Result.NodeInfo.ID, j.targetConfig.IpAddress, j.targetConfig.SekaidP2PPort), nil
+}
+
+// checkFileContentGenesisFiles checks if the content of two Genesis files is identical.
 func (JoinerManager) checkFileContentGenesisFiles(genesis1, genesis2 []byte) error {
 	if string(genesis1) != string(genesis2) {
 		return fmt.Errorf("genesis files are not identical")
@@ -155,6 +163,7 @@ func (JoinerManager) checkFileContentGenesisFiles(genesis1, genesis2 []byte) err
 	return nil
 }
 
+// checkGenSum checks the integrity of a Genesis file using its SHA256 checksum.
 func (j *JoinerManager) checkGenSum(ctx context.Context, genesis []byte) error {
 	log := logging.Log
 
@@ -174,7 +183,8 @@ func (j *JoinerManager) checkGenSum(ctx context.Context, genesis []byte) error {
 	return nil
 }
 
-func (j *JoinerManager) doQuery(ctx context.Context, url string) ([]byte, error) {
+// doGetHttpQuery performs an HTTP GET request to the specified URL and returns the response body as a byte slice.
+func (j *JoinerManager) doGetHttpQuery(ctx context.Context, url string) ([]byte, error) {
 	log := logging.Log
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -202,12 +212,13 @@ func (j *JoinerManager) doQuery(ctx context.Context, url string) ([]byte, error)
 	return body, nil
 }
 
+// getInterxGenesis retrieves the Interx Genesis data from a target Interx server.
 func (j *JoinerManager) getInterxGenesis(ctx context.Context) ([]byte, error) {
 	log := logging.Log
 
 	url := fmt.Sprintf("http://%s:%s/%s", j.targetConfig.IpAddress, j.targetConfig.InterxPort, "api/genesis")
 
-	body, err := j.doQuery(ctx, url)
+	body, err := j.doGetHttpQuery(ctx, url)
 	if err != nil {
 		log.Errorf("Querying error: %s", err)
 		return nil, err
@@ -216,14 +227,8 @@ func (j *JoinerManager) getInterxGenesis(ctx context.Context) ([]byte, error) {
 	return body, nil
 }
 
-type chunkedGenesisResponse struct {
-	Result struct {
-		Chunk json.Number `json:"chunk"`
-		Total json.Number `json:"total"`
-		Data  string      `json:"data"`
-	} `json:"result"`
-}
-
+// getSekaidGenesis retrieves the complete Sekaid Genesis data from a target Sekaid node
+// by fetching the data in chunks using the Sekaid RPC API.
 func (j *JoinerManager) getSekaidGenesis(ctx context.Context) ([]byte, error) {
 	log := logging.Log
 
@@ -233,13 +238,13 @@ func (j *JoinerManager) getSekaidGenesis(ctx context.Context) ([]byte, error) {
 	for {
 		url := fmt.Sprintf("http://%s:%s/%s", j.targetConfig.IpAddress, j.targetConfig.SekaidRPCPort, fmt.Sprintf("genesis_chunked?chunk=%d", chunkCount))
 
-		chunkedGenesisResponseBody, err := j.doQuery(ctx, url)
+		chunkedGenesisResponseBody, err := j.doGetHttpQuery(ctx, url)
 		if err != nil {
 			log.Errorf("Querying error: %s", err)
 			return nil, err
 		}
 
-		var response chunkedGenesisResponse
+		var response *types.ResponseChunkedGenesis
 		err = json.Unmarshal([]byte(chunkedGenesisResponseBody), &response)
 		if err != nil {
 			log.Errorf("Error parsing JSON: %s", err)
@@ -269,23 +274,21 @@ func (j *JoinerManager) getSekaidGenesis(ctx context.Context) ([]byte, error) {
 	return completeGenesis, nil
 }
 
-type checkSumResponse struct {
-	Checksum string `json:"checksum"`
-}
-
+// getGenSum retrieves the Genesis Sum from a target Interx server
+// and returns it as a string after trimming the prefix "0x".
 func (j *JoinerManager) getGenSum(ctx context.Context) (string, error) {
 	log := logging.Log
 
 	const genSumPrefix = "0x"
 	url := fmt.Sprintf("http://%s:%s/%s", j.targetConfig.IpAddress, j.targetConfig.InterxPort, "api/gensum")
 
-	body, err := j.doQuery(ctx, url)
+	body, err := j.doGetHttpQuery(ctx, url)
 	if err != nil {
 		log.Errorf("Querying error: %s", err)
 		return "", err
 	}
 
-	var result checkSumResponse
+	var result *types.ResponseCheckSum
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		log.Errorf("Error parsing JSON: %s", err)

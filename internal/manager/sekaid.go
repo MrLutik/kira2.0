@@ -93,7 +93,8 @@ func NewSekaidManager(containerManager *docker.ContainerManager, config *config.
 	}, err
 }
 
-func (s *SekaidManager) initializeSekaid(ctx context.Context, commands []string) error {
+// runCommands executes a list of shell commands inside the Sekaid container
+func (s *SekaidManager) runCommands(ctx context.Context, commands []string) error {
 	log := logging.Log
 	for _, command := range commands {
 		_, err := s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
@@ -106,6 +107,7 @@ func (s *SekaidManager) initializeSekaid(ctx context.Context, commands []string)
 	return nil
 }
 
+// initGenesisSekaidBinInContainer sets up the 'sekaid' Genesis container and initializes it with necessary configurations.
 func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' (sekaid) genesis container", s.config.SekaidContainerName)
@@ -124,7 +126,7 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 			validatorAccountName, s.config.KeyringBackend, s.config.Moniker, s.config.SekaidHome),
 	}
 
-	err := s.initializeSekaid(ctx, commands)
+	err := s.runCommands(ctx, commands)
 	if err != nil {
 		log.Errorf("Initialized container error: %s", err)
 		return err
@@ -134,19 +136,18 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 	return nil
 }
 
+// initJoinerSekaidBinInContainer sets up the 'sekaid' joiner container and initializes it with necessary configurations.
 func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, genesisData []byte) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' joiner container", s.config.SekaidContainerName)
 
 	commands := []string{
-		fmt.Sprintf(`sekaid init --overwrite --chain-id=%s --home=%s "%s"`,
-			s.config.NetworkName, s.config.SekaidHome, s.config.Moniker),
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
 		fmt.Sprintf(`sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/sekai.mnemonic`,
 			validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 	}
 
-	err := s.initializeSekaid(ctx, commands)
+	err := s.runCommands(ctx, commands)
 	if err != nil {
 		log.Errorf("Initialized container error: %s", err)
 		return err
@@ -165,12 +166,12 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 	return nil
 }
 
-// startGenesisSekaidBinInContainer starts sekaid binary inside sekaid container name
-// Returns an error if any issue occurs during the start process.
+// startGenesisSekaidBinInContainer starts the 'sekaid' binary inside the Sekaid Genesis container with the provided configuration.
 func (s *SekaidManager) startGenesisSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' genesis container", s.config.SekaidContainerName)
 
+	// TODO move all args to config.toml
 	command := fmt.Sprintf(`sekaid start --rpc.laddr="tcp://0.0.0.0:%s" --p2p.laddr="tcp://0.0.0.0:%s" --home=%s`,
 		s.config.RpcPort, s.config.P2PPort, s.config.SekaidHome)
 	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
@@ -181,10 +182,12 @@ func (s *SekaidManager) startGenesisSekaidBinInContainer(ctx context.Context) er
 	return nil
 }
 
+// startJoinerSekaidBinInContainer starts the 'sekaid' binary inside the Sekaid joiner container with the provided configuration.
 func (s *SekaidManager) startJoinerSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' joiner container", s.config.SekaidContainerName)
 
+	// TODO move all args to config.toml
 	command := fmt.Sprintf(`sekaid start --home=%s --fast_sync=true --p2p.seeds=%s --rpc.laddr="tcp://0.0.0.0:%s" --p2p.laddr="tcp://0.0.0.0:%s"`,
 		s.config.SekaidHome, s.config.Seed, s.config.RpcPort, s.config.P2PPort)
 	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
@@ -196,10 +199,8 @@ func (s *SekaidManager) startJoinerSekaidBinInContainer(ctx context.Context) err
 }
 
 // runGenesisSekaidContainer starts the 'sekaid' container and checks if the process is running.
-// If the 'sekaid' process is not running, it initializes the sekaid node using the `initializeSekaid` method.
+// If the 'sekaid' process is not running, it initializes the Sekaid node using the `initializeGenesisSekaid` method.
 // The method waits for a specified duration before checking if the 'sekaid' process is running.
-// If any errors occur during the process, an error is returned.
-// Upon successful start of the 'sekaid' container, the method indicates that the container has started.
 func (s *SekaidManager) runGenesisSekaidContainer(ctx context.Context) error {
 	log := logging.Log
 
@@ -228,6 +229,9 @@ func (s *SekaidManager) runGenesisSekaidContainer(ctx context.Context) error {
 	return nil
 }
 
+// runJoinerSekaidContainer starts the 'sekaid' container and checks if the process is running.
+// If the 'sekaid' process is not running, it initializes the Sekaid joiner node using the `initializeJoinerSekaid` method.
+// The method waits for a specified duration before checking if the 'sekaid' process is running.
 func (s *SekaidManager) runJoinerSekaidContainer(ctx context.Context, genesis []byte) error {
 	log := logging.Log
 
@@ -256,8 +260,8 @@ func (s *SekaidManager) runJoinerSekaidContainer(ctx context.Context, genesis []
 	return nil
 }
 
-// initializeGenesisSekaid initializes the sekaid node by performing several setup steps.
-// It starts the sekaid binary for the first time in the specified container,
+// initializeGenesisSekaid initializes the Sekaid node by performing several setup steps.
+// It starts the 'sekaid' binary for the first time in the specified container,
 // initializes a new instance, and waits for it to start.
 // If any errors occur during the initialization process, an error is returned.
 // The method also propagates genesis proposals and updates the identity registrar from the validator account.
@@ -308,6 +312,10 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 	return nil
 }
 
+// initializeJoinerSekaid initializes the Sekaid joiner node by performing several setup steps.
+// It starts the 'sekaid' binary for the first time in the specified container,
+// initializes a new instance using the provided Genesis data, and waits for it to start.
+// If any errors occur during the initialization process, an error is returned.
 func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []byte) error {
 	log := logging.Log
 
