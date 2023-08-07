@@ -107,16 +107,9 @@ func (s *SekaidManager) runCommands(ctx context.Context, commands []string) erro
 	return nil
 }
 
-// ConfigTomlValue represents a configuration value to be updated in the '*.toml' file of the 'sekaid' application.
-type ConfigTomlValue struct {
-	Tag   string
-	Name  string
-	Value string
-}
-
 // getStandardConfigPack returns a slice of toml value representing the standard configurations to apply to the 'sekaid' application.
-func (s *SekaidManager) getStandardConfigPack() []ConfigTomlValue {
-	configs := []ConfigTomlValue{
+func (s *SekaidManager) getStandardConfigPack() []config.TomlValue {
+	configs := []config.TomlValue{
 		// # CFG [base]
 		{Tag: "", Name: "moniker", Value: s.config.Moniker},
 		{Tag: "", Name: "fast_sync", Value: "true"},
@@ -125,13 +118,6 @@ func (s *SekaidManager) getStandardConfigPack() []ConfigTomlValue {
 		// # CFG [MEMPOOL]
 		{Tag: "mempool", Name: "max_txs_bytes", Value: "131072000"},
 		{Tag: "mempool", Name: "max_tx_bytes", Value: "131072"},
-
-		// TODO: State sync is used for 3rd+ joiner
-		// // [STATESYNC]
-		// {Tag: "statesync", Name: "trust_period", Value: "168h0m0s"},
-		// {Tag: "statesync", Name: "enable", Value: "true"},
-		// {Tag: "statesync", Name: "temp_dir", Value: "/tmp"},
-
 		// # CFG [CONSENSUS]
 		{Tag: "consensus", Name: "timeout_commit", Value: "10000ms"},
 		{Tag: "consensus", Name: "create_empty_blocks_interval", Value: "20s"},
@@ -165,7 +151,7 @@ func (s *SekaidManager) getStandardConfigPack() []ConfigTomlValue {
 
 // applyNewConfig applies a set of configurations to the 'sekaid' application running in the SekaidManager's container.
 // This function allows modifying specific values in the 'config.toml' file of the 'sekaid' application by updating its content.
-func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []ConfigTomlValue) error {
+func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config.TomlValue) error {
 	log := logging.Log
 
 	configDir := fmt.Sprintf("%s/config", s.config.SekaidHome)
@@ -180,7 +166,7 @@ func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []Config
 	config := string(configFileContent)
 	var newConfig string
 	for _, update := range configsToml {
-		newConfig, err = utils.SetTomlVar(update.Tag, update.Name, update.Value, string(config))
+		newConfig, err = utils.SetTomlVar(&update, config)
 		if err != nil {
 			log.Errorf("Updating ([%s] %s = %s) error: %s\n", update.Tag, update.Name, update.Value, err)
 
@@ -265,9 +251,11 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 	}
 
 	updates := s.getStandardConfigPack()
-	// TODO apply all calculated configs from `configure.sh`
-	// after standard config package
-	updates = append(updates, ConfigTomlValue{Tag: "p2p", Name: "seeds", Value: s.config.Seed})
+	if len(s.config.ConfigTomlValues) == 0 {
+		log.Errorf("There is no provided configs for joiner")
+		return fmt.Errorf("cannot apply empty necessary configs for joiner")
+	}
+	updates = append(updates, s.config.ConfigTomlValues...)
 
 	err = s.applyNewConfig(ctx, updates)
 	if err != nil {

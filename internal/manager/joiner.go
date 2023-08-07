@@ -46,9 +46,9 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context) (*config.KiraCon
 		return nil, err
 	}
 
-	seeds, err := j.getSeeds(ctx)
+	configs, err := j.getConfigsBasedOnSeed(ctx)
 	if err != nil {
-		log.Errorf("Can't get seeds, error: %s", err)
+		log.Errorf("Can't get calculated config values: %s", err)
 		return nil, err
 	}
 
@@ -75,7 +75,7 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context) (*config.KiraCon
 		SekaiDebFileName:    "sekai-linux-amd64.deb",
 		InterxDebFileName:   "interx-linux-amd64.deb",
 		TimeBetweenBlocks:   time.Second * 10,
-		Seed:                seeds,
+		ConfigTomlValues:    configs,
 	}
 
 	return cfg, nil
@@ -108,6 +108,30 @@ func (j *JoinerManager) GetVerifiedGenesisFile(ctx context.Context) ([]byte, err
 
 	log.Info("Genesis file is valid")
 	return genesisSekaid, nil
+}
+
+func (j *JoinerManager) getConfigsBasedOnSeed(ctx context.Context) ([]config.TomlValue, error) {
+	log := logging.Log
+
+	configValues := make([]config.TomlValue, 0)
+
+	seeds, err := j.getSeeds(ctx)
+	if err != nil {
+		log.Errorf("Can't get seeds, error: %s", err)
+		return nil, err
+	}
+
+	configValues = append(configValues, config.TomlValue{Tag: "p2p", Name: "seeds", Value: seeds})
+
+	// TODO add other calculated fields
+
+	// TODO: State sync is used for 3rd+ joiner
+	// // [STATESYNC]
+	// {Tag: "statesync", Name: "trust_period", Value: "168h0m0s"},
+	// {Tag: "statesync", Name: "enable", Value: "true"},
+	// {Tag: "statesync", Name: "temp_dir", Value: "/tmp"},
+
+	return configValues, nil
 }
 
 // getChainID retrieves the Chain ID from a target Sekaid node's status endpoint.

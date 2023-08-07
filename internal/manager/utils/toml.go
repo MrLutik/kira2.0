@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
@@ -48,10 +49,10 @@ func IsSubStr(s, substring string) bool {
 // formatted in quotes if necessary and handles the update of configurations within a specific tag or section.
 // The 'tag' parameter allows specifying the configuration section where the 'name' should be updated.
 // If the 'tag' is empty ("") or not found, the function updates configurations in the [base] section.
-func SetTomlVar(tag, name, value, config string) (string, error) {
-	tag = strings.TrimSpace(tag)
-	name = strings.TrimSpace(name)
-	value = strings.TrimSpace(value)
+func SetTomlVar(config *config.TomlValue, configStr string) (string, error) {
+	tag := strings.TrimSpace(config.Tag)
+	name := strings.TrimSpace(config.Name)
+	value := strings.TrimSpace(config.Value)
 
 	log.Infof("Trying to update the ([%s] %s = %s) updated successfully\n", tag, name, value)
 
@@ -59,7 +60,7 @@ func SetTomlVar(tag, name, value, config string) (string, error) {
 		tag = "[" + tag + "]"
 	}
 
-	lines := strings.Split(config, "\n")
+	lines := strings.Split(configStr, "\n")
 
 	tagLine, nameLine, nextTagLine := -1, -1, -1
 
