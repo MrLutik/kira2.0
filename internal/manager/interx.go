@@ -24,7 +24,7 @@ type InterxManager struct {
 }
 
 // NewInterxManager returns configured InterxManager.
-func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (ContainerRunner, error) {
+func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*InterxManager, error) {
 	log := logging.Log
 	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
 		config.InterxPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
@@ -75,8 +75,8 @@ func (i *InterxManager) initInterxBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' (interx) container", i.config.InterxContainerName)
 
-	command := fmt.Sprintf(`interx init --rpc="http://%s:%s" --grpc="dns:///%s:%s" -home=%s`,
-		i.config.SekaidContainerName, i.config.RpcPort, i.config.SekaidContainerName, i.config.GrpcPort, i.config.InterxHome)
+	command := fmt.Sprintf(`interx init --rpc="http://%s:%s" --grpc="dns:///%s:%s" --home=%s --port=%s`,
+		i.config.SekaidContainerName, i.config.RpcPort, i.config.SekaidContainerName, i.config.GrpcPort, i.config.InterxHome, i.config.InterxPort)
 	_, err := i.containerManager.ExecCommandInContainer(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)

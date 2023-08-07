@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mrlutik/kira2.0/internal/types"
 )
 
 // GetValidatorAddress retrieves the address of the validator using the specified
@@ -25,30 +27,16 @@ func (m *MonitoringService) GetValidatorAddress(ctx context.Context, sekaidConta
 	return result, nil
 }
 
-// ResponseSekaidStatus represents the JSON response structure for the Sekaid status query.
-type ResponseSekaidStatus struct {
-	Result struct {
-		NodeInfo struct {
-			ID string `json:"id"`
-		} `json:"node_info"`
-		SyncInfo struct {
-			LatestBlockHeight string    `json:"latest_block_height"`
-			LatestBlockTime   time.Time `json:"latest_block_time"`
-			CatchingUp        bool      `json:"catching_up"`
-		} `json:"sync_info"`
-	} `json:"result"`
-}
-
 // doGetSekaidStatusQuery performs the Sekaid status query using the provided HTTP client,
 // sekaid port, and timeout duration, and returns the parsed response or an error.
-func doGetSekaidStatusQuery(ctx context.Context, httpClient *http.Client, sekaidPort string, timeout time.Duration) (*ResponseSekaidStatus, error) {
-	var response ResponseSekaidStatus
+func doGetSekaidStatusQuery(ctx context.Context, httpClient *http.Client, sekaidPort string, timeout time.Duration) (*types.ResponseSekaidStatus, error) {
+	var response *types.ResponseSekaidStatus
 	err := doHTTPGetQuery(ctx, httpClient, sekaidPort, timeout, "status", &response)
 	if err != nil {
 		return nil, err
 	}
 
-	return &response, nil
+	return response, nil
 }
 
 // SekaidInfo represents the needed information about Sekaid.

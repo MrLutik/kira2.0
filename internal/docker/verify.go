@@ -14,7 +14,7 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/IrzBQYeMwvKa44/DF/HB7XDpnE+
 f+mU9F/Qbfq25bBWV2+NlYMJv3KvKHNtu3Jknt6yizZjUV4b8WGfKBzFYw==
 -----END PUBLIC KEY-----`
 
-func VerifyingDockerImage(ctx context.Context, dockerManager *DockerManager, cfg *config.KiraConfig) {
+func VerifyingDockerEnvironment(ctx context.Context, dockerManager *DockerManager, cfg *config.KiraConfig) {
 	err := dockerManager.VerifyDockerInstallation(ctx)
 	errors.HandleFatalErr("Docker is not available", err)
 

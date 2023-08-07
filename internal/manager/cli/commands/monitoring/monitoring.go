@@ -1,14 +1,20 @@
-package main
+package monitoring
 
 import (
 	"context"
 	"strconv"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/mrlutik/kira2.0/internal/docker"
+	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/monitoring"
+	"github.com/spf13/cobra"
+)
+
+const (
+	use   = "monitoring"
+	short = "Monitoring sekaid network"
+	long  = "Monitoring sekaid network"
 )
 
 const (
@@ -28,27 +34,33 @@ const (
 
 var log = logging.Log
 
-func main() {
-	log.SetLevel(logrus.DebugLevel)
-
-	dockerManager, err := docker.NewTestDockerManager()
-	if err != nil {
-		log.Fatalf("Can't create instance of docker manager: %s", err)
+func Monitoring() *cobra.Command {
+	log.Info("Adding `monitoring` command...")
+	monitoringCmd := &cobra.Command{
+		Use:   use,
+		Short: short,
+		Long:  long,
+		Run: func(_ *cobra.Command, _ []string) {
+			mainMonitoring()
+		},
 	}
+
+	return monitoringCmd
+}
+
+func mainMonitoring() {
+	dockerManager, err := docker.NewTestDockerManager()
+	errors.HandleFatalErr("Can't create instance of docker manager", err)
 	defer dockerManager.Cli.Close()
 
 	containerManager, err := docker.NewTestContainerManager()
-	if err != nil {
-		log.Fatalf("Can't create instance of container docker manager: %s", err)
-	}
+	errors.HandleFatalErr("Can't create instance of container docker manager", err)
 	defer dockerManager.Cli.Close()
 
 	ctx := context.Background()
 
 	err = dockerManager.VerifyDockerInstallation(ctx)
-	if err != nil {
-		log.Fatalf("Docker is not available: %s", err)
-	}
+	errors.HandleFatalErr("Docker is not available", err)
 
 	monitoring := monitoring.NewMonitoringService(dockerManager, containerManager)
 
