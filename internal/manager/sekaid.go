@@ -149,18 +149,41 @@ func (s *SekaidManager) getStandardConfigPack() []config.TomlValue {
 	return configs
 }
 
+// getGenesisAppConfig returns a slice of toml value representing the genesis app configurations to apply to the 'sekaid' app.toml
+func (s *SekaidManager) getGenesisAppConfig() []config.TomlValue {
+	return []config.TomlValue{
+		{Tag: "state-sync", Name: "snapshot-interval", Value: "1000"},
+		{Tag: "state-sync", Name: "snapshot-keep-recent", Value: "2"},
+		{Tag: "", Name: "pruning", Value: "nothing"},
+		{Tag: "", Name: "pruning-keep-recent", Value: "2"},
+		{Tag: "", Name: "pruning-keep-every", Value: "100"},
+	}
+}
+
+// getJoinerAppConfig returns a slice of toml value representing the joiner app configurations to apply to the 'sekaid' app.toml
+func (s *SekaidManager) getJoinerAppConfig() []config.TomlValue {
+	return []config.TomlValue{
+		{Tag: "state-sync", Name: "snapshot-interval", Value: "200"},
+		{Tag: "state-sync", Name: "snapshot-keep-recent", Value: "2"},
+		{Tag: "", Name: "pruning", Value: "custom"},
+		{Tag: "", Name: "pruning-keep-recent", Value: "2"},
+		{Tag: "", Name: "pruning-keep-every", Value: "100"},
+		{Tag: "", Name: "pruning-interval", Value: "10"},
+	}
+}
+
 // applyNewConfig applies a set of configurations to the 'sekaid' application running in the SekaidManager's container.
-// This function allows modifying specific values in the 'config.toml' file of the 'sekaid' application by updating its content.
-func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config.TomlValue) error {
+func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config.TomlValue, filename string) error {
 	log := logging.Log
 
 	configDir := fmt.Sprintf("%s/config", s.config.SekaidHome)
-	const configFile = "config.toml"
 
-	configFileContent, err := s.containerManager.GetFileFromContainer(ctx, configDir, configFile, s.config.SekaidContainerName)
+	log.Infof("Applying new configs to '%s/%s'", configDir, filename)
+
+	configFileContent, err := s.containerManager.GetFileFromContainer(ctx, configDir, filename, s.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("Can't get 'config.toml' file of sekaid application. Error: %s", err)
-		return fmt.Errorf("getting 'config.toml' file from sekaid container error: %w", err)
+		log.Errorf("Can't get '%s' file of sekaid application. Error: %s", filename, err)
+		return fmt.Errorf("getting '%s' file from sekaid container error: %w", filename, err)
 	}
 
 	config := string(configFileContent)
@@ -180,13 +203,23 @@ func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config
 		config = newConfig
 	}
 
-	err = s.containerManager.WriteFileDataToContainer(ctx, []byte(config), "config.toml",
+	err = s.containerManager.WriteFileDataToContainer(ctx, []byte(config), filename,
 		fmt.Sprintf("%s/config", s.config.SekaidHome), s.config.SekaidContainerName)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	return nil
+}
+
+// This function allows modifying specific values in the 'config.toml' file of the 'sekaid' application by updating its content.
+func (s *SekaidManager) applyNewConfigToml(ctx context.Context, configsToml []config.TomlValue) error {
+	return s.applyNewConfig(ctx, configsToml, "config.toml")
+}
+
+// This function allows modifying specific values in the 'app.toml' file of the 'sekaid' application by updating its content.
+func (s *SekaidManager) applyNewAppToml(ctx context.Context, configsToml []config.TomlValue) error {
+	return s.applyNewConfig(ctx, configsToml, "app.toml")
 }
 
 // initGenesisSekaidBinInContainer sets up the 'sekaid' Genesis container and initializes it with necessary configurations.
@@ -214,10 +247,16 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 		return err
 	}
 
-	err = s.applyNewConfig(ctx, s.getStandardConfigPack())
+	err = s.applyNewConfigToml(ctx, s.getStandardConfigPack())
 	if err != nil {
 		log.Errorf("Can't apply new config, error: %s", err)
 		return fmt.Errorf("applying new config error: %w", err)
+	}
+
+	err = s.applyNewAppToml(ctx, s.getGenesisAppConfig())
+	if err != nil {
+		log.Errorf("Can't apply new app config, error: %s", err)
+		return fmt.Errorf("applying new app config error: %w", err)
 	}
 
 	log.Infof("'sekaid' genesis container '%s' initialized", s.config.SekaidContainerName)
@@ -257,10 +296,16 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 	}
 	updates = append(updates, s.config.ConfigTomlValues...)
 
-	err = s.applyNewConfig(ctx, updates)
+	err = s.applyNewConfigToml(ctx, updates)
 	if err != nil {
 		log.Errorf("Can't apply new config, error: %s", err)
 		return fmt.Errorf("applying new config error: %w", err)
+	}
+
+	err = s.applyNewAppToml(ctx, s.getJoinerAppConfig())
+	if err != nil {
+		log.Errorf("Can't apply new app config, error: %s", err)
+		return fmt.Errorf("applying new app config error: %w", err)
 	}
 
 	log.Infof("'sekaid' joiner container '%s' initialized", s.config.SekaidContainerName)

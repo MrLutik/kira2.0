@@ -54,7 +54,7 @@ func SetTomlVar(config *config.TomlValue, configStr string) (string, error) {
 	name := strings.TrimSpace(config.Name)
 	value := strings.TrimSpace(config.Value)
 
-	log.Infof("Trying to update the ([%s] %s = %s) updated successfully\n", tag, name, value)
+	log.Infof("Trying to update the ([%s] %s = %s)", tag, name, value)
 
 	if tag != "" {
 		tag = "[" + tag + "]"
