@@ -183,35 +183,49 @@ func (dm *ContainerManager) ExecCommandInContainer(ctx context.Context, containe
 	return output, err
 }
 
-// GetFileFromContainer allows you to retrieve a file from a Docker container and save it to the host machine.
-// ctx (context.Context): The context for the operation.
-// filePathOnHostMachine (string): The file path on the host machine where the file will be saved.
-// filePathOnContainer (string): The file path inside the Docker container from which the file will be retrieved.
-// containerID (string): The ID or name of the Docker container from which the file will be retrieved.
-func (dm *ContainerManager) GetFileFromContainer(ctx context.Context, filePathOnHostMachine, filePathOnContainer, containerID string) error {
-	log.Infof("Getting file from container '%s' to '%s'", filePathOnContainer, filePathOnHostMachine)
-	rc, _, err := dm.Cli.CopyFromContainer(ctx, containerID, filePathOnContainer)
+// readTarArchive reads a file from the TAR archive stream
+// and returns the file content as a byte slice.
+func readTarArchive(tr *tar.Reader, fileName string) ([]byte, error) {
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if hdr.Name == fileName {
+			b, err := io.ReadAll(tr)
+			if err != nil {
+				return nil, err
+			}
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("file %s not found in tar archive", fileName)
+}
+
+// GetFileFromContainer retrieves a file from a specified container using the Docker API.
+// It copies the TAR archive with file from the specified folder path in the container,
+// read file from TAR archive and returns the file content as a byte slice.
+func (dm *ContainerManager) GetFileFromContainer(ctx context.Context, folderPathOnContainer, fileName, containerID string) ([]byte, error) {
+	log.Printf("Getting file from container '%s/%s'", folderPathOnContainer, fileName)
+
+	rc, _, err := dm.Cli.CopyFromContainer(ctx, containerID, folderPathOnContainer+"/"+fileName)
 	if err != nil {
-		log.Errorf("Error during copying file from container: %s", err)
-		return err
+		log.Println(err)
+		return nil, err
 	}
 	defer rc.Close()
 
-	contents, err := io.ReadAll(rc)
+	tr := tar.NewReader(rc)
+	b, err := readTarArchive(tr, fileName)
 	if err != nil {
-		log.Errorf("Reading error: %s", err)
-		return err
+		log.Println(err)
+		return nil, err
 	}
 
-	err = os.WriteFile(filePathOnHostMachine, contents, 0o644)
-	if err != nil {
-		log.Errorf("Writing file error: %s", err)
-		return err
-	}
-
-	log.Infof("Successfully got file '%s' to the host!", filePathOnHostMachine)
-
-	return nil
+	return b, nil
 }
 
 // GetInspectOfContainer inspects the Docker container with the given containerIdentification and returns

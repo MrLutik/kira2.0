@@ -107,6 +107,121 @@ func (s *SekaidManager) runCommands(ctx context.Context, commands []string) erro
 	return nil
 }
 
+// getStandardConfigPack returns a slice of toml value representing the standard configurations to apply to the 'sekaid' application.
+func (s *SekaidManager) getStandardConfigPack() []config.TomlValue {
+	configs := []config.TomlValue{
+		// # CFG [base]
+		{Tag: "", Name: "moniker", Value: s.config.Moniker},
+		{Tag: "", Name: "fast_sync", Value: "true"},
+		// # CFG [FASTSYNC]
+		{Tag: "fastsync", Name: "version", Value: "v1"},
+		// # CFG [MEMPOOL]
+		{Tag: "mempool", Name: "max_txs_bytes", Value: "131072000"},
+		{Tag: "mempool", Name: "max_tx_bytes", Value: "131072"},
+		// # CFG [CONSENSUS]
+		{Tag: "consensus", Name: "timeout_commit", Value: "10000ms"},
+		{Tag: "consensus", Name: "create_empty_blocks_interval", Value: "20s"},
+		{Tag: "consensus", Name: "skip_timeout_commit", Value: "false"},
+		// # CFG [INSTRUMENTATION]
+		{Tag: "instrumentation", Name: "prometheus", Value: "true"},
+		// # CFG [P2P]
+		{Tag: "p2p", Name: "pex", Value: "true"},
+		{Tag: "p2p", Name: "private_peer_ids", Value: ""},
+		{Tag: "p2p", Name: "unconditional_peer_ids", Value: ""},
+		{Tag: "p2p", Name: "persistent_peers", Value: ""},
+		{Tag: "p2p", Name: "seeds", Value: ""},
+		{Tag: "p2p", Name: "laddr", Value: fmt.Sprintf("tcp://0.0.0.0:%s", s.config.P2PPort)},
+		{Tag: "p2p", Name: "seed_mode", Value: "false"},
+		{Tag: "p2p", Name: "max_num_outbound_peers", Value: "32"},
+		{Tag: "p2p", Name: "max_num_inbound_peers", Value: "128"},
+		{Tag: "p2p", Name: "send_rate", Value: "65536000"},
+		{Tag: "p2p", Name: "recv_rate", Value: "65536000"},
+		{Tag: "p2p", Name: "max_packet_msg_payload_size", Value: "131072"},
+		{Tag: "p2p", Name: "handshake_timeout", Value: "60s"},
+		{Tag: "p2p", Name: "dial_timeout", Value: "30s"},
+		{Tag: "p2p", Name: "allow_duplicate_ip", Value: "true"},
+		{Tag: "p2p", Name: "addr_book_strict", Value: "false"},
+		// # CFG [RPC]
+		{Tag: "rpc", Name: "laddr", Value: fmt.Sprintf("tcp://0.0.0.0:%s", s.config.RpcPort)},
+		{Tag: "rpc", Name: "cors_allowed_origins", Value: "[ \"*\" ]"},
+	}
+
+	return configs
+}
+
+// getGenesisAppConfig returns a slice of toml value representing the genesis app configurations to apply to the 'sekaid' app.toml
+func (s *SekaidManager) getGenesisAppConfig() []config.TomlValue {
+	return []config.TomlValue{
+		{Tag: "state-sync", Name: "snapshot-interval", Value: "1000"},
+		{Tag: "state-sync", Name: "snapshot-keep-recent", Value: "2"},
+		{Tag: "", Name: "pruning", Value: "nothing"},
+		{Tag: "", Name: "pruning-keep-recent", Value: "2"},
+		{Tag: "", Name: "pruning-keep-every", Value: "100"},
+	}
+}
+
+// getJoinerAppConfig returns a slice of toml value representing the joiner app configurations to apply to the 'sekaid' app.toml
+func (s *SekaidManager) getJoinerAppConfig() []config.TomlValue {
+	return []config.TomlValue{
+		{Tag: "state-sync", Name: "snapshot-interval", Value: "200"},
+		{Tag: "state-sync", Name: "snapshot-keep-recent", Value: "2"},
+		{Tag: "", Name: "pruning", Value: "custom"},
+		{Tag: "", Name: "pruning-keep-recent", Value: "2"},
+		{Tag: "", Name: "pruning-keep-every", Value: "100"},
+		{Tag: "", Name: "pruning-interval", Value: "10"},
+	}
+}
+
+// applyNewConfig applies a set of configurations to the 'sekaid' application running in the SekaidManager's container.
+func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config.TomlValue, filename string) error {
+	log := logging.Log
+
+	configDir := fmt.Sprintf("%s/config", s.config.SekaidHome)
+
+	log.Infof("Applying new configs to '%s/%s'", configDir, filename)
+
+	configFileContent, err := s.containerManager.GetFileFromContainer(ctx, configDir, filename, s.config.SekaidContainerName)
+	if err != nil {
+		log.Errorf("Can't get '%s' file of sekaid application. Error: %s", filename, err)
+		return fmt.Errorf("getting '%s' file from sekaid container error: %w", filename, err)
+	}
+
+	config := string(configFileContent)
+	var newConfig string
+	for _, update := range configsToml {
+		newConfig, err = utils.SetTomlVar(&update, config)
+		if err != nil {
+			log.Errorf("Updating ([%s] %s = %s) error: %s\n", update.Tag, update.Name, update.Value, err)
+
+			// TODO What can we do if updating value is not successful?
+
+			continue
+		}
+
+		log.Printf("Value ([%s] %s = %s) updated successfully\n", update.Tag, update.Name, update.Value)
+
+		config = newConfig
+	}
+
+	err = s.containerManager.WriteFileDataToContainer(ctx, []byte(config), filename,
+		fmt.Sprintf("%s/config", s.config.SekaidHome), s.config.SekaidContainerName)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return nil
+}
+
+// This function allows modifying specific values in the 'config.toml' file of the 'sekaid' application by updating its content.
+func (s *SekaidManager) applyNewConfigToml(ctx context.Context, configsToml []config.TomlValue) error {
+	return s.applyNewConfig(ctx, configsToml, "config.toml")
+}
+
+// This function allows modifying specific values in the 'app.toml' file of the 'sekaid' application by updating its content.
+func (s *SekaidManager) applyNewAppToml(ctx context.Context, configsToml []config.TomlValue) error {
+	return s.applyNewConfig(ctx, configsToml, "app.toml")
+}
+
 // initGenesisSekaidBinInContainer sets up the 'sekaid' Genesis container and initializes it with necessary configurations.
 func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
@@ -130,6 +245,18 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 	if err != nil {
 		log.Errorf("Initialized container error: %s", err)
 		return err
+	}
+
+	err = s.applyNewConfigToml(ctx, s.getStandardConfigPack())
+	if err != nil {
+		log.Errorf("Can't apply new config, error: %s", err)
+		return fmt.Errorf("applying new config error: %w", err)
+	}
+
+	err = s.applyNewAppToml(ctx, s.getGenesisAppConfig())
+	if err != nil {
+		log.Errorf("Can't apply new app config, error: %s", err)
+		return fmt.Errorf("applying new app config error: %w", err)
 	}
 
 	log.Infof("'sekaid' genesis container '%s' initialized", s.config.SekaidContainerName)
@@ -162,34 +289,36 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 		return err
 	}
 
+	updates := s.getStandardConfigPack()
+	if len(s.config.ConfigTomlValues) == 0 {
+		log.Errorf("There is no provided configs for joiner")
+		return fmt.Errorf("cannot apply empty necessary configs for joiner")
+	}
+	updates = append(updates, s.config.ConfigTomlValues...)
+
+	err = s.applyNewConfigToml(ctx, updates)
+	if err != nil {
+		log.Errorf("Can't apply new config, error: %s", err)
+		return fmt.Errorf("applying new config error: %w", err)
+	}
+
+	err = s.applyNewAppToml(ctx, s.getJoinerAppConfig())
+	if err != nil {
+		log.Errorf("Can't apply new app config, error: %s", err)
+		return fmt.Errorf("applying new app config error: %w", err)
+	}
+
 	log.Infof("'sekaid' joiner container '%s' initialized", s.config.SekaidContainerName)
 	return nil
 }
 
-// startGenesisSekaidBinInContainer starts the 'sekaid' binary inside the Sekaid Genesis container with the provided configuration.
-func (s *SekaidManager) startGenesisSekaidBinInContainer(ctx context.Context) error {
+// startSekaidBinInContainer starts the 'sekaid' binary inside the Sekaid container.
+func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' genesis container", s.config.SekaidContainerName)
 
 	// TODO move all args to config.toml
-	command := fmt.Sprintf(`sekaid start --rpc.laddr="tcp://0.0.0.0:%s" --p2p.laddr="tcp://0.0.0.0:%s" --home=%s`,
-		s.config.RpcPort, s.config.P2PPort, s.config.SekaidHome)
-	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
-	if err != nil {
-		log.Errorf("Command '%s' execution error: %s", command, err)
-	}
-
-	return nil
-}
-
-// startJoinerSekaidBinInContainer starts the 'sekaid' binary inside the Sekaid joiner container with the provided configuration.
-func (s *SekaidManager) startJoinerSekaidBinInContainer(ctx context.Context) error {
-	log := logging.Log
-	log.Infof("Setting up '%s' joiner container", s.config.SekaidContainerName)
-
-	// TODO move all args to config.toml
-	command := fmt.Sprintf(`sekaid start --home=%s --fast_sync=true --p2p.seeds=%s --rpc.laddr="tcp://0.0.0.0:%s" --p2p.laddr="tcp://0.0.0.0:%s"`,
-		s.config.SekaidHome, s.config.Seed, s.config.RpcPort, s.config.P2PPort)
+	command := fmt.Sprintf("sekaid start --home=%s --trace", s.config.SekaidHome)
 	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
@@ -204,12 +333,12 @@ func (s *SekaidManager) startJoinerSekaidBinInContainer(ctx context.Context) err
 func (s *SekaidManager) runGenesisSekaidContainer(ctx context.Context) error {
 	log := logging.Log
 
-	if err := s.startGenesisSekaidBinInContainer(ctx); err != nil {
+	if err := s.startSekaidBinInContainer(ctx); err != nil {
 		log.Errorf("Cannot start 'sekaid' bin in '%s' container, error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("cannot start 'sekaid' bin in '%s' container, error: %w", s.config.SekaidContainerName, err)
 	}
 
-	const delay = time.Second * 1
+	const delay = time.Second * 3
 	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
 	time.Sleep(delay)
 
@@ -235,12 +364,12 @@ func (s *SekaidManager) runGenesisSekaidContainer(ctx context.Context) error {
 func (s *SekaidManager) runJoinerSekaidContainer(ctx context.Context, genesis []byte) error {
 	log := logging.Log
 
-	if err := s.startJoinerSekaidBinInContainer(ctx); err != nil {
+	if err := s.startSekaidBinInContainer(ctx); err != nil {
 		log.Errorf("Cannot start 'sekaid' bin in '%s' container, error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("cannot start 'sekaid' bin in '%s' container, error: %w", s.config.SekaidContainerName, err)
 	}
 
-	const delay = time.Second * 1
+	const delay = time.Second * 3
 	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
 	time.Sleep(delay)
 
@@ -275,12 +404,12 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 		return fmt.Errorf("setup '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
-	if err := s.startGenesisSekaidBinInContainer(ctx); err != nil {
+	if err := s.startSekaidBinInContainer(ctx); err != nil {
 		log.Errorf("Starting 'sekaid' bin in '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("starting 'sekaid' bin in '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
-	const delay = time.Second * 1
+	const delay = time.Second * 3
 	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
 	time.Sleep(delay)
 
@@ -326,12 +455,12 @@ func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []by
 		return fmt.Errorf("setup '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
-	if err := s.startJoinerSekaidBinInContainer(ctx); err != nil {
+	if err := s.startSekaidBinInContainer(ctx); err != nil {
 		log.Errorf("Starting 'sekaid' bin in '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("starting 'sekaid' bin in '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
-	const delay = time.Second * 1
+	const delay = time.Second * 3
 	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
 	time.Sleep(delay)
 
