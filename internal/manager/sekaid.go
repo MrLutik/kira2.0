@@ -203,8 +203,7 @@ func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config
 		config = newConfig
 	}
 
-	err = s.containerManager.WriteFileDataToContainer(ctx, []byte(config), filename,
-		fmt.Sprintf("%s/config", s.config.SekaidHome), s.config.SekaidContainerName)
+	err = s.containerManager.WriteFileDataToContainer(ctx, []byte(config), filename, configDir, s.config.SekaidContainerName)
 	if err != nil {
 		log.Fatalln(err)
 	}
