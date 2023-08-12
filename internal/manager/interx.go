@@ -2,7 +2,10 @@ package manager
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -12,6 +15,8 @@ import (
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
+	"github.com/mrlutik/kira2.0/internal/manager/utils"
+	"github.com/mrlutik/kira2.0/internal/types"
 )
 
 // InterxManager represents a manager for Interx container and its associated configurations.
@@ -75,16 +80,119 @@ func (i *InterxManager) initInterxBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' (interx) container", i.config.InterxContainerName)
 
-	command := fmt.Sprintf(`interx init --rpc="http://%s:%s" --grpc="dns:///%s:%s" --home=%s --port=%s`,
-		i.config.SekaidContainerName, i.config.RpcPort, i.config.SekaidContainerName, i.config.GrpcPort, i.config.InterxHome, i.config.InterxPort)
+	command := fmt.Sprintf(`interx init --home=%s`, i.config.InterxHome)
 	_, err := i.containerManager.ExecCommandInContainer(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
 	}
 
+	updates, err := i.getConfigPacks(ctx)
+	if err != nil {
+		log.Errorf("Can't get config pack based on sekaid application, error: %s", err)
+		return fmt.Errorf("config pack sekaid initialization error: %w", err)
+	}
+
+	err = i.applyNewConfigs(ctx, updates)
+	if err != nil {
+		log.Errorf("Can't apply new config, error: %s", err)
+		return fmt.Errorf("applying new config error: %w", err)
+	}
+
 	log.Infoln("'interx' is initialized")
 	return err
+}
+
+func (i *InterxManager) applyNewConfigs(ctx context.Context, updates []config.JsonValue) error {
+	log := logging.Log
+	filename := "config.json"
+
+	log.Infof("Applying new configs to '%s/%s'", i.config.InterxHome, filename)
+
+	configFileContent, err := i.containerManager.GetFileFromContainer(ctx, i.config.InterxHome, filename, i.config.InterxContainerName)
+	if err != nil {
+		log.Errorf("Can't get '%s' file of interx application. Error: %s", filename, err)
+		return fmt.Errorf("getting '%s' file from interx container error: %w", filename, err)
+	}
+
+	var newFileContent []byte
+	for _, update := range updates {
+		newFileContent, err = utils.UpdateJsonValue(configFileContent, &update)
+		if err != nil {
+			log.Errorf("Updating: (%s = %v) error: %s\n", update.Key, update.Value, err)
+
+			// TODO What can we do if updating value is not successful?
+
+			continue
+		}
+
+		log.Printf("(%s = %v) updated successfully\n", update.Key, update.Value)
+
+		configFileContent = newFileContent
+	}
+
+	err = i.containerManager.WriteFileDataToContainer(ctx, configFileContent, filename, i.config.InterxHome, i.config.InterxContainerName)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return nil
+}
+
+func (i *InterxManager) getConfigPacks(ctx context.Context) ([]config.JsonValue, error) {
+	log := logging.Log
+
+	configs := make([]config.JsonValue, 0)
+
+	node_id, err := getLocalSekaidNodeID(i.config.RpcPort)
+	if err != nil {
+		log.Errorf("Getting sekaid node status error: %s", err)
+		return nil, err
+	}
+
+	configs = append(configs,
+		// node type: validator
+		config.JsonValue{Key: "node.validator_node_id", Value: node_id},
+		config.JsonValue{Key: "node.node_type", Value: "validator"},
+
+		// TODO seed: node.seed_node_id & node.node_type seed
+		// TODO sentry: node.sentry_node_id & node.node_type sentry
+
+		config.JsonValue{Key: "grpc", Value: fmt.Sprintf("dns:///%s:%s", i.config.SekaidContainerName, i.config.GrpcPort)},
+		config.JsonValue{Key: "rpc", Value: fmt.Sprintf("http://%s:%s", i.config.SekaidContainerName, i.config.RpcPort)},
+		config.JsonValue{Key: "port", Value: i.config.InterxPort},
+	)
+
+	// TODO other needed configurations
+
+	return configs, nil
+}
+
+func getLocalSekaidNodeID(port string) (string, error) {
+	log := logging.Log
+	var responseStatus types.ResponseSekaidStatus
+
+	url := fmt.Sprintf("http://localhost:%s/status", port)
+	response, err := http.Get(url)
+	if err != nil {
+		log.Errorf("Can't reach sekaid RPC status, error: %s", err)
+		return "", err
+	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Errorf("Can't read the response body")
+		return "", err
+	}
+
+	err = json.Unmarshal(body, &responseStatus)
+	if err != nil {
+		log.Errorf("Can't parse JSON response: %s", err)
+		return "", err
+	}
+
+	return responseStatus.Result.NodeInfo.ID, nil
 }
 
 // startInterxBinInContainer starts interx binary inside InterxContainerName

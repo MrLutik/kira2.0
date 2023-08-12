@@ -11,6 +11,12 @@ type TomlValue struct {
 	Value string
 }
 
+// JsonValue represents a configuration value to be updated in the '*.json' file of the 'interx' application
+type JsonValue struct {
+	Key   string // dot-separated keys by nesting
+	Value any
+}
+
 // KiraConfig is a configuration for sekaid or interx manager.
 type KiraConfig struct {
 	NetworkName         string        // name of a blockchain name (chain-ID)
