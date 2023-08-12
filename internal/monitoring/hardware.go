@@ -11,8 +11,28 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-// GetCPULoadPercentage returns the CPU usage percentage.
 func (m *MonitoringService) GetCPULoadPercentage() (float64, error) {
+	return getCPULoadPercentage()
+}
+
+func (m *MonitoringService) GetRAMUsage() (*ramUsageInfo, error) {
+	return getRAMUsage()
+}
+
+func (m *MonitoringService) GetDiskUsage() (*diskUsageInfo, error) {
+	return getDiskUsage()
+}
+
+func (m *MonitoringService) GetPublicIP() (string, error) {
+	return GetPublicIP()
+}
+
+func (m *MonitoringService) GetInterfacesIP() (map[string]string, error) {
+	return getInterfacesIP()
+}
+
+// getCPULoadPercentage returns the CPU usage percentage.
+func getCPULoadPercentage() (float64, error) {
 	log.Infoln("Getting CPU usage percentage")
 
 	percent, err := cpu.Percent(time.Millisecond*200, false)
@@ -24,15 +44,15 @@ func (m *MonitoringService) GetCPULoadPercentage() (float64, error) {
 	return percent[0], nil
 }
 
-// RAMUsageInfo represents information about RAM usage.
-type RAMUsageInfo struct {
+// ramUsageInfo represents information about RAM usage.
+type ramUsageInfo struct {
 	TotalGB float64
 	FreeGB  float64
 	UsedGB  float64
 }
 
-// GetRAMUsage returns the RAM usage information.
-func (m *MonitoringService) GetRAMUsage() (*RAMUsageInfo, error) {
+// getRAMUsage returns the RAM usage information.
+func getRAMUsage() (*ramUsageInfo, error) {
 	log.Infoln("Getting RAM usage info")
 
 	virtualMemory, err := mem.VirtualMemory()
@@ -41,22 +61,22 @@ func (m *MonitoringService) GetRAMUsage() (*RAMUsageInfo, error) {
 		return nil, err
 	}
 
-	return &RAMUsageInfo{
+	return &ramUsageInfo{
 		TotalGB: float64(virtualMemory.Total) / gigabyte,
 		FreeGB:  float64(virtualMemory.Free) / gigabyte,
 		UsedGB:  float64(virtualMemory.Used) / gigabyte,
 	}, nil
 }
 
-// DiskUsageInfo represents information about disk usage.
-type DiskUsageInfo struct {
+// diskUsageInfo represents information about disk usage.
+type diskUsageInfo struct {
 	TotalGB uint64
 	FreeGB  uint64
 	UsedGB  uint64
 }
 
-// GetDiskUsage returns the disk usage information.
-func (m *MonitoringService) GetDiskUsage() (*DiskUsageInfo, error) {
+// getDiskUsage returns the disk usage information.
+func getDiskUsage() (*diskUsageInfo, error) {
 	log.Infoln("Getting disk usage info")
 
 	var stat syscall.Statfs_t
@@ -69,7 +89,7 @@ func (m *MonitoringService) GetDiskUsage() (*DiskUsageInfo, error) {
 	total := stat.Blocks * uint64(stat.Bsize)
 	available := stat.Bavail * uint64(stat.Bsize)
 
-	return &DiskUsageInfo{
+	return &diskUsageInfo{
 		TotalGB: total / gigabyte,
 		FreeGB:  available / gigabyte,
 		UsedGB:  (total - available) / gigabyte,
@@ -88,7 +108,7 @@ func (m *MonitoringService) GetDiskUsage() (*DiskUsageInfo, error) {
 //
 // TODO: Additional services such as 'http://ifconfig.me', 'https://api.ipify.org/' or 'https://ipv4.icanhazip.com/'
 // can be considered as future alternatives for retrieving the public IP address.
-func (m *MonitoringService) GetPublicIP() (string, error) {
+func GetPublicIP() (string, error) {
 	log.Infoln("Getting public IP address")
 
 	client := dns.Client{Net: "udp4"}
@@ -133,8 +153,8 @@ func (m *MonitoringService) GetPublicIP() (string, error) {
 	return "", fmt.Errorf("can't get the public IP address")
 }
 
-// GetInterfacesIP returns a map of interface names and their corresponding IP addresses.
-func (m *MonitoringService) GetInterfacesIP() (map[string]string, error) {
+// getInterfacesIP returns a map of interface names and their corresponding IP addresses.
+func getInterfacesIP() (map[string]string, error) {
 	log.Infoln("Getting IP addresses of interfaces")
 
 	interfaces, err := net.Interfaces()

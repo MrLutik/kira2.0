@@ -13,6 +13,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager/utils"
+	"github.com/mrlutik/kira2.0/internal/monitoring"
 	"github.com/mrlutik/kira2.0/internal/types"
 )
 
@@ -140,7 +141,7 @@ func (s *SekaidManager) getStandardConfigPack() []config.TomlValue {
 		{Tag: "p2p", Name: "handshake_timeout", Value: "60s"},
 		{Tag: "p2p", Name: "dial_timeout", Value: "30s"},
 		{Tag: "p2p", Name: "allow_duplicate_ip", Value: "true"},
-		{Tag: "p2p", Name: "addr_book_strict", Value: "false"},
+		{Tag: "p2p", Name: "addr_book_strict", Value: "true"},
 		// # CFG [RPC]
 		{Tag: "rpc", Name: "laddr", Value: fmt.Sprintf("tcp://0.0.0.0:%s", s.config.RpcPort)},
 		{Tag: "rpc", Name: "cors_allowed_origins", Value: "[ \"*\" ]"},
@@ -211,8 +212,36 @@ func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config
 	return nil
 }
 
+func (s *SekaidManager) getExternalP2PAddress() (config.TomlValue, error) {
+	log := logging.Log
+
+	publicIp, err := monitoring.GetPublicIP() // TODO move method to other package?
+	if err != nil {
+		log.Errorf("Getting public IP address error: %s", err)
+		return config.TomlValue{}, err
+	}
+
+	return config.TomlValue{
+		Tag:   "p2p",
+		Name:  "external_address",
+		Value: fmt.Sprintf("tcp://%s:%s", publicIp, s.config.P2PPort),
+	}, nil
+}
+
 // This function allows modifying specific values in the 'config.toml' file of the 'sekaid' application by updating its content.
 func (s *SekaidManager) applyNewConfigToml(ctx context.Context, configsToml []config.TomlValue) error {
+	log := logging.Log
+
+	// Adding external p2p address to config
+	// This action performed here due to avoiding duplication
+	// Genesis and Joiner should both have this configuration
+	externalP2PConfig, err := s.getExternalP2PAddress()
+	if err != nil {
+		log.Errorf("Getting external P2P address error: %s", err)
+		return err
+	}
+	configsToml = append(configsToml, externalP2PConfig)
+
 	return s.applyNewConfig(ctx, configsToml, "config.toml")
 }
 
