@@ -80,8 +80,7 @@ func (i *InterxManager) initInterxBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' (interx) container", i.config.InterxContainerName)
 
-	command := fmt.Sprintf(`interx init --rpc="http://%s:%s" --grpc="dns:///%s:%s" --home=%s --port=%s`,
-		i.config.SekaidContainerName, i.config.RpcPort, i.config.SekaidContainerName, i.config.GrpcPort, i.config.InterxHome, i.config.InterxPort)
+	command := fmt.Sprintf(`interx init --home=%s`, i.config.InterxHome)
 	_, err := i.containerManager.ExecCommandInContainer(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
@@ -145,16 +144,23 @@ func (i *InterxManager) getConfigPacks(ctx context.Context) ([]config.JsonValue,
 
 	configs := make([]config.JsonValue, 0)
 
-	node_id, err := getSekaidStatus(i.config.RpcPort)
+	node_id, err := getLocalSekaidNodeID(i.config.RpcPort)
 	if err != nil {
 		log.Errorf("Getting sekaid node status error: %s", err)
 		return nil, err
 	}
 
-	// validator only
 	configs = append(configs,
+		// node type: validator
 		config.JsonValue{Key: "node.validator_node_id", Value: node_id},
 		config.JsonValue{Key: "node.node_type", Value: "validator"},
+
+		// TODO seed: node.seed_node_id & node.node_type seed
+		// TODO sentry: node.sentry_node_id & node.node_type sentry
+
+		config.JsonValue{Key: "grpc", Value: fmt.Sprintf("dns:///%s:%s", i.config.SekaidContainerName, i.config.GrpcPort)},
+		config.JsonValue{Key: "rpc", Value: fmt.Sprintf("http://%s:%s", i.config.SekaidContainerName, i.config.RpcPort)},
+		config.JsonValue{Key: "port", Value: i.config.InterxPort},
 	)
 
 	// TODO other needed configurations
@@ -162,7 +168,7 @@ func (i *InterxManager) getConfigPacks(ctx context.Context) ([]config.JsonValue,
 	return configs, nil
 }
 
-func getSekaidStatus(port string) (string, error) {
+func getLocalSekaidNodeID(port string) (string, error) {
 	log := logging.Log
 	var responseStatus types.ResponseSekaidStatus
 
