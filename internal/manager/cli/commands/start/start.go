@@ -2,6 +2,7 @@ package start
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
@@ -49,6 +50,9 @@ func mainStart() {
 
 	ctx := context.Background()
 
+	pathWithKeys := "/data/.secrets"
+	os.RemoveAll(pathWithKeys)
+	os.Mkdir(pathWithKeys, os.ModePerm)
 	// TODO: Instead of HARDCODE - reading config file
 	// Note: we do not need the constructor for config, it is not readable right now
 	// Using initialization of structure on the way reads better
@@ -74,6 +78,7 @@ func mainStart() {
 		SekaiDebFileName:    "sekai-linux-amd64.deb",
 		InterxDebFileName:   "interx-linux-amd64.deb",
 		TimeBetweenBlocks:   time.Second * 10,
+		SecretsFolder:       pathWithKeys,
 	}
 
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)

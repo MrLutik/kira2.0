@@ -39,6 +39,7 @@ type KiraConfig struct {
 	Moniker             string        // Moniker
 	SekaiDebFileName    string        // fileName of sekai deb file
 	InterxDebFileName   string        // fileName of interx deb file
+	SecretsFolder       string        // path where mnemonics.env and node keys located
 	TimeBetweenBlocks   time.Duration // Awaiting time between blocks
 	ConfigTomlValues    []TomlValue   // List of configs for update
 	// NOTE Default time of block is ~5 seconds!

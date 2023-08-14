@@ -255,12 +255,15 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 	log := logging.Log
 	log.Infof("Setting up '%s' (sekaid) genesis container", s.config.SekaidContainerName)
 
+	mnemonic := "want vanish frown filter resemble purchase trial baby equal never cinnamon claim wrap cash snake cable head tray few daring shine clip loyal series"
+	mnemonicSet := s.helper.GenerateMnemonics(mnemonic)
+
 	commands := []string{
 		fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`,
 			s.config.NetworkName, s.config.SekaidHome, s.config.Moniker),
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
-		fmt.Sprintf(`sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/sekai.mnemonic`,
-			validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
+		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/sekai.mnemonic`,
+			mnemonicSet.ValidatorAddrMnemonic, validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf(`sekaid keys add "faucet" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/faucet.mnemonic`,
 			s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf("sekaid add-genesis-account %s 150000000000000ukex,300000000000000test,2000000000000000000000000000samolean,1000000lol --keyring-backend=%s --home=%s",
