@@ -2,10 +2,9 @@ package start
 
 import (
 	"context"
-	"os"
+	"fmt"
 	"time"
 
-	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
@@ -22,6 +21,7 @@ const (
 )
 
 var log = logging.Log
+var recover bool
 
 func Start() *cobra.Command {
 	log.Info("Adding `start` command...")
@@ -29,10 +29,13 @@ func Start() *cobra.Command {
 		Use:   use,
 		Short: short,
 		Long:  long,
-		Run: func(_ *cobra.Command, _ []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
+			recover, _ = cmd.Flags().GetBool("recover")
+
 			mainStart()
 		},
 	}
+	startCmd.PersistentFlags().Bool("recover", false, fmt.Sprintf("If true recover keys and mnemonic from master mnemonic, otherwise generate random one"))
 
 	return startCmd
 }
@@ -50,9 +53,6 @@ func mainStart() {
 
 	ctx := context.Background()
 
-	pathWithKeys := "/data/.secrets"
-	os.RemoveAll(pathWithKeys)
-	os.Mkdir(pathWithKeys, os.ModePerm)
 	// TODO: Instead of HARDCODE - reading config file
 	// Note: we do not need the constructor for config, it is not readable right now
 	// Using initialization of structure on the way reads better
@@ -78,14 +78,14 @@ func mainStart() {
 		SekaiDebFileName:    "sekai-linux-amd64.deb",
 		InterxDebFileName:   "interx-linux-amd64.deb",
 		TimeBetweenBlocks:   time.Second * 10,
-		SecretsFolder:       pathWithKeys,
+		Recover:             recover,
 	}
 
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
-	adapters.MustDownloadBinaries(ctx, cfg)
+	// adapters.MustDownloadBinaries(ctx, cfg)
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)

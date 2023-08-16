@@ -25,6 +25,7 @@ type SekaidManager struct {
 	containerManager       *docker.ContainerManager
 	config                 *config.KiraConfig
 	helper                 *utils.HelperManager
+	masterMnamonicSet      *types.MasterMnemonicSet
 }
 
 const (
@@ -250,20 +251,42 @@ func (s *SekaidManager) applyNewAppToml(ctx context.Context, configsToml []confi
 	return s.applyNewConfig(ctx, configsToml, "app.toml")
 }
 
+func (s *SekaidManager) ReadOrGenerateMasterMnemonic() error {
+	var masterMnemonic string
+	log := logging.Log
+	if s.config.Recover {
+		masterMnemonic = s.helper.MnemonicReader()
+	} else {
+		bip39mn, err := s.helper.GenerateMnemonic()
+		if err != nil {
+			return err
+		}
+		masterMnemonic = bip39mn.String()
+	}
+	log.Printf("MASTER MNEMONIC IS:\n%s\n", masterMnemonic)
+	s.masterMnamonicSet = s.helper.GenerateMnemonicsFromMaster(string(masterMnemonic))
+	return nil
+}
+
 // initGenesisSekaidBinInContainer sets up the 'sekaid' Genesis container and initializes it with necessary configurations.
 func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' (sekaid) genesis container", s.config.SekaidContainerName)
 
-	mnemonic := "want vanish frown filter resemble purchase trial baby equal never cinnamon claim wrap cash snake cable head tray few daring shine clip loyal series"
-	mnemonicSet := s.helper.GenerateMnemonics(mnemonic)
+	// initcmd := fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`, s.config.NetworkName, s.config.SekaidHome, s.config.Moniker)
+	err := s.helper.SetSekaidKeys(ctx)
+	if err != nil {
+		log.Errorf("Can't set sekaid keys: %s", err)
+		return fmt.Errorf("Can't set sekaid keys %w", err)
+	}
+	// s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{initcmd})
 
 	commands := []string{
 		fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`,
 			s.config.NetworkName, s.config.SekaidHome, s.config.Moniker),
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
-		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/sekai.mnemonic`,
-			mnemonicSet.ValidatorAddrMnemonic, validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
+		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
+			s.masterMnamonicSet.ValidatorAddrMnemonic, validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf(`sekaid keys add "faucet" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/faucet.mnemonic`,
 			s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf("sekaid add-genesis-account %s 150000000000000ukex,300000000000000test,2000000000000000000000000000samolean,1000000lol --keyring-backend=%s --home=%s",
@@ -272,12 +295,11 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 			validatorAccountName, s.config.KeyringBackend, s.config.Moniker, s.config.SekaidHome),
 	}
 
-	err := s.runCommands(ctx, commands)
+	err = s.runCommands(ctx, commands)
 	if err != nil {
 		log.Errorf("Initialized container error: %s", err)
 		return err
 	}
-
 	err = s.applyNewConfigToml(ctx, s.getStandardConfigPack())
 	if err != nil {
 		log.Errorf("Can't apply new config, error: %s", err)
@@ -298,11 +320,11 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, genesisData []byte) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' joiner container", s.config.SekaidContainerName)
-
+	s.helper.SetSekaidKeys(ctx)
 	commands := []string{
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
-		fmt.Sprintf(`sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/sekai.mnemonic`,
-			validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
+		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
+			s.masterMnamonicSet.ValidatorAddrMnemonic, validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 	}
 
 	err := s.runCommands(ctx, commands)

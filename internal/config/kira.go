@@ -42,6 +42,7 @@ type KiraConfig struct {
 	SecretsFolder       string        // path where mnemonics.env and node keys located
 	TimeBetweenBlocks   time.Duration // Awaiting time between blocks
 	ConfigTomlValues    []TomlValue   // List of configs for update
+	Recover             bool          // switch for recover mode
 	// NOTE Default time of block is ~5 seconds!
 	// Check (m *MonitoringService) GetConsensusInfo method
 	// from cmd/monitoring/main.go
