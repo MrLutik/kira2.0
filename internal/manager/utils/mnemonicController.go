@@ -62,7 +62,7 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 		log.Errorf("cannot send priv_validator_key.json to container\n")
 		return err
 	}
-	// err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/validator_node_key.json", sekaidConfigFolder+"/node_key.json", h.config.SekaidContainerName)
+
 	h.copyFile(h.config.SecretsFolder+"/validator_node_key.json", h.config.SecretsFolder+"/node_key.json")
 	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/node_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
@@ -70,12 +70,4 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 		return err
 	}
 	return nil
-}
-
-func (h *HelperManager) SetInterxKeys() {
-
-}
-
-func (h *HelperManager) ReadMnemonicFromEnvFile() {
-
 }
