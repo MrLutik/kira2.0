@@ -2,6 +2,8 @@ package config
 
 import (
 	"time"
+
+	"github.com/mrlutik/kira2.0/internal/types"
 )
 
 // TomlValue represents a configuration value to be updated in the '*.toml' file of the 'sekaid' application.
@@ -43,6 +45,7 @@ type KiraConfig struct {
 	TimeBetweenBlocks   time.Duration // Awaiting time between blocks
 	ConfigTomlValues    []TomlValue   // List of configs for update
 	Recover             bool          // switch for recover mode
+	MasterMnamonicSet   *types.MasterMnemonicSet
 	// NOTE Default time of block is ~5 seconds!
 	// Check (m *MonitoringService) GetConsensusInfo method
 	// from cmd/monitoring/main.go
