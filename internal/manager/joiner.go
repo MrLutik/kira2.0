@@ -37,7 +37,7 @@ func NewJoinerManager(config *SeedKiraConfig) *JoinerManager {
 }
 
 // GenerateKiraConfig generates KiraConfig with target information for future connection
-func (j *JoinerManager) GenerateKiraConfig(ctx context.Context) (*config.KiraConfig, error) {
+func (j *JoinerManager) GenerateKiraConfig(ctx context.Context, recover bool) (*config.KiraConfig, error) {
 	log := logging.Log
 
 	chainID, err := j.getChainID(ctx)
@@ -76,6 +76,7 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context) (*config.KiraCon
 		InterxDebFileName:   "interx-linux-amd64.deb",
 		TimeBetweenBlocks:   time.Second * 10,
 		ConfigTomlValues:    configs,
+		Recover:             recover,
 	}
 
 	return cfg, nil
