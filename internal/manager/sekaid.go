@@ -286,6 +286,8 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
 		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
 			s.config.MasterMnamonicSet.ValidatorAddrMnemonic, validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
+		fmt.Sprintf(`yes %s | sekaid keys add "signer" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
+			s.config.MasterMnamonicSet.SignerAddrMnemonic, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf(`sekaid keys add "faucet" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/faucet.mnemonic`,
 			s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf("sekaid add-genesis-account %s 150000000000000ukex,300000000000000test,2000000000000000000000000000samolean,1000000lol --keyring-backend=%s --home=%s",
