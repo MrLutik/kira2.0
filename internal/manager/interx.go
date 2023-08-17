@@ -219,7 +219,7 @@ func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
 // If any errors occur during the process, an error is returned.
 func (i *InterxManager) runInterxContainer(ctx context.Context) error {
 	log := logging.Log
-	const delay = time.Second
+	const delay = time.Second * 3
 
 	err := i.startInterxBinInContainer(ctx)
 	if err != nil {
@@ -228,7 +228,7 @@ func (i *InterxManager) runInterxContainer(ctx context.Context) error {
 	}
 
 	log.Warningf("Waiting for %0.0f seconds for process", delay.Seconds())
-	time.Sleep(time.Second * 1)
+	time.Sleep(delay)
 
 	check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, "interx", i.config.InterxContainerName)
 	if err != nil {
