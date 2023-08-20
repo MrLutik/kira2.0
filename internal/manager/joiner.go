@@ -13,8 +13,14 @@ import (
 	"time"
 
 	"github.com/mrlutik/kira2.0/internal/config"
+	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/types"
+)
+
+const (
+	endpointStatus     = "status"
+	endpointPubP2PList = "api/pub_p2p_list?peers_only=true"
 )
 
 type SeedKiraConfig struct {
@@ -40,21 +46,19 @@ func NewJoinerManager(config *SeedKiraConfig) *JoinerManager {
 func (j *JoinerManager) GenerateKiraConfig(ctx context.Context) (*config.KiraConfig, error) {
 	log := logging.Log
 
-	chainID, err := j.getChainID(ctx)
+	networkInfo, err := j.retrieveNetworkInformation(ctx)
 	if err != nil {
-		log.Errorf("Can't get network name (chain-id) from genesis, error: %s", err)
-		return nil, err
+		return nil, errors.LogAndReturnErr("Retrieving network information", err)
 	}
 
-	configs, err := j.getConfigsBasedOnSeed(ctx)
+	configs, err := j.getConfigsBasedOnSeed(ctx, networkInfo)
 	if err != nil {
 		log.Errorf("Can't get calculated config values: %s", err)
 		return nil, err
 	}
 
-	// TODO How to provide this config from kira_launcher?
 	cfg := &config.KiraConfig{
-		NetworkName:         chainID,
+		NetworkName:         networkInfo.NetworkName,
 		SekaidHome:          "/data/.sekai",
 		InterxHome:          "/data/.interx",
 		KeyringBackend:      "test",
@@ -110,72 +114,213 @@ func (j *JoinerManager) GetVerifiedGenesisFile(ctx context.Context) ([]byte, err
 	return genesisSekaid, nil
 }
 
-func (j *JoinerManager) getConfigsBasedOnSeed(ctx context.Context) ([]config.TomlValue, error) {
-	log := logging.Log
-
+func (j *JoinerManager) getConfigsBasedOnSeed(ctx context.Context, netInfo *NetworkInfo) ([]config.TomlValue, error) {
 	configValues := make([]config.TomlValue, 0)
 
-	seeds, err := j.getSeeds(ctx)
+	configValues = append(configValues, config.TomlValue{Tag: "p2p", Name: "seeds", Value: strings.Join(netInfo.Seeds, ",")})
+
+	listOfRPC, err := j.parseRPCfromSeedsList(netInfo.Seeds)
 	if err != nil {
-		log.Errorf("Can't get seeds, error: %s", err)
-		return nil, err
+		return nil, errors.LogAndReturnErr("Parsing RPCs from seeds list", err)
 	}
 
-	configValues = append(configValues, config.TomlValue{Tag: "p2p", Name: "seeds", Value: seeds})
+	syncInfo, err := j.getSyncInfo(ctx, listOfRPC, netInfo.BlockHeight)
+	if err != nil {
+		return nil, errors.LogAndReturnErr("Getting sync information", err)
+	}
 
-	// TODO add other calculated fields
-
-	// TODO: State sync is used for 3rd+ joiner
-	// // [STATESYNC]
-	// {Tag: "statesync", Name: "trust_period", Value: "168h0m0s"},
-	// {Tag: "statesync", Name: "enable", Value: "true"},
-	// {Tag: "statesync", Name: "temp_dir", Value: "/tmp"},
+	if syncInfo != nil {
+		configValues = append(configValues, config.TomlValue{Tag: "statesync", Name: "trust_hash", Value: syncInfo.trustHashBlock})
+		configValues = append(configValues, config.TomlValue{Tag: "statesync", Name: "trust_height", Value: syncInfo.trustHeightBlock})
+		configValues = append(configValues, config.TomlValue{Tag: "statesync", Name: "rpc_servers", Value: strings.Join(syncInfo.rpcServers, ",")})
+		configValues = append(configValues, config.TomlValue{Tag: "statesync", Name: "trust_period", Value: "168h0m0s"})
+		configValues = append(configValues, config.TomlValue{Tag: "statesync", Name: "enable", Value: "true"})
+		configValues = append(configValues, config.TomlValue{Tag: "statesync", Name: "temp_dir", Value: "/tmp"})
+	}
 
 	return configValues, nil
 }
 
-// getChainID retrieves the Chain ID from a target Sekaid node's status endpoint.
-func (j *JoinerManager) getChainID(ctx context.Context) (string, error) {
-	log := logging.Log
-
-	url := fmt.Sprintf("http://%s:%s/%s", j.targetConfig.IpAddress, j.targetConfig.SekaidRPCPort, "status")
-
-	body, err := j.doGetHttpQuery(ctx, url)
-	if err != nil {
-		log.Errorf("Querying error: %s", err)
-		return "", err
-	}
-
-	var response *types.ResponseSekaidStatus
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		log.Errorf("Can't parse JSON response: %s", err)
-		return "", err
-	}
-
-	return response.Result.NodeInfo.Network, nil
+type NetworkInfo struct {
+	NetworkName string
+	NodeID      string
+	BlockHeight string
+	Seeds       []string
 }
 
-// getSeeds retrieves the Seed node information from a target Sekaid node's status endpoint.
-func (j *JoinerManager) getSeeds(ctx context.Context) (string, error) {
+func (j *JoinerManager) retrieveNetworkInformation(ctx context.Context) (*NetworkInfo, error) {
+	log := logging.Log
+	statusResponse, err := j.getSekaidStatus(ctx, j.targetConfig.IpAddress, j.targetConfig.SekaidRPCPort)
+	if err != nil {
+		return nil, errors.LogAndReturnErr("Getting sekaid status", err)
+	}
+
+	pupP2PListResponse, err := j.getPubP2PList(ctx, j.targetConfig.IpAddress, j.targetConfig.InterxPort)
+	if err != nil {
+		return nil, errors.LogAndReturnErr("Getting sekaid public P2P list", err)
+	}
+
+	listOfSeeds, err := j.parsePubP2PListResponse(ctx, pupP2PListResponse)
+	if err != nil {
+		return nil, errors.LogAndReturnErr("Parsing sekaid public P2P list", err)
+	}
+	if len(listOfSeeds) == 0 {
+		log.Warn("List of seeds is empty, the trusted seed will be used")
+		listOfSeeds = []string{fmt.Sprintf("tcp://%s@%s:%s", statusResponse.Result.NodeInfo.ID, j.targetConfig.IpAddress, j.targetConfig.SekaidP2PPort)}
+	}
+
+	return &NetworkInfo{
+		NetworkName: statusResponse.Result.NodeInfo.Network,
+		NodeID:      statusResponse.Result.NodeInfo.ID,
+		BlockHeight: statusResponse.Result.SyncInfo.LatestBlockHeight,
+		Seeds:       listOfSeeds,
+	}, nil
+}
+
+func (j *JoinerManager) getSekaidStatus(ctx context.Context, ipAddress, rpcPort string) (*types.ResponseSekaidStatus, error) {
 	log := logging.Log
 
-	url := fmt.Sprintf("http://%s:%s/%s", j.targetConfig.IpAddress, j.targetConfig.SekaidRPCPort, "status")
+	url := fmt.Sprintf("http://%s:%s/%s", ipAddress, rpcPort, endpointStatus)
 
 	body, err := j.doGetHttpQuery(ctx, url)
 	if err != nil {
 		log.Errorf("Querying error: %s", err)
-		return "", err
+		return nil, err
 	}
 
 	var response *types.ResponseSekaidStatus
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		log.Errorf("Can't parse JSON response: %s", err)
-		return "", err
+		return nil, err
 	}
 
-	return fmt.Sprintf("tcp://%s@%s:%s", response.Result.NodeInfo.ID, j.targetConfig.IpAddress, j.targetConfig.SekaidP2PPort), nil
+	return response, nil
+}
+
+func (j *JoinerManager) getPubP2PList(ctx context.Context, ipAddress, rpcPort string) ([]byte, error) {
+	log := logging.Log
+
+	url := fmt.Sprintf("http://%s:%s/%s", ipAddress, rpcPort, endpointPubP2PList)
+
+	body, err := j.doGetHttpQuery(ctx, url)
+	if err != nil {
+		log.Errorf("Querying error: %s", err)
+		return nil, err
+	}
+
+	return body, nil
+}
+
+func (j *JoinerManager) parsePubP2PListResponse(ctx context.Context, response []byte) ([]string, error) {
+	log := logging.Log
+
+	if len(response) == 0 {
+		log.Warning("The list of public seeds is not available")
+		return nil, nil
+	}
+
+	linesOfPeers := strings.Split(string(response), "\n")
+	listOfSeeds := make([]string, 0)
+
+	for _, line := range linesOfPeers {
+		formattedSeed := fmt.Sprintf("tcp://%s", line)
+		log.Debugf("Got seed: %s", formattedSeed)
+		listOfSeeds = append(listOfSeeds, formattedSeed)
+	}
+
+	return listOfSeeds, nil
+}
+
+type SyncInfo struct {
+	rpcServers       []string
+	trustHeightBlock string
+	trustHashBlock   string
+}
+
+func (j *JoinerManager) getSyncInfo(ctx context.Context, listOfRPC []string, minHeight string) (*SyncInfo, error) {
+	log := logging.Log
+
+	resultSyncInfo := &SyncInfo{
+		rpcServers:       []string{},
+		trustHeightBlock: "",
+		trustHashBlock:   "",
+	}
+
+	for _, rpcServer := range listOfRPC {
+		responseBlock, err := j.getBlockInfo(ctx, rpcServer, minHeight)
+		if err != nil {
+			log.Infof("Can't get block information from RPC '%s'", rpcServer)
+			continue
+		}
+
+		if responseBlock.Result.Block.Header.Height != minHeight {
+			log.Infof("RPC (%s) height is '%s', but expected '%s'", rpcServer, responseBlock.Result.Block.Header.Height, minHeight)
+			continue
+		}
+
+		if responseBlock.Result.BlockID.Hash != resultSyncInfo.trustHashBlock && resultSyncInfo.trustHashBlock != "" {
+			log.Infof("RPC (%s) hash is '%s', but expected '%s'", rpcServer, responseBlock.Result.BlockID.Hash, resultSyncInfo.trustHashBlock)
+			continue
+		}
+
+		resultSyncInfo.trustHashBlock = responseBlock.Result.BlockID.Hash
+		resultSyncInfo.trustHeightBlock = minHeight
+
+		log.Infof("Adding RPC (%s) to RPC connection list", rpcServer)
+		resultSyncInfo.rpcServers = append(resultSyncInfo.rpcServers, rpcServer)
+	}
+
+	if len(resultSyncInfo.rpcServers) < 2 {
+		log.Info("Sync is NOT possible (not enough RPC servers)")
+		return nil, nil
+	}
+
+	log.Debug(resultSyncInfo)
+	return resultSyncInfo, nil
+}
+
+func (j *JoinerManager) parseRPCfromSeedsList(seeds []string) ([]string, error) {
+	log := logging.Log
+
+	listOfRPCs := make([]string, 0)
+
+	for _, seed := range seeds {
+		// tcp://23ca3770ae3874ac8f5a6f84a5cfaa1b39e49fc9@128.140.86.241:26656 -> 128.140.86.241:26657
+		parts := strings.Split(seed, "@")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid seed format: '%s'", seed)
+		}
+
+		ipAndPort := strings.Split(parts[1], ":")
+		if len(ipAndPort) != 2 {
+			return nil, fmt.Errorf("invalid IP and Port format in seed: '%s'", seed)
+		}
+
+		rpc := fmt.Sprintf("%s:%s", ipAndPort[0], j.targetConfig.SekaidRPCPort)
+		log.Infof("Adding rpc to list: %s", rpc)
+		listOfRPCs = append(listOfRPCs, rpc)
+	}
+
+	return listOfRPCs, nil
+}
+
+func (j *JoinerManager) getBlockInfo(ctx context.Context, rpcServer, minHeight string) (*types.ResponseBlock, error) {
+	endpointBlock := fmt.Sprintf("block?height=%s", minHeight)
+
+	url := fmt.Sprintf("http://%s/%s", rpcServer, endpointBlock)
+	body, err := j.doGetHttpQuery(ctx, url)
+	if err != nil {
+		return nil, errors.LogAndReturnErr("Can't reach block response", err)
+	}
+
+	var response *types.ResponseBlock
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, errors.LogAndReturnErr("Can't parse JSON response", err)
+	}
+
+	return response, nil
 }
 
 // checkFileContentGenesisFiles checks if the content of two Genesis files is identical.
@@ -210,6 +355,11 @@ func (j *JoinerManager) checkGenSum(ctx context.Context, genesis []byte) error {
 // doGetHttpQuery performs an HTTP GET request to the specified URL and returns the response body as a byte slice.
 func (j *JoinerManager) doGetHttpQuery(ctx context.Context, url string) ([]byte, error) {
 	log := logging.Log
+
+	const timeoutQuery = time.Second * 3
+
+	ctx, cancel := context.WithTimeout(ctx, timeoutQuery)
+	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
