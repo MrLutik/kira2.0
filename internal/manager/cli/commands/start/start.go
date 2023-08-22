@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
@@ -85,7 +86,7 @@ func mainStart() {
 
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
-	// adapters.MustDownloadBinaries(ctx, cfg)
+	adapters.MustDownloadBinaries(ctx, cfg)
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)

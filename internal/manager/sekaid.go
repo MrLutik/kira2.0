@@ -253,6 +253,7 @@ func (s *SekaidManager) applyNewAppToml(ctx context.Context, configsToml []confi
 func (s *SekaidManager) ReadOrGenerateMasterMnemonic() error {
 	var masterMnemonic string
 	log := logging.Log
+	var err error
 	if s.config.Recover {
 		masterMnemonic = s.helper.MnemonicReader()
 	} else {
@@ -263,7 +264,10 @@ func (s *SekaidManager) ReadOrGenerateMasterMnemonic() error {
 		masterMnemonic = bip39mn.String()
 	}
 	log.Printf("MASTER MNEMONIC IS:\n%s\n", masterMnemonic)
-	s.config.MasterMnamonicSet = s.helper.GenerateMnemonicsFromMaster(string(masterMnemonic))
+	s.config.MasterMnamonicSet, err = s.helper.GenerateMnemonicsFromMaster(string(masterMnemonic))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

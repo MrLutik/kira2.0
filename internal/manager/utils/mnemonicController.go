@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"os"
 
+	vlg "github.com/PeepoFrog/validator-key-gen/MnemonicsGenerator"
 	kiraMnemonicGen "github.com/kiracore/tools/bip39gen/cmd"
 	"github.com/kiracore/tools/bip39gen/pkg/bip39"
 	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/types"
 )
 
-func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) *types.MasterMnemonicSet {
+func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg.MasterMnemonicSet, error) {
 	log := logging.Log
 	log.Debugf("GenerateMnemonicFromMaster: masterMnemonic:\n%s", masterMnemonic)
 	defaultprefix := "kira"
@@ -20,15 +20,18 @@ func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) *type
 
 	// masterMnemonic = "want vanish frown filter resemble purchase trial baby equal never cinnamon claim wrap cash snake cable head tray few daring shine clip loyal series"
 
-	mnemonicSet := MasterKeysGen([]byte(masterMnemonic), defaultprefix, defaultPath, h.config.SecretsFolder)
+	mnemonicSet, err := vlg.MasterKeysGen([]byte(masterMnemonic), defaultprefix, defaultPath, h.config.SecretsFolder)
+	if err != nil {
+		return &vlg.MasterMnemonicSet{}, err
+	}
 	str := fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n", mnemonicSet.SignerAddrMnemonic, mnemonicSet.ValidatorNodeMnemonic, mnemonicSet.ValidatorNodeId, mnemonicSet.ValidatorAddrMnemonic, mnemonicSet.ValidatorValMnemonic)
 	fmt.Println((str))
-	return mnemonicSet
+	return &mnemonicSet, nil
 }
 
 func (h *HelperManager) MnemonicReader() (masterMnemonic string) {
 	log := logging.Log
-	log.Printf("\nENTER YOUR MASTER MNEMONIC:\n")
+	fmt.Printf("\nENTER YOUR MASTER MNEMONIC:\n")
 	// var input string
 	reader := bufio.NewReader(os.Stdin)
 	log.Println("Enter mnemonic: ")
