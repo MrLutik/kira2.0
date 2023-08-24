@@ -7,8 +7,8 @@ import (
 	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
-	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/errors"
+	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager"
 	"github.com/mrlutik/kira2.0/internal/systemd"
@@ -84,6 +84,9 @@ func mainStart() {
 		{Port: cfg.InterxPort, Type: "tcp"},
 		{Port: "22", Type: "tcp"},
 		{Port: "53", Type: "udp"},
+		{Port: "4789", Type: "udp"},
+		{Port: "7946", Type: "udp"},
+		{Port: "7946", Type: "tcp"},
 	}
 
 	firewallManager := firewallManager.NewFirewallmanager("validator", ports)

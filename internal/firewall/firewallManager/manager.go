@@ -112,7 +112,7 @@ func (cfg *firewallManager) checkPorts() error {
 }
 func (cfg *firewallManager) checkFirewallZone() (bool, error) {
 	out, zones, err := cfg.firewallController.GetAllFirewallZones()
-	log.Debugf("%s\n%+v\n%w\n", string(out), zones, err)
+	log.Debugf("%s\n%+v\n%s\n", string(out), zones, err)
 	if err != nil {
 		return false, fmt.Errorf("%s\n%w", out, err)
 	}
