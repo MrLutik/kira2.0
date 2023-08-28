@@ -11,6 +11,7 @@ import (
 
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
+	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager/utils"
 	"github.com/mrlutik/kira2.0/internal/monitoring"
@@ -25,6 +26,7 @@ type SekaidManager struct {
 	containerManager       *docker.ContainerManager
 	config                 *config.KiraConfig
 	helper                 *utils.HelperManager
+	dockerManager          *docker.DockerManager
 }
 
 const (
@@ -36,7 +38,7 @@ const (
 //
 //	*docker.DockerManager // The pointer for docker.DockerManager instance.
 //	*config	// Config of Kira application struct
-func NewSekaidManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*SekaidManager, error) {
+func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *docker.DockerManager, config *config.KiraConfig) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
 		config.P2PPort, config.RpcPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
@@ -89,6 +91,7 @@ func NewSekaidManager(containerManager *docker.ContainerManager, config *config.
 		SekaiHostConfig:        sekaiHostConfig,
 		SekaidNetworkingConfig: sekaidNetworkingConfig,
 		containerManager:       containerManager,
+		dockerManager:          dockerManager,
 		config:                 config,
 		helper:                 helper,
 	}, err
@@ -425,6 +428,22 @@ func (s *SekaidManager) runJoinerSekaidContainer(ctx context.Context, genesis []
 func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 	log := logging.Log
 
+	ports := []firewallManager.Port{
+		{Port: s.config.RpcPort, Type: "tcp"},
+		{Port: s.config.P2PPort, Type: "tcp"},
+		{Port: s.config.GrpcPort, Type: "tcp"},
+		{Port: s.config.InterxPort, Type: "tcp"},
+		{Port: "26660", Type: "tcp"},
+		{Port: "22", Type: "tcp"},
+		{Port: "53", Type: "udp"},
+		{Port: "4789", Type: "udp"},
+		{Port: "7946", Type: "udp"},
+		{Port: "7946", Type: "tcp"},
+	}
+
+	firewallManager := firewallManager.NewFirewallmanager(s.dockerManager, "validator", ports)
+	err := firewallManager.SetUpFirewall(ctx, s.config)
+
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of genesis validator", s.config.SekaidContainerName)
 
 	if err := s.initGenesisSekaidBinInContainer(ctx); err != nil {
@@ -475,6 +494,22 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 // If any errors occur during the initialization process, an error is returned.
 func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []byte) error {
 	log := logging.Log
+
+	ports := []firewallManager.Port{
+		{Port: s.config.RpcPort, Type: "tcp"},
+		{Port: s.config.P2PPort, Type: "tcp"},
+		{Port: s.config.GrpcPort, Type: "tcp"},
+		{Port: s.config.InterxPort, Type: "tcp"},
+		{Port: "26660", Type: "tcp"},
+		{Port: "22", Type: "tcp"},
+		{Port: "53", Type: "udp"},
+		{Port: "4789", Type: "udp"},
+		{Port: "7946", Type: "udp"},
+		{Port: "7946", Type: "tcp"},
+	}
+
+	firewallManager := firewallManager.NewFirewallmanager(s.dockerManager, "validator", ports)
+	err := firewallManager.SetUpFirewall(ctx, s.config)
 
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of joiner", s.config.SekaidContainerName)
 
