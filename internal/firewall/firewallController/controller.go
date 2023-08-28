@@ -19,8 +19,8 @@ func (f *FirewalldController) CreateNewFirewalldZone() (string, error) {
 	return string(out), err
 }
 
-func (f *FirewalldController) ChangeZone() (string, error) {
-	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--change-interface=eth0", "--zone="+f.zoneName, "--permanent")
+func (f *FirewalldController) ChangeDefaultZone() (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--set-default-zone="+f.zoneName)
 	return string(out), err
 }
 
@@ -34,7 +34,7 @@ func (f *FirewalldController) OpenPort(port string) (string, error) {
 	return string(out), err
 }
 
-func (f *FirewalldController) SaveChanges() (string, error) {
+func (f *FirewalldController) ReloadFirewall() (string, error) {
 	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--reload")
 	return string(out), err
 }
@@ -45,7 +45,18 @@ func (f *FirewalldController) GetAllFirewallZones() (string, []string, error) {
 	return string(out), zones, err
 }
 
-func (f *FirewalldController) AddDockerToTheZone() (string, error) {
-	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--zone="+f.zoneName, "--permanent", "--add-interface=docker0")
+func (f *FirewalldController) AddInterfaceToTheZone(interfaceName string) (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--zone="+f.zoneName, "--add-interface="+interfaceName, "--permanent")
 	return string(out), err
+}
+
+func (f *FirewalldController) EnableDockerRouting(interfaceName string) (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--direct", "--permanent", "--add-rule", "ipv4", "filter", "FORWARD", "0", "-i", interfaceName, "-o", interfaceName, "-j", "ACCEPT")
+	return string(out), err
+}
+
+func (f *FirewalldController) DeleteFirewallZone(zonename string) (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--delete-zone="+zonename, "--permanent")
+	return string(out), err
+
 }
