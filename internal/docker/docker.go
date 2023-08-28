@@ -6,9 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -158,28 +155,4 @@ func (dm *DockerManager) GetNetworksInfo(ctx context.Context) ([]types.NetworkRe
 	}
 
 	return resources, nil
-}
-
-func EditDockerService() error {
-	const dockerOverrideDir = "/etc/systemd/system/docker.service.d"
-	const dockerOverrideFile = "override.conf"
-
-	// Create directory if it doesn't exist
-	if err := os.MkdirAll(dockerOverrideDir, 0755); err != nil {
-		return fmt.Errorf("Error creating directory: %v", err)
-	}
-
-	// Configuration content
-	content := `[Service]
-ExecStart=
-ExecStart=/usr/bin/dockerd --iptables=false
-`
-
-	// Write content to file
-	filePath := filepath.Join(dockerOverrideDir, dockerOverrideFile)
-	if err := ioutil.WriteFile(filePath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("Error writing to file: %v", err)
-	}
-
-	return nil
 }

@@ -154,7 +154,7 @@ func mainJoin(cmd *cobra.Command) {
 	// Right now the files are downloaded in current directory, where the program starts
 	adapters.MustDownloadBinaries(ctx, cfg)
 
-	sekaiManager, err := manager.NewSekaidManager(containerManager, cfg)
+	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
 	errors.HandleFatalErr("Can't create new 'sekai' manager instance", err)
 	sekaiManager.MustInitAndRunJoiner(ctx, genesis)
 

@@ -8,7 +8,6 @@ import (
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
-	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager"
 	"github.com/mrlutik/kira2.0/internal/systemd"
@@ -76,30 +75,13 @@ func mainStart() {
 		InterxDebFileName:   "interx-linux-amd64.deb",
 		TimeBetweenBlocks:   time.Second * 10,
 	}
-
-	ports := []firewallManager.Port{
-		{Port: cfg.RpcPort, Type: "tcp"},
-		{Port: cfg.P2PPort, Type: "tcp"},
-		{Port: cfg.GrpcPort, Type: "tcp"},
-		{Port: cfg.InterxPort, Type: "tcp"},
-		{Port: "22", Type: "tcp"},
-		{Port: "53", Type: "udp"},
-		{Port: "4789", Type: "udp"},
-		{Port: "7946", Type: "udp"},
-		{Port: "7946", Type: "tcp"},
-	}
-
-	firewallManager := firewallManager.NewFirewallmanager("validator", ports)
-	err = firewallManager.SetUpFirewall()
-	errors.HandleFatalErr("Error seting up firewalld", err)
-
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
 	adapters.MustDownloadBinaries(ctx, cfg)
 
-	sekaiManager, err := manager.NewSekaidManager(containerManager, cfg)
+	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
 	sekaiManager.MustInitAndRunGenesisValidator(ctx)
 
