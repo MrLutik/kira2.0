@@ -428,7 +428,7 @@ func (s *SekaidManager) runJoinerSekaidContainer(ctx context.Context, genesis []
 func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 	log := logging.Log
 
-	ports := []firewallManager.Port{
+	ports := []types.Port{
 		{Port: s.config.RpcPort, Type: "tcp"},
 		{Port: s.config.P2PPort, Type: "tcp"},
 		{Port: s.config.GrpcPort, Type: "tcp"},
@@ -441,7 +441,7 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 		{Port: "7946", Type: "tcp"},
 	}
 
-	firewallManager := firewallManager.NewFirewallmanager(s.dockerManager, "validator", ports)
+	firewallManager := firewallManager.NewFirewallManager(s.dockerManager, "validator", ports)
 	err := firewallManager.SetUpFirewall(ctx, s.config)
 
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of genesis validator", s.config.SekaidContainerName)
@@ -495,7 +495,7 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []byte) error {
 	log := logging.Log
 
-	ports := []firewallManager.Port{
+	ports := []types.Port{
 		{Port: s.config.RpcPort, Type: "tcp"},
 		{Port: s.config.P2PPort, Type: "tcp"},
 		{Port: s.config.GrpcPort, Type: "tcp"},
@@ -508,7 +508,7 @@ func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []by
 		{Port: "7946", Type: "tcp"},
 	}
 
-	firewallManager := firewallManager.NewFirewallmanager(s.dockerManager, "validator", ports)
+	firewallManager := firewallManager.NewFirewallManager(s.dockerManager, "validator", ports)
 	err := firewallManager.SetUpFirewall(ctx, s.config)
 
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of joiner", s.config.SekaidContainerName)
