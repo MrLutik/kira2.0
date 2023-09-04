@@ -133,7 +133,7 @@ func mainJoin(cmd *cobra.Command) {
 	sekaidP2PPort, _ := cmd.Flags().GetString("p2p-port")
 
 	// Information about validator we need to join
-	joinerCfg := &manager.SeedKiraConfig{
+	joinerCfg := &manager.TargetSeedKiraConfig{
 		IpAddress:     ip,
 		InterxPort:    interxPort,
 		SekaidRPCPort: sekaidRPCPort,
