@@ -28,6 +28,7 @@ const ipRegex = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-
 const portRegex = `^([1-9]\d{0,4}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`
 
 var log = logging.Log
+var recover bool
 
 func Join() *cobra.Command {
 	log.Info("Adding `join` command...")
@@ -51,6 +52,7 @@ func Join() *cobra.Command {
 	joinCmd.Flags().String("interx-port", "11000", "Interx port of the validator")
 	joinCmd.Flags().String("rpc-port", "26657", "Sekaid RPC port of the validator")
 	joinCmd.Flags().String("p2p-port", "26656", "Sekaid P2P port of the validator")
+	joinCmd.PersistentFlags().Bool("recover", false, fmt.Sprintf("If true recover keys and mnemonic from master mnemonic, otherwise generate random one"))
 
 	return joinCmd
 }
@@ -138,8 +140,8 @@ func mainJoin(cmd *cobra.Command) {
 		SekaidP2PPort: sekaidP2PPort,
 	}
 	joinerManager := manager.NewJoinerManager(joinerCfg)
-
-	cfg, err := joinerManager.GenerateKiraConfig(ctx)
+	recover, _ = cmd.Flags().GetBool("recover")
+	cfg, err := joinerManager.GenerateKiraConfig(ctx, recover)
 	errors.HandleFatalErr("Can't get kira config", err)
 
 	// TODO method called twice

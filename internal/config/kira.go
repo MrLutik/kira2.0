@@ -2,6 +2,8 @@ package config
 
 import (
 	"time"
+
+	vlg "github.com/PeepoFrog/validator-key-gen/MnemonicsGenerator"
 )
 
 // TomlValue represents a configuration value to be updated in the '*.toml' file of the 'sekaid' application.
@@ -39,8 +41,11 @@ type KiraConfig struct {
 	Moniker             string        // Moniker
 	SekaiDebFileName    string        // fileName of sekai deb file
 	InterxDebFileName   string        // fileName of interx deb file
+	SecretsFolder       string        // path where mnemonics.env and node keys located
 	TimeBetweenBlocks   time.Duration // Awaiting time between blocks
 	ConfigTomlValues    []TomlValue   // List of configs for update
+	Recover             bool          // switch for recover mode
+	MasterMnamonicSet   *vlg.MasterMnemonicSet
 	// NOTE Default time of block is ~5 seconds!
 	// Check (m *MonitoringService) GetConsensusInfo method
 	// from cmd/monitoring/main.go

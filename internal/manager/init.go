@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"os"
 
 	"github.com/mrlutik/kira2.0/internal/errors"
 )
@@ -12,6 +13,13 @@ const debFileDestInContainer = "/tmp/"
 // If the 'isGenesisValidator' flag is set to true, it sets up the container for the genesis validator, otherwise for the joiner.
 // The method will terminate the program with a fatal error if any step encounters an error.
 func (s *SekaidManager) mustInitializeAndRunContainer(ctx context.Context, genesis []byte, isGenesisValidator bool) {
+	//removing and creating again .secrets folder
+	usr := s.helper.GetCurrentOSUser()
+	s.config.SecretsFolder = usr.HomeDir + "/.secrets"
+	os.RemoveAll(s.config.SecretsFolder)
+	os.Mkdir(s.config.SecretsFolder, os.ModePerm)
+	err := s.ReadOrGenerateMasterMnemonic()
+	errors.HandleFatalErr("Reading or generating master mnemonic", err)
 	check, err := s.containerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
 	errors.HandleFatalErr("Checking container names", err)
 	if check {

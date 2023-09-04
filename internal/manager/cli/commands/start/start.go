@@ -2,6 +2,7 @@ package start
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
@@ -21,6 +22,7 @@ const (
 )
 
 var log = logging.Log
+var recover bool
 
 func Start() *cobra.Command {
 	log.Info("Adding `start` command...")
@@ -28,10 +30,13 @@ func Start() *cobra.Command {
 		Use:   use,
 		Short: short,
 		Long:  long,
-		Run: func(_ *cobra.Command, _ []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
+			recover, _ = cmd.Flags().GetBool("recover")
+
 			mainStart()
 		},
 	}
+	startCmd.PersistentFlags().Bool("recover", false, fmt.Sprintf("If true recover keys and mnemonic from master mnemonic, otherwise generate random one"))
 
 	return startCmd
 }
@@ -74,6 +79,7 @@ func mainStart() {
 		SekaiDebFileName:    "sekai-linux-amd64.deb",
 		InterxDebFileName:   "interx-linux-amd64.deb",
 		TimeBetweenBlocks:   time.Second * 10,
+		Recover:             recover,
 	}
 
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
