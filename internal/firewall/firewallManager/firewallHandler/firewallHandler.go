@@ -64,6 +64,7 @@ func (fh *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
 	return false, nil
 }
 
+// geting docker's custom interface name
 func (fh *FirewallHandler) GetDockerNetworkInterfaceName(ctx context.Context, dockerNetworkName string) (interfaceName string, err error) {
 	networks, err := fh.dockerManager.GetNetworksInfo(ctx)
 	if err != nil {
@@ -83,6 +84,20 @@ func (fh *FirewallHandler) BlackListIP(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck != nil {
 		fh.firewalldController.RejectIp(ip)
+	} else {
+		return fmt.Errorf("%s is not a valid ip", ip)
+	}
+	_, err := fh.firewalldController.ReloadFirewall()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fh *FirewallHandler) WhiteListIp(ip string) error {
+	ipCheck := net.ParseIP(ip)
+	if ipCheck != nil {
+		fh.firewalldController.AcceptIp(ip)
 	} else {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}

@@ -1,6 +1,7 @@
 package firewallController
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/mrlutik/kira2.0/internal/osutils"
@@ -58,5 +59,14 @@ func (f *FirewalldController) EnableDockerRouting(interfaceName string) (string,
 func (f *FirewalldController) DeleteFirewallZone(zonename string) (string, error) {
 	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--delete-zone="+zonename, "--permanent")
 	return string(out), err
+}
 
+func (f *FirewalldController) RejectIp(ip string) (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+f.zoneName, fmt.Sprintf(`--add-rich-rule="rule family='ipv4' source address=%s reject"`, ip))
+	return string(out), err
+}
+
+func (f *FirewalldController) AcceptIp(ip string) (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+f.zoneName, fmt.Sprintf(`--add-rich-rule="rule family='ipv4' source address=%s accept"`, ip))
+	return string(out), err
 }
