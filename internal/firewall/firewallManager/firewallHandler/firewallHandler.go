@@ -35,12 +35,15 @@ func (fh *FirewallHandler) OpenPorts(portsToOpen []types.Port) error {
 	return nil
 }
 
-func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) error {
+func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) (err error) {
 	var ok bool
 	for _, port := range portsToOpen {
-		ok = osutils.CheckIfPortIsValid(port.Port)
+		ok, err = osutils.CheckIfPortIsValid(port.Port)
+		if err != nil {
+			return fmt.Errorf("error when parsinh <%s>: %w", port, err)
+		}
 		if !ok {
-			return fmt.Errorf("port <%s> is not valid", port)
+			return fmt.Errorf("port <%s> is not valid: %w", port, err)
 		}
 		if port.Type != "tcp" && port.Type != "udp" {
 			return fmt.Errorf("port type <%s> is not valid", port.Type)
