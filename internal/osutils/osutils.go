@@ -1,6 +1,7 @@
 package osutils
 
 import (
+	"fmt"
 	"net"
 	"os/exec"
 	"runtime"
@@ -12,16 +13,24 @@ import (
 
 var log = logging.Log
 
+func CheckIfIPIsValid(input string) (bool, error) {
+	ipCheck := net.ParseIP(input)
+	if ipCheck == nil {
+		return false, fmt.Errorf("%s in not an valid ip", input)
+	}
+	return true, nil
+}
+
 // Checks if input string is a valid port  0-65535
-func CheckIfPortIsValid(input string) bool {
+func CheckIfPortIsValid(input string) (bool, error) {
 	// Convert string to integer
 	port, err := strconv.Atoi(input)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	// Check if the port is in the valid range
-	return port >= 0 && port <= 65535
+	return port >= 0 && port <= 65535, nil
 }
 
 // Run command
