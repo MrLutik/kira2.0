@@ -161,6 +161,9 @@ func (i *InterxManager) getConfigPacks(ctx context.Context) ([]config.JsonValue,
 		config.JsonValue{Key: "grpc", Value: fmt.Sprintf("dns:///%s:%s", i.config.SekaidContainerName, i.config.GrpcPort)},
 		config.JsonValue{Key: "rpc", Value: fmt.Sprintf("http://%s:%s", i.config.SekaidContainerName, i.config.RpcPort)},
 		config.JsonValue{Key: "port", Value: i.config.InterxPort},
+
+		config.JsonValue{Key: "mnemonic", Value: string(i.config.MasterMnamonicSet.SignerAddrMnemonic)},
+		config.JsonValue{Key: "faucet.mnemonic", Value: string(i.config.MasterMnamonicSet.SignerAddrMnemonic)},
 	)
 
 	// TODO other needed configurations

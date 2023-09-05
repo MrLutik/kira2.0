@@ -28,3 +28,17 @@ type ResponseChunkedGenesis struct {
 		Data  string      `json:"data"`
 	} `json:"result"`
 }
+
+// ResponseBlock represents the JSON response structure for the Sekaid `/block` query.
+type ResponseBlock struct {
+	Result struct {
+		BlockID struct {
+			Hash string `json:"hash"`
+		} `json:"block_id"`
+		Block struct {
+			Header struct {
+				Height string `json:"height"`
+			} `json:"header"`
+		} `json:"block"`
+	} `json:"result"`
+}
