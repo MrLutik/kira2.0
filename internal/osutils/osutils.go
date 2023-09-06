@@ -28,9 +28,12 @@ func CheckIfPortIsValid(input string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
 	// Check if the port is in the valid range
-	return port >= 0 && port <= 65535, nil
+	if port < 0 || port > 65535 {
+		return false, fmt.Errorf("%v port in not in valid range", port)
+	}
+
+	return true, nil
 }
 
 // Run command

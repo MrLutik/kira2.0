@@ -471,12 +471,9 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 		{Port: s.config.P2PPort, Type: "tcp"},
 		{Port: s.config.GrpcPort, Type: "tcp"},
 		{Port: s.config.InterxPort, Type: "tcp"},
-		{Port: "26660", Type: "tcp"},
+		{Port: s.config.PrometheusPort, Type: "tcp"},
 		{Port: "22", Type: "tcp"},
 		{Port: "53", Type: "udp"},
-		{Port: "4789", Type: "udp"},
-		{Port: "7946", Type: "udp"},
-		{Port: "7946", Type: "tcp"},
 	}
 
 	firewallManager := firewallManager.NewFirewallManager(s.dockerManager, "validator", ports)
@@ -538,12 +535,9 @@ func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []by
 		{Port: s.config.P2PPort, Type: "tcp"},
 		{Port: s.config.GrpcPort, Type: "tcp"},
 		{Port: s.config.InterxPort, Type: "tcp"},
-		{Port: "26660", Type: "tcp"},
+		{Port: s.config.PrometheusPort, Type: "tcp"},
 		{Port: "22", Type: "tcp"},
 		{Port: "53", Type: "udp"},
-		{Port: "4789", Type: "udp"},
-		{Port: "7946", Type: "udp"},
-		{Port: "7946", Type: "tcp"},
 	}
 
 	firewallManager := firewallManager.NewFirewallManager(s.dockerManager, "validator", ports)
