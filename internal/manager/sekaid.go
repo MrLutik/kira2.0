@@ -55,6 +55,12 @@ func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *
 		return nil, err
 	}
 
+	natPrometheusPort, err := nat.NewPort("tcp", config.PrometheusPort)
+	if err != nil {
+		log.Errorf("Creating NAT Prometheus port error: %s", err)
+		return nil, err
+	}
+
 	sekaiContainerConfig := &container.Config{
 		Image:       fmt.Sprintf("%s:%s", config.DockerImageName, config.DockerImageVersion),
 		Cmd:         []string{"/bin/bash"},
@@ -64,8 +70,9 @@ func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *
 		StdinOnce:   true,
 		Hostname:    fmt.Sprintf("%s.local", config.SekaidContainerName),
 		ExposedPorts: nat.PortSet{
-			natRpcPort: struct{}{},
-			natP2PPort: struct{}{},
+			natRpcPort:        struct{}{},
+			natP2PPort:        struct{}{},
+			natPrometheusPort: struct{}{},
 		},
 	}
 
@@ -74,8 +81,9 @@ func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *
 			config.VolumeName,
 		},
 		PortBindings: nat.PortMap{
-			natRpcPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.RpcPort}},
-			natP2PPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.P2PPort}},
+			natRpcPort:        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.RpcPort}},
+			natP2PPort:        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.P2PPort}},
+			natPrometheusPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.PrometheusPort}},
 		},
 		Privileged: true,
 	}
