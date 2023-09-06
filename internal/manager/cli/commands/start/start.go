@@ -75,6 +75,7 @@ func mainStart() {
 		P2PPort:             "26656",
 		GrpcPort:            "9090",
 		InterxPort:          "11000",
+		PrometheusPort:      "26660",
 		Moniker:             "VALIDATOR",
 		SekaiDebFileName:    "sekai-linux-amd64.deb",
 		InterxDebFileName:   "interx-linux-amd64.deb",
