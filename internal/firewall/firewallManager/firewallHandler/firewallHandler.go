@@ -27,7 +27,7 @@ type FirewallHandler struct {
 func (fh *FirewallHandler) OpenPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
 		log.Debugf("Opening %s/%s port\n", port.Port, port.Type)
-		o, err := fh.firewalldController.OpenPort(fmt.Sprintf("%s/%s", port.Port, port.Type))
+		o, err := fh.firewalldController.OpenPort(port)
 		if err != nil {
 			return fmt.Errorf("%s\n%w", o, err)
 		}

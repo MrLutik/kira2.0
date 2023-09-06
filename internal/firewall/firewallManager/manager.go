@@ -85,11 +85,11 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context, kiraConfig *config
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
-	log.Infof("Closing all ports\n")
-	o, err = fm.FirewalldController.CloseAllPorts()
-	if err != nil {
-		return fmt.Errorf("%s\n%w", o, err)
-	}
+	// log.Infof("Closing all ports\n")
+	// o, err = fm.FirewalldController.DropAllPorts()
+	// if err != nil {
+	// 	return fmt.Errorf("%s\n%w", o, err)
+	// }
 
 	log.Infof("Checking ports %+v \n", fm.PortsToOpen)
 	err = fm.FirewallHandler.CheckPorts(fm.PortsToOpen)

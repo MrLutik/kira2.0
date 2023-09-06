@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/mrlutik/kira2.0/internal/osutils"
+	"github.com/mrlutik/kira2.0/internal/types"
 )
 
 type FirewalldController struct {
@@ -25,13 +26,23 @@ func (f *FirewalldController) ChangeDefaultZone() (string, error) {
 	return string(out), err
 }
 
-func (f *FirewalldController) CloseAllPorts() (string, error) {
+func (f *FirewalldController) DropAllConnections() (string, error) {
 	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--set-target=DROP", "--permanent")
 	return string(out), err
 }
 
-func (f *FirewalldController) OpenPort(port string) (string, error) {
-	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--zone=validator", "--add-port="+port, "--permanent")
+func (f *FirewalldController) AllowAllConnections() (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--set-target=DROP", "--permanent")
+	return string(out), err
+}
+
+func (f *FirewalldController) OpenPort(port types.Port) (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--zone="+f.zoneName, "--add-port="+port.Port+"/"+port.Type, "--permanent")
+	return string(out), err
+}
+
+func (f *FirewalldController) ClosePort(port types.Port) (string, error) {
+	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--zone="+f.zoneName, "--remove-port="+port.Port+"/"+port.Type, "--permanent")
 	return string(out), err
 }
 
