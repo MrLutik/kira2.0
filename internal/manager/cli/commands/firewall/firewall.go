@@ -34,13 +34,11 @@ func Firewall() *cobra.Command {
 		},
 	}
 
-	firewallCmd.Flags().String("blacklist-ip", "", "IP address to block")
-	firewallCmd.Flags().String("whitelist-ip", "", "IP address to allow")
-
-	// firewallCmd.Flags().String("close-port", "", "Port to close")
-	// firewallCmd.Flags().String("open-port", "", "Port to open")
 	firewallCmd.AddCommand(openport.OpenPort())
 	firewallCmd.AddCommand(closePort.ClosePort())
+
+	firewallCmd.Flags().String("blacklist-ip", "", "IP address to block")
+	firewallCmd.Flags().String("whitelist-ip", "", "IP address to allow")
 	firewallCmd.Flags().Bool("drop-all", false, "Set this flag to block all ports except those needed for node functioning")
 	firewallCmd.Flags().Bool("allow-all", false, "Set this flag to open all ports, after installation is opened by default")
 
