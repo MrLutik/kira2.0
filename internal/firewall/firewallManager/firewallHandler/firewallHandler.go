@@ -15,13 +15,16 @@ import (
 
 var log = logging.Log
 
-func NewFirewallHandler(dockerManager *docker.DockerManager, firewalldController *firewallController.FirewalldController) *FirewallHandler {
-	return &FirewallHandler{firewalldController: firewalldController, dockerManager: dockerManager}
+//	func NewFirewallHandler(dockerManager *docker.DockerManager, firewalldController *firewallController.FirewalldController) *FirewallHandler {
+//		return &FirewallHandler{firewalldController: firewalldController, dockerManager: dockerManager}
+//	}
+func NewFirewallHandler(firewalldController *firewallController.FirewalldController) *FirewallHandler {
+	return &FirewallHandler{firewalldController: firewalldController}
 }
 
 type FirewallHandler struct {
 	firewalldController *firewallController.FirewalldController
-	dockerManager       *docker.DockerManager
+	// dockerManager       *docker.DockerManager
 }
 
 func (fh *FirewallHandler) OpenPorts(portsToOpen []types.Port) error {
@@ -68,8 +71,8 @@ func (fh *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
 }
 
 // geting docker's custom interface name
-func (fh *FirewallHandler) GetDockerNetworkInterfaceName(ctx context.Context, dockerNetworkName string) (interfaceName string, err error) {
-	networks, err := fh.dockerManager.GetNetworksInfo(ctx)
+func (fh *FirewallHandler) GetDockerNetworkInterfaceName(ctx context.Context, dockerNetworkName string, dockerManager *docker.DockerManager) (interfaceName string, err error) {
+	networks, err := dockerManager.GetNetworksInfo(ctx)
 	if err != nil {
 		return interfaceName, fmt.Errorf("cannot get docker network info: %w", err)
 	}
@@ -90,7 +93,23 @@ func (fh *FirewallHandler) BlackListIP(ip string) error {
 	} else {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
-	_, err := fh.firewalldController.ReloadFirewall()
+	out, err := fh.firewalldController.ReloadFirewall()
+	log.Debugf("%s", out)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fh *FirewallHandler) RemoveFromBlackListIP(ip string) error {
+	ipCheck := net.ParseIP(ip)
+	if ipCheck != nil {
+		fh.firewalldController.RemoveRejectRuleIp(ip)
+	} else {
+		return fmt.Errorf("%s is not a valid ip", ip)
+	}
+	out, err := fh.firewalldController.ReloadFirewall()
+	log.Debugf("%s", out)
 	if err != nil {
 		return err
 	}
@@ -104,7 +123,23 @@ func (fh *FirewallHandler) WhiteListIp(ip string) error {
 	} else {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
-	_, err := fh.firewalldController.ReloadFirewall()
+	out, err := fh.firewalldController.ReloadFirewall()
+	log.Debugf("%s", out)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fh *FirewallHandler) RemoveFromWhitelistIP(ip string) error {
+	ipCheck := net.ParseIP(ip)
+	if ipCheck != nil {
+		fh.firewalldController.RemoveAllowRuleIp(ip)
+	} else {
+		return fmt.Errorf("%s is not a valid ip", ip)
+	}
+	out, err := fh.firewalldController.ReloadFirewall()
+	log.Debugf("%s", out)
 	if err != nil {
 		return err
 	}

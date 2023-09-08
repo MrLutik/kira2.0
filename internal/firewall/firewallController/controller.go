@@ -72,12 +72,29 @@ func (f *FirewalldController) DeleteFirewallZone(zonename string) (string, error
 	return string(out), err
 }
 
+// adding rule for rejecting ip
 func (f *FirewalldController) RejectIp(ip string) (string, error) {
-	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+f.zoneName, fmt.Sprintf(`--add-rich-rule="rule family='ipv4' source address=%s reject"`, ip))
+	// out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+f.zoneName, "--add-rich-rule="+fmt.Sprintf(`"rule family='ipv4' source address='%s' reject"`, ip))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="rule family='ipv4' source address='%s' reject"`, f.zoneName, ip))
 	return string(out), err
 }
 
+// removing rule for rejecting ip
+func (f *FirewalldController) RemoveRejectRuleIp(ip string) (string, error) {
+	// out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+f.zoneName, "--add-rich-rule="+fmt.Sprintf(`"rule family='ipv4' source address='%s' reject"`, ip))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' reject"`, f.zoneName, ip))
+	return string(out), err
+}
+
+// adding rule for accepting ip
 func (f *FirewalldController) AcceptIp(ip string) (string, error) {
-	out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+f.zoneName, fmt.Sprintf(`--add-rich-rule="rule family='ipv4' source address=%s accept"`, ip))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="rule family='ipv4' source address='%s' accept"`, f.zoneName, ip))
+	return string(out), err
+}
+
+// removing rule for accepting ip
+func (f *FirewalldController) RemoveAllowRuleIp(ip string) (string, error) {
+	// out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+f.zoneName, "--add-rich-rule="+fmt.Sprintf(`"rule family='ipv4' source address='%s' reject"`, ip))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' accept"`, f.zoneName, ip))
 	return string(out), err
 }
