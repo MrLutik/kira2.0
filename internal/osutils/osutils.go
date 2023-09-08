@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/shlex"
 	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
@@ -16,7 +17,7 @@ var log = logging.Log
 func CheckIfIPIsValid(input string) (bool, error) {
 	ipCheck := net.ParseIP(input)
 	if ipCheck == nil {
-		return false, fmt.Errorf("%s in not an valid ip", input)
+		return false, fmt.Errorf("<%s> is not a valid ip", input)
 	}
 	return true, nil
 }
@@ -45,6 +46,22 @@ func RunCommand(command string, args ...string) ([]byte, error) {
 		return output, err
 	}
 	return output, err
+}
+
+func RunCommandV2(commandStr string) (string, error) {
+	log.Printf("RUNNING V2 COMMAND RUNNER\n")
+	args, err := shlex.Split(commandStr)
+	if err != nil {
+		return "", err
+	}
+	log.Debugf("Running: %s ", commandStr)
+	cmd := exec.Command(args[0], args[1:]...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	return string(out), nil
 }
 
 func GetInternetInterface() string {
