@@ -3,6 +3,7 @@ package firewallManager
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"time"
 
 	"github.com/mrlutik/kira2.0/internal/config"
@@ -76,13 +77,43 @@ func NewFirewallManager(dockerManager *docker.DockerManager, kiraCfg *config.Kir
 	c := firewallController.NewFireWalldController(cfg.ZoneName)
 	h := firewallHandler.NewFirewallHandler(c)
 
-	return &FirewallManager{FirewalldController: c, DockerManager: dockerManager, FirewallHandler: h, FirewallConfig: cfg}
+	return &FirewallManager{FirewalldController: c, DockerManager: dockerManager, FirewallHandler: h, FirewallConfig: cfg, KiraConfig: kiraCfg}
 }
 
 var log = logging.Log
 
+func (fm *FirewallManager) CheckFirewallSetUp(ctx context.Context) (bool, error) {
+	_, err := exec.LookPath("firewall-cmd")
+	if err != nil {
+		return false, fmt.Errorf("firewalld is not installed on the system")
+	}
+
+	//check if validator zone exist
+	check, err := fm.FirewallHandler.CheckFirewallZone(fm.FirewallConfig.ZoneName)
+	if err != nil {
+		return false, fmt.Errorf("error while checking validator zone %w", err)
+	}
+	if !check {
+		return false, nil
+	}
+	return true, nil
+}
+
 func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	log.Infof("***FIREWALL SETUP***\n")
+
+	log.Infof("Disabling docker iptables\n")
+	fm.FirewallHandler.DisableIpTablesForDocker()
+	log.Infof("Restarting docker service\n")
+	err := fm.FirewallHandler.RestartDockerService()
+	if err != nil {
+		return fmt.Errorf("cannot restart docker service: %s", err)
+	}
+	log.Infof("Checking if docker is running\n")
+	err = fm.DockerManager.VerifyDockerInstallation(ctx)
+	if err != nil {
+		return err
+	}
 
 	log.Infof("checking and deleting default docker zone\n")
 	dockerZoneName := "docker"
@@ -166,15 +197,34 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 
-	interfaceName, err := fm.FirewallHandler.GetDockerNetworkInterfaceName(ctx, fm.KiraConfig.DockerNetworkName, fm.DockerManager)
+	dockerInterface, err := fm.FirewallHandler.GetDockerNetworkInterface(ctx, fm.KiraConfig.DockerNetworkName, fm.DockerManager)
+	interfaceName := "br-" + dockerInterface.ID[0:11]
+
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
+	fm.DockerManager.GetNetworksInfo(ctx)
 	log.Infof("Adding %s interface to the zone and enabling routing\n", interfaceName)
 	o, err = fm.FirewalldController.AddInterfaceToTheZone(interfaceName)
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
+
+	dockerInterfaceConfig := dockerInterface.IPAM.Config
+	log.Debugf("docker interace subnet: %s", dockerInterfaceConfig[0].Subnet)
+	o, err = fm.FirewalldController.AddRichRule(fmt.Sprintf("rule family=ipv4 source address=%s accept", dockerInterfaceConfig[0].Subnet), fm.FirewallConfig.ZoneName)
+	if err != nil {
+		return fmt.Errorf("%s\n%w", o, err)
+	}
+	o, err = fm.FirewalldController.ReloadFirewall()
+	if err != nil {
+		return fmt.Errorf("%s\n%w", o, err)
+	}
+	o, err = fm.FirewalldController.TurnOnMasquarade()
+	if err != nil {
+		return fmt.Errorf("%s\n%w", o, err)
+	}
+	// os.Exit(1)
 	//adding docker to the zone and enabling routing
 	log.Infof("Adding docker0 interface to the zone and enabling routing\n")
 	o, err = fm.FirewalldController.AddInterfaceToTheZone("docker0")
@@ -189,12 +239,16 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
-
-	//save
+	log.Infof("Reloading firewall\n")
 	o, err = fm.FirewalldController.ReloadFirewall()
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 
+	log.Infof("Restarting docker service\n")
+	err = fm.FirewallHandler.RestartDockerService()
+	if err != nil {
+		return fmt.Errorf("cannot restart docker service: %s", err)
+	}
 	return nil
 }

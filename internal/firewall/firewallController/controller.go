@@ -98,3 +98,13 @@ func (f *FirewalldController) RemoveAllowRuleIp(ip string) (string, error) {
 	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' accept"`, f.zoneName, ip))
 	return string(out), err
 }
+
+func (f *FirewalldController) AddRichRule(rule string, zoneName string) (string, error) {
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="%s"`, zoneName, rule))
+	return string(out), err
+}
+
+func (f *FirewalldController) TurnOnMasquarade() (string, error) {
+	out, err := osutils.RunCommandV2(fmt.Sprintf("firewall-cmd --zone=%s --add-masquerade --permanent", f.zoneName))
+	return string(out), err
+}

@@ -2,9 +2,12 @@ package firewallHandler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 
+	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallController"
 	"github.com/mrlutik/kira2.0/internal/types"
@@ -62,7 +65,7 @@ func (fh *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
 		return false, fmt.Errorf("%s\n%w", out, err)
 	}
 	for _, zone := range zones {
-		log.Debugf("%s %s", zone, zoneName)
+		// log.Debugf("%s %s", zone, zoneName)
 		if zone == zoneName {
 			return true, nil
 		}
@@ -71,18 +74,19 @@ func (fh *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
 }
 
 // geting docker's custom interface name
-func (fh *FirewallHandler) GetDockerNetworkInterfaceName(ctx context.Context, dockerNetworkName string, dockerManager *docker.DockerManager) (interfaceName string, err error) {
+func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string, dockerManager *docker.DockerManager) (dockerInterface *dockerTypes.NetworkResource, err error) {
 	networks, err := dockerManager.GetNetworksInfo(ctx)
 	if err != nil {
-		return interfaceName, fmt.Errorf("cannot get docker network info: %w", err)
+		return dockerInterface, fmt.Errorf("cannot get docker network info: %w", err)
 	}
 
 	for _, network := range networks {
 		if network.Name == dockerNetworkName {
-			interfaceName = "br-" + network.ID[0:11]
+			// interfaceName = "br-" + network.ID[0:11]
+			dockerInterface = &network
 		}
 	}
-	return interfaceName, nil
+	return dockerInterface, nil
 }
 
 // blacklisting ip, still thinking if i shoud do realoading in this func or latter seperate, because reloading taking abit time
@@ -141,6 +145,47 @@ func (fh *FirewallHandler) RemoveFromWhitelistIP(ip string) error {
 	out, err := fh.firewalldController.ReloadFirewall()
 	log.Debugf("%s", out)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (fh *FirewallHandler) RestartDockerService() error {
+	out, err := osutils.RunCommandV2("sudo systemctl restart docker")
+	if err != nil {
+		return fmt.Errorf("failed to restart:\n %s\n%w", string(out), err)
+	}
+	return nil
+}
+
+func (fh *FirewallHandler) DisableIpTablesForDocker() error {
+	filepath := "/etc/docker/daemon.json"
+	type dockerServiceConfig struct {
+		Iptables bool `json:"iptables"`
+	}
+	var config dockerServiceConfig
+	file, err := os.Open(filepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			config.Iptables = false
+		} else {
+			return err
+		}
+	} else {
+		defer file.Close()
+		if err := json.NewDecoder(file).Decode(&config); err != nil {
+			return err
+		}
+		config.Iptables = false
+	}
+	outFile, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	encoder := json.NewEncoder(outFile)
+	encoder.SetIndent("", "    ")
+	if err := encoder.Encode(config); err != nil {
 		return err
 	}
 	return nil
