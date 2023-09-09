@@ -3,6 +3,7 @@ package osutils
 import (
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
@@ -13,6 +14,17 @@ import (
 )
 
 var log = logging.Log
+
+func CheckItPathExist(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
 
 func CheckIfIPIsValid(input string) (bool, error) {
 	ipCheck := net.ParseIP(input)
@@ -48,20 +60,18 @@ func RunCommand(command string, args ...string) ([]byte, error) {
 	return output, err
 }
 
-func RunCommandV2(commandStr string) (string, error) {
-	log.Printf("RUNNING V2 COMMAND RUNNER\n")
+func RunCommandV2(commandStr string) ([]byte, error) {
 	args, err := shlex.Split(commandStr)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 	log.Debugf("Running: %s ", commandStr)
 	cmd := exec.Command(args[0], args[1:]...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", err
+		return out, err
 	}
-
-	return string(out), nil
+	return (out), nil
 }
 
 func GetInternetInterface() string {
