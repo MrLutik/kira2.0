@@ -277,6 +277,22 @@ func (dm *ContainerManager) InitAndCreateContainer(
 	return err
 }
 
+func (dm *ContainerManager) StartContainer(
+	ctx context.Context,
+	containerName string,
+) error {
+	dm.Cli.ContainerStart(ctx, containerName, types.ContainerStartOptions{})
+	return nil
+}
+
+func (dm *ContainerManager) StopContainer(
+	ctx context.Context,
+	containerName string,
+) error {
+	dm.Cli.ContainerStop(ctx, containerName, container.StopOptions{})
+	return nil
+}
+
 // InstallDebPackage installs a Debian package (.deb) inside a specified container.
 // ctx: The context for the operation.
 // containerID: The ID or name of the container where the package will be installed.
