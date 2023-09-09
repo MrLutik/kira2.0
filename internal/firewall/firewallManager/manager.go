@@ -210,8 +210,10 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 
+	log.Debugf("issuing docker interface subnet\n")
+
 	dockerInterfaceConfig := dockerInterface.IPAM.Config
-	log.Debugf("docker interace subnet: %s", dockerInterfaceConfig[0].Subnet)
+	log.Debugf("docker interace subnet: %s\n", dockerInterfaceConfig[0].Subnet)
 	o, err = fm.FirewalldController.AddRichRule(fmt.Sprintf("rule family=ipv4 source address=%s accept", dockerInterfaceConfig[0].Subnet), fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)

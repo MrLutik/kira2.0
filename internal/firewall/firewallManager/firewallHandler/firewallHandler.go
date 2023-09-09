@@ -74,19 +74,12 @@ func (fh *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
 }
 
 // geting docker's custom interface name
-func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string, dockerManager *docker.DockerManager) (dockerInterface *dockerTypes.NetworkResource, err error) {
-	networks, err := dockerManager.GetNetworksInfo(ctx)
+func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string, dockerManager *docker.DockerManager) (dockerInterface dockerTypes.NetworkResource, err error) {
+	network, err := dockerManager.Cli.NetworkInspect(ctx, dockerNetworkName, dockerTypes.NetworkInspectOptions{})
 	if err != nil {
 		return dockerInterface, fmt.Errorf("cannot get docker network info: %w", err)
 	}
-
-	for _, network := range networks {
-		if network.Name == dockerNetworkName {
-			// interfaceName = "br-" + network.ID[0:11]
-			dockerInterface = &network
-		}
-	}
-	return dockerInterface, nil
+	return network, nil
 }
 
 // blacklisting ip, still thinking if i shoud do realoading in this func or latter seperate, because reloading taking abit time
