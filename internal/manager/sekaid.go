@@ -11,7 +11,6 @@ import (
 
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
-	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager/utils"
 	"github.com/mrlutik/kira2.0/internal/monitoring"
@@ -268,13 +267,20 @@ func (s *SekaidManager) ReadOrGenerateMasterMnemonic() error {
 	if s.config.Recover {
 		masterMnemonic = s.helper.MnemonicReader()
 	} else {
-		bip39mn, err := s.helper.GenerateMnemonic()
-		if err != nil {
-			return err
+		masterMnemonic, err = s.helper.ReadMnemonicsFromFile(s.config.SecretsFolder + "/mnemonics.env")
+
+		if masterMnemonic == "" || err != nil {
+			log.Printf("Coud not read master mnemonic from file, trying to generete new one \n%s\n", err)
+			bip39mn, err := s.helper.GenerateMnemonic()
+			if err != nil {
+				return err
+			}
+			masterMnemonic = bip39mn.String()
+		} else {
+			log.Println("MASTER MNEMONIC WAS FOUND AND RESTORED")
 		}
-		masterMnemonic = bip39mn.String()
 	}
-	log.Printf("MASTER MNEMONIC IS:\n%s\n", masterMnemonic)
+	log.Debugf("MASTER MNEMONIC IS:\n%s\n", masterMnemonic)
 	s.config.MasterMnamonicSet, err = s.helper.GenerateMnemonicsFromMaster(string(masterMnemonic))
 	if err != nil {
 		return err
@@ -466,8 +472,18 @@ func (s *SekaidManager) runJoinerSekaidContainer(ctx context.Context, genesis []
 func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 	log := logging.Log
 
-	firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
-	err := firewallManager.SetUpFirewall(ctx)
+	// log.Println("stoping container before docker service restart")
+	// if err := s.containerManager.StopContainer(ctx, s.config.SekaidContainerName); err != nil {
+	// 	return fmt.Errorf("stop '%s' container error: %w", s.config.SekaidContainerName, err)
+	// }
+	// firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
+	// err := firewallManager.SetUpFirewall(ctx)
+	// //TODO: ADD FUNCTIONALITY FOR RESTART CONTAINER, FIREWALLSETUP IS RESTARTING DOCKER SERVICE SO CONTAINER SHOULD BE STARTED AGAIN
+	// log.Println("starting container again")
+	// if err = s.containerManager.StartContainer(ctx, s.config.SekaidContainerName); err != nil {
+	// 	log.Errorf("Cannot start container second time '%s' container error: %s", s.config.SekaidContainerName, err)
+	// 	return fmt.Errorf("start '%s' container error: %w", s.config.SekaidContainerName, err)
+	// }
 
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of genesis validator", s.config.SekaidContainerName)
 
@@ -520,8 +536,18 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []byte) error {
 	log := logging.Log
 
-	firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
-	err := firewallManager.SetUpFirewall(ctx)
+	// log.Println("stoping container before docker service restart")
+	// if err := s.containerManager.StopContainer(ctx, s.config.SekaidContainerName); err != nil {
+	// 	return fmt.Errorf("stop '%s' container error: %w", s.config.SekaidContainerName, err)
+	// }
+	// firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
+	// err := firewallManager.SetUpFirewall(ctx)
+	// //TODO: ADD FUNCTIONALITY FOR RESTART CONTAINER, FIREWALLSETUP IS RESTARTING DOCKER SERVICE SO CONTAINER SHOULD BE STARTED AGAIN
+	// log.Println("starting container again")
+	// if err = s.containerManager.StartContainer(ctx, s.config.SekaidContainerName); err != nil {
+	// 	log.Errorf("Cannot start container second time '%s' container error: %s", s.config.SekaidContainerName, err)
+	// 	return fmt.Errorf("start '%s' container error: %w", s.config.SekaidContainerName, err)
+	// }
 
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of joiner", s.config.SekaidContainerName)
 
