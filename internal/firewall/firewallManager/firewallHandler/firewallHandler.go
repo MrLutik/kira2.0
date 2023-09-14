@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"regexp"
+	"strings"
 
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/mrlutik/kira2.0/internal/docker"
@@ -39,6 +41,48 @@ func (fh *FirewallHandler) OpenPorts(portsToOpen []types.Port, zoneName string) 
 		}
 	}
 	return nil
+}
+
+func (fh *FirewallHandler) ClosePorts(portsToClose []types.Port, zoneName string) error {
+	for _, port := range portsToClose {
+		if port.Port != "53" && port.Port != "22" {
+			log.Debugf("Closing %s/%s port\n", port.Port, port.Type)
+			o, err := fh.firewalldController.ClosePort(port, zoneName)
+			if err != nil {
+				return fmt.Errorf("%s\n%w", o, err)
+			}
+		} else {
+			log.Debugf("skiping %s port (sys port)", port.Port)
+		}
+	}
+	return nil
+}
+
+func (fh *FirewallHandler) ConvertFirewalldPortToKM2Port(firewalldPort string) (types.Port, error) {
+	re := regexp.MustCompile(`(?P<Port>\d+)/(?P<Type>tcp|udp)`)
+	matches := re.FindStringSubmatch(firewalldPort)
+
+	if matches == nil {
+		return types.Port{}, fmt.Errorf("cannot convert %s port, no matches", firewalldPort)
+	}
+
+	// Extract matches based on named groups
+	portIndex := re.SubexpIndex("Port")
+	typeIndex := re.SubexpIndex("Type")
+
+	port := matches[portIndex]
+	portType := strings.TrimPrefix(matches[typeIndex], "/")
+	check, err := osutils.CheckIfPortIsValid(port)
+	if err != nil {
+		return types.Port{}, fmt.Errorf("cannot check if <%s> is a valid port", port)
+	}
+	if !check {
+		return types.Port{}, fmt.Errorf("<%s> is not a valid port", port)
+	}
+	return types.Port{
+		Port: port,
+		Type: portType,
+	}, nil
 }
 
 func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) (err error) {

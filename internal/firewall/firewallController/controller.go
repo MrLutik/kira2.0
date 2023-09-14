@@ -108,3 +108,9 @@ func (f *FirewalldController) TurnOnMasquarade(zoneName string) (string, error) 
 	out, err := osutils.RunCommandV2(fmt.Sprintf("firewall-cmd --zone=%s --add-masquerade --permanent", zoneName))
 	return string(out), err
 }
+
+func (f *FirewalldController) GetOpenedPorts(zoneName string) (string, []string, error) {
+	out, err := osutils.RunCommandV2(fmt.Sprintf("firewall-cmd --zone=%s --list-ports", zoneName))
+	ports := strings.Fields(string(out))
+	return string(out), ports, err
+}

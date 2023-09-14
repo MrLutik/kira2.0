@@ -290,7 +290,7 @@ func (fm *FirewallManager) ClostAllOpenedPorts(ctx context.Context) error {
 	return nil
 }
 
-func (fm *FirewallManager) OpenDefaultPorts(ctx context.Context) error {
+func (fm *FirewallManager) OpenConfigPorts(ctx context.Context) error {
 	portsToOpen := fm.FirewallConfig.PortsToOpen
 	err := fm.FirewallHandler.CheckPorts(portsToOpen)
 	if err != nil {
@@ -305,5 +305,29 @@ func (fm *FirewallManager) OpenDefaultPorts(ctx context.Context) error {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 
+	return nil
+}
+
+func (fm *FirewallManager) RestoreDefaultFirewalldSetingsForKM2(ctx context.Context) error {
+	check, err := fm.FirewallHandler.CheckFirewallZone(fm.FirewallConfig.ZoneName)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	if check {
+		log.Infof("docker zone exist: %s, deleting\n", fm.FirewallConfig.ZoneName)
+		o, err := fm.FirewalldController.DeleteFirewallZone(fm.FirewallConfig.ZoneName)
+		if err != nil {
+			return fmt.Errorf("%s\n%w", o, err)
+		}
+		o, err = fm.FirewalldController.ReloadFirewall()
+		if err != nil {
+			return fmt.Errorf("%s\n%w", o, err)
+		}
+	}
+
+	err = fm.SetUpFirewall(ctx)
+	if err != nil {
+		return fmt.Errorf("errow while setuping firewalld: %w", err)
+	}
 	return nil
 }
