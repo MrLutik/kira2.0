@@ -30,10 +30,10 @@ type FirewallHandler struct {
 	// dockerManager       *docker.DockerManager
 }
 
-func (fh *FirewallHandler) OpenPorts(portsToOpen []types.Port) error {
+func (fh *FirewallHandler) OpenPorts(portsToOpen []types.Port, zoneName string) error {
 	for _, port := range portsToOpen {
 		log.Debugf("Opening %s/%s port\n", port.Port, port.Type)
-		o, err := fh.firewalldController.OpenPort(port)
+		o, err := fh.firewalldController.OpenPort(port, zoneName)
 		if err != nil {
 			return fmt.Errorf("%s\n%w", o, err)
 		}
@@ -83,10 +83,10 @@ func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, docker
 }
 
 // blacklisting ip, still thinking if i shoud do realoading in this func or latter seperate, because reloading taking abit time
-func (fh *FirewallHandler) BlackListIP(ip string) error {
+func (fh *FirewallHandler) BlackListIP(ip string, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck != nil {
-		fh.firewalldController.RejectIp(ip)
+		fh.firewalldController.RejectIp(ip, zoneName)
 	} else {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
@@ -98,10 +98,10 @@ func (fh *FirewallHandler) BlackListIP(ip string) error {
 	return nil
 }
 
-func (fh *FirewallHandler) RemoveFromBlackListIP(ip string) error {
+func (fh *FirewallHandler) RemoveFromBlackListIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck != nil {
-		fh.firewalldController.RemoveRejectRuleIp(ip)
+		fh.firewalldController.RemoveRejectRuleIp(ip, zoneName)
 	} else {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
@@ -113,10 +113,10 @@ func (fh *FirewallHandler) RemoveFromBlackListIP(ip string) error {
 	return nil
 }
 
-func (fh *FirewallHandler) WhiteListIp(ip string) error {
+func (fh *FirewallHandler) WhiteListIp(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck != nil {
-		fh.firewalldController.AcceptIp(ip)
+		fh.firewalldController.AcceptIp(ip, zoneName)
 	} else {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
@@ -128,10 +128,10 @@ func (fh *FirewallHandler) WhiteListIp(ip string) error {
 	return nil
 }
 
-func (fh *FirewallHandler) RemoveFromWhitelistIP(ip string) error {
+func (fh *FirewallHandler) RemoveFromWhitelistIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck != nil {
-		fh.firewalldController.RemoveAllowRuleIp(ip)
+		fh.firewalldController.RemoveAllowRuleIp(ip, zoneName)
 	} else {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}

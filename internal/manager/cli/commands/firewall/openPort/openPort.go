@@ -74,7 +74,7 @@ func mainOpenPort(cmd *cobra.Command) {
 
 	fc := firewallController.NewFireWalldController("validator")
 	log.Printf("Adding %s port with %s type\n", port.Port, port.Type)
-	_, err = fc.OpenPort(port)
+	_, err = fc.OpenPort(port, fc.ZoneName)
 	errors.HandleFatalErr(fmt.Sprintf("error while opening port %v", port), err)
 
 	_, err = fc.ReloadFirewall()

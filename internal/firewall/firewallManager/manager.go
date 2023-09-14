@@ -142,7 +142,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	}
 	if !check {
 		log.Infof("Creating new firewalldZone %s, check = %v\n ", fm.FirewallConfig.ZoneName, check)
-		o, err := fm.FirewalldController.CreateNewFirewalldZone()
+		o, err := fm.FirewalldController.CreateNewFirewalldZone(fm.FirewallConfig.ZoneName)
 		if err != nil {
 			return fmt.Errorf("%s\n%w", o, err)
 		}
@@ -153,7 +153,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	}
 
 	log.Infof("Switching into %s firewalldZone\n", fm.FirewallConfig.ZoneName)
-	o, err := fm.FirewalldController.ChangeDefaultZone()
+	o, err := fm.FirewalldController.ChangeDefaultZone(fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
@@ -178,13 +178,13 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		{Port: "22", Type: "tcp"},
 		{Port: "53", Type: "udp"},
 	}
-	err = fm.FirewallHandler.OpenPorts(sysports)
+	err = fm.FirewallHandler.OpenPorts(sysports, fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
 
 	log.Infof("Opening kira ports\n")
-	err = fm.FirewallHandler.OpenPorts(fm.FirewallConfig.PortsToOpen)
+	err = fm.FirewallHandler.OpenPorts(fm.FirewallConfig.PortsToOpen, fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -192,20 +192,20 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	//adding interface that has internet acces
 	log.Infof("Adding interface that has internet acces\n")
 	internetInterface := osutils.GetInternetInterface()
-	o, err = fm.FirewalldController.AddInterfaceToTheZone(internetInterface)
+	o, err = fm.FirewalldController.AddInterfaceToTheZone(internetInterface, fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 
 	dockerInterface, err := fm.FirewallHandler.GetDockerNetworkInterface(ctx, fm.KiraConfig.DockerNetworkName, fm.DockerManager)
 	interfaceName := "br-" + dockerInterface.ID[0:11]
-
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
+
 	fm.DockerManager.GetNetworksInfo(ctx)
 	log.Infof("Adding %s interface to the zone and enabling routing\n", interfaceName)
-	o, err = fm.FirewalldController.AddInterfaceToTheZone(interfaceName)
+	o, err = fm.FirewalldController.AddInterfaceToTheZone(interfaceName, fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
@@ -222,14 +222,14 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
-	o, err = fm.FirewalldController.TurnOnMasquarade()
+	o, err = fm.FirewalldController.TurnOnMasquarade(fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 	// os.Exit(1)
 	//adding docker to the zone and enabling routing
 	log.Infof("Adding docker0 interface to the zone and enabling routing\n")
-	o, err = fm.FirewalldController.AddInterfaceToTheZone("docker0")
+	o, err = fm.FirewalldController.AddInterfaceToTheZone("docker0", fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
@@ -237,10 +237,10 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
-	o, err = fm.FirewalldController.EnableDockerRouting("docker0")
-	if err != nil {
-		return fmt.Errorf("%s\n%w", o, err)
-	}
+	// o, err = fm.FirewalldController.EnableDockerRouting("docker0")
+	// if err != nil {
+	// 	return fmt.Errorf("%s\n%w", o, err)
+	// }
 	log.Infof("Reloading firewall\n")
 	o, err = fm.FirewalldController.ReloadFirewall()
 	if err != nil {

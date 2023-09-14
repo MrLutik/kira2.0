@@ -102,7 +102,7 @@ func mainWhitelist(cmd *cobra.Command) {
 				errors.HandleFatalErr("Can't create instance of docker manager", err)
 				defer dockerManager.Cli.Close()
 				fm := firewallManager.NewFirewallManager(dockerManager, kiraCfg)
-				fm.FirewallHandler.WhiteListIp(ip)
+				fm.FirewallHandler.WhiteListIp(ip, fm.FirewallConfig.ZoneName)
 			}
 		}
 	}
@@ -113,7 +113,7 @@ func mainWhitelist(cmd *cobra.Command) {
 				errors.HandleFatalErr("Can't create instance of docker manager", err)
 				defer dockerManager.Cli.Close()
 				fm := firewallManager.NewFirewallManager(dockerManager, kiraCfg)
-				fm.FirewallHandler.RemoveFromWhitelistIP(ip)
+				fm.FirewallHandler.RemoveFromWhitelistIP(ip, fm.FirewallConfig.ZoneName)
 			}
 		}
 	}
