@@ -7,11 +7,38 @@ import (
 	"os"
 
 	vlg "github.com/PeepoFrog/validator-key-gen/MnemonicsGenerator"
+	"github.com/joho/godotenv"
 	kiraMnemonicGen "github.com/kiracore/tools/bip39gen/cmd"
 	"github.com/kiracore/tools/bip39gen/pkg/bip39"
 	"github.com/mrlutik/kira2.0/internal/logging"
+	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
+func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (mastermnemonic string, err error) {
+	log := logging.Log
+	log.Println("checking if path exist: ", pathToFile)
+	check, err := osutils.CheckItPathExist(pathToFile)
+	if err != nil {
+		log.Printf("error while checkin path to %s, error: %s", pathToFile, err)
+	}
+	if check {
+		log.Println("path exist, trying to read mnemonic from mnemonics.env file")
+		if err := godotenv.Load(pathToFile); err != nil {
+			err = fmt.Errorf("error loading .env file: %v", err)
+			return mastermnemonic, err
+		}
+		// Retrieve the MASTER_MNEMONIC value
+		mastermnemonic = os.Getenv("MASTER_MNEMONIC")
+		if mastermnemonic == "" {
+			err = fmt.Errorf("MASTER_MNEMONIC not found")
+			return mastermnemonic, err
+		} else {
+			log.Debugln("MASTER_MNEMONIC:", mastermnemonic)
+		}
+	}
+
+	return mastermnemonic, nil
+}
 func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg.MasterMnemonicSet, error) {
 	log := logging.Log
 	log.Debugf("GenerateMnemonicFromMaster: masterMnemonic:\n%s", masterMnemonic)

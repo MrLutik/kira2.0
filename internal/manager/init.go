@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/mrlutik/kira2.0/internal/errors"
+	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
 const debFileDestInContainer = "/tmp/"
@@ -16,11 +17,17 @@ func (s *SekaidManager) mustInitializeAndRunContainer(ctx context.Context, genes
 	//removing and creating again .secrets folder
 	usr := s.helper.GetCurrentOSUser()
 	s.config.SecretsFolder = usr.HomeDir + "/.secrets"
-	os.RemoveAll(s.config.SecretsFolder)
-	os.Mkdir(s.config.SecretsFolder, os.ModePerm)
-	err := s.ReadOrGenerateMasterMnemonic()
+
+	check, err := osutils.CheckItPathExist(s.config.SecretsFolder)
+	errors.HandleFatalErr("Error checking secrets folder path", err)
+	if !check {
+		// os.RemoveAll(s.config.SecretsFolder)
+		os.Mkdir(s.config.SecretsFolder, os.ModePerm)
+	}
+
+	err = s.ReadOrGenerateMasterMnemonic()
 	errors.HandleFatalErr("Reading or generating master mnemonic", err)
-	check, err := s.containerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
+	check, err = s.containerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
 	errors.HandleFatalErr("Checking container names", err)
 	if check {
 		err = s.containerManager.StopAndDeleteContainer(ctx, s.config.SekaidContainerName)
