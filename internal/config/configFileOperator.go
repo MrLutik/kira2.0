@@ -24,7 +24,7 @@ func ReadConfigFile(filePath string) (cfg *KiraConfig, err error) {
 
 func WriteConfigFile(filePath string, cfg *KiraConfig) error {
 	//todo
-	//check if path exist
+	//check if path exist from os utils (firewall__controller branch)
 	file, err := os.Create(filePath)
 	if err != nil {
 		return err
