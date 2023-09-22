@@ -65,6 +65,7 @@ type KiraConfig struct {
 	RpcPort             string                 // sekaid's rpc port
 	GrpcPort            string                 // sekaid's grpc port
 	P2PPort             string                 // sekaid's p2p port
+	PrometheusPort      string                 // prometheus port
 	InterxPort          string                 // interx endpoint port
 	Moniker             string                 // Moniker
 	SekaiDebFileName    string                 // fileName of sekai deb file

@@ -25,6 +25,7 @@ type SekaidManager struct {
 	containerManager       *docker.ContainerManager
 	config                 *config.KiraConfig
 	helper                 *utils.HelperManager
+	dockerManager          *docker.DockerManager
 }
 
 const (
@@ -36,7 +37,7 @@ const (
 //
 //	*docker.DockerManager // The pointer for docker.DockerManager instance.
 //	*config	// Config of Kira application struct
-func NewSekaidManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*SekaidManager, error) {
+func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *docker.DockerManager, config *config.KiraConfig) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
 		config.P2PPort, config.RpcPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
@@ -53,6 +54,12 @@ func NewSekaidManager(containerManager *docker.ContainerManager, config *config.
 		return nil, err
 	}
 
+	natPrometheusPort, err := nat.NewPort("tcp", config.PrometheusPort)
+	if err != nil {
+		log.Errorf("Creating NAT Prometheus port error: %s", err)
+		return nil, err
+	}
+
 	sekaiContainerConfig := &container.Config{
 		Image:       fmt.Sprintf("%s:%s", config.DockerImageName, config.DockerImageVersion),
 		Cmd:         []string{"/bin/bash"},
@@ -62,8 +69,9 @@ func NewSekaidManager(containerManager *docker.ContainerManager, config *config.
 		StdinOnce:   true,
 		Hostname:    fmt.Sprintf("%s.local", config.SekaidContainerName),
 		ExposedPorts: nat.PortSet{
-			natRpcPort: struct{}{},
-			natP2PPort: struct{}{},
+			natRpcPort:        struct{}{},
+			natP2PPort:        struct{}{},
+			natPrometheusPort: struct{}{},
 		},
 	}
 
@@ -72,8 +80,9 @@ func NewSekaidManager(containerManager *docker.ContainerManager, config *config.
 			config.VolumeName,
 		},
 		PortBindings: nat.PortMap{
-			natRpcPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.RpcPort}},
-			natP2PPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.P2PPort}},
+			natRpcPort:        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.RpcPort}},
+			natP2PPort:        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.P2PPort}},
+			natPrometheusPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.PrometheusPort}},
 		},
 		Privileged: true,
 	}
@@ -89,6 +98,7 @@ func NewSekaidManager(containerManager *docker.ContainerManager, config *config.
 		SekaiHostConfig:        sekaiHostConfig,
 		SekaidNetworkingConfig: sekaidNetworkingConfig,
 		containerManager:       containerManager,
+		dockerManager:          dockerManager,
 		config:                 config,
 		helper:                 helper,
 	}, err
@@ -257,13 +267,20 @@ func (s *SekaidManager) ReadOrGenerateMasterMnemonic() error {
 	if s.config.Recover {
 		masterMnemonic = s.helper.MnemonicReader()
 	} else {
-		bip39mn, err := s.helper.GenerateMnemonic()
-		if err != nil {
-			return err
+		masterMnemonic, err = s.helper.ReadMnemonicsFromFile(s.config.SecretsFolder + "/mnemonics.env")
+
+		if masterMnemonic == "" || err != nil {
+			log.Printf("Coud not read master mnemonic from file, trying to generete new one \n%s\n", err)
+			bip39mn, err := s.helper.GenerateMnemonic()
+			if err != nil {
+				return err
+			}
+			masterMnemonic = bip39mn.String()
+		} else {
+			log.Println("MASTER MNEMONIC WAS FOUND AND RESTORED")
 		}
-		masterMnemonic = bip39mn.String()
 	}
-	log.Printf("MASTER MNEMONIC IS:\n%s\n", masterMnemonic)
+	log.Debugf("MASTER MNEMONIC IS:\n%s\n", masterMnemonic)
 	s.config.MasterMnamonicSet, err = s.helper.GenerateMnemonicsFromMaster(string(masterMnemonic))
 	if err != nil {
 		return err
@@ -455,6 +472,19 @@ func (s *SekaidManager) runJoinerSekaidContainer(ctx context.Context, genesis []
 func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 	log := logging.Log
 
+	// log.Println("stoping container before docker service restart")
+	// if err := s.containerManager.StopContainer(ctx, s.config.SekaidContainerName); err != nil {
+	// 	return fmt.Errorf("stop '%s' container error: %w", s.config.SekaidContainerName, err)
+	// }
+	// firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
+	// err := firewallManager.SetUpFirewall(ctx)
+	// //TODO: ADD FUNCTIONALITY FOR RESTART CONTAINER, FIREWALLSETUP IS RESTARTING DOCKER SERVICE SO CONTAINER SHOULD BE STARTED AGAIN
+	// log.Println("starting container again")
+	// if err = s.containerManager.StartContainer(ctx, s.config.SekaidContainerName); err != nil {
+	// 	log.Errorf("Cannot start container second time '%s' container error: %s", s.config.SekaidContainerName, err)
+	// 	return fmt.Errorf("start '%s' container error: %w", s.config.SekaidContainerName, err)
+	// }
+
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of genesis validator", s.config.SekaidContainerName)
 
 	if err := s.initGenesisSekaidBinInContainer(ctx); err != nil {
@@ -505,6 +535,19 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 // If any errors occur during the initialization process, an error is returned.
 func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []byte) error {
 	log := logging.Log
+
+	// log.Println("stoping container before docker service restart")
+	// if err := s.containerManager.StopContainer(ctx, s.config.SekaidContainerName); err != nil {
+	// 	return fmt.Errorf("stop '%s' container error: %w", s.config.SekaidContainerName, err)
+	// }
+	// firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
+	// err := firewallManager.SetUpFirewall(ctx)
+	// //TODO: ADD FUNCTIONALITY FOR RESTART CONTAINER, FIREWALLSETUP IS RESTARTING DOCKER SERVICE SO CONTAINER SHOULD BE STARTED AGAIN
+	// log.Println("starting container again")
+	// if err = s.containerManager.StartContainer(ctx, s.config.SekaidContainerName); err != nil {
+	// 	log.Errorf("Cannot start container second time '%s' container error: %s", s.config.SekaidContainerName, err)
+	// 	return fmt.Errorf("start '%s' container error: %w", s.config.SekaidContainerName, err)
+	// }
 
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of joiner", s.config.SekaidContainerName)
 
