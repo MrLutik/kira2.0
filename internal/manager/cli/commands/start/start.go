@@ -86,6 +86,7 @@ func mainStart() {
 
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
+
 	adapters.MustDownloadBinaries(ctx, cfg)
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, cfg)
