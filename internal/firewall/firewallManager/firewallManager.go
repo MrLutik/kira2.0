@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"time"
 
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
@@ -35,31 +34,6 @@ type FirewallConfig struct {
 //
 // for example 39090 tcp or 53 udp
 
-func GenerateKiraConfigForFirewallManager() *config.KiraConfig {
-	return &config.KiraConfig{
-		SekaidHome:          "/data/.sekai",
-		InterxHome:          "/data/.interx",
-		KeyringBackend:      "test",
-		DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
-		DockerImageVersion:  "v0.13.11",
-		DockerNetworkName:   "kira_network",
-		SekaiVersion:        "latest", // or v0.3.16
-		InterxVersion:       "latest", // or v0.4.33
-		SekaidContainerName: "sekaid",
-		InterxContainerName: "interx",
-		VolumeName:          "kira_volume:/data",
-		MnemonicDir:         "~/mnemonics",
-		RpcPort:             "26657",
-		P2PPort:             "26656",
-		GrpcPort:            "9090",
-		InterxPort:          "11000",
-		PrometheusPort:      "26660",
-		Moniker:             "VALIDATOR",
-		SekaiDebFileName:    "sekai-linux-amd64.deb",
-		InterxDebFileName:   "interx-linux-amd64.deb",
-		TimeBetweenBlocks:   time.Second * 10,
-	}
-}
 func NewFirewallConfig(kiraCfg *config.KiraConfig) *FirewallConfig {
 	return &FirewallConfig{
 		ZoneName: "validator",
@@ -102,8 +76,6 @@ func (fm *FirewallManager) CheckFirewallSetUp(ctx context.Context) (bool, error)
 func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	log.Infof("***FIREWALL SETUP***\n")
 
-	log.Infof("Disabling docker iptables\n")
-	fm.FirewallHandler.DisableIpTablesForDocker()
 	log.Infof("Restarting docker service\n")
 	err := fm.FirewallHandler.RestartDockerService()
 	if err != nil {
