@@ -19,14 +19,16 @@ type JsonValue struct {
 	Value any
 }
 
-func NewKiraConfig() *KiraConfig {
+func NewDefaultKiraConfig() *KiraConfig {
 	return &KiraConfig{
-		NetworkName:         "testnet-1",
-		SekaidHome:          "/data/.sekai",
-		InterxHome:          "/data/.interx",
-		KeyringBackend:      "test",
-		DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
-		DockerImageVersion:  "v0.13.11",
+		NetworkName:    "testnet-1",
+		SekaidHome:     "/data/.sekai",
+		InterxHome:     "/data/.interx",
+		KeyringBackend: "test",
+		// DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
+		// DockerImageVersion:  "v0.13.11",
+		DockerImageName:     "ubuntu",
+		DockerImageVersion:  "latest",
 		DockerNetworkName:   "kira_network",
 		SekaiVersion:        "latest", // or v0.3.16
 		InterxVersion:       "latest", // or v0.4.33
@@ -37,6 +39,7 @@ func NewKiraConfig() *KiraConfig {
 		RpcPort:             "26657",
 		P2PPort:             "26656",
 		GrpcPort:            "9090",
+		PrometheusPort:      "26660",
 		InterxPort:          "11000",
 		Moniker:             "VALIDATOR",
 		SekaiDebFileName:    "sekai-linux-amd64.deb",
@@ -73,7 +76,7 @@ type KiraConfig struct {
 	SecretsFolder       string                 // path where mnemonics.env and node keys located
 	TimeBetweenBlocks   time.Duration          // Awaiting time between blocks
 	KiraConfigFilePath  string                 //string to toml km2 config file //default /home/$USER/.config/kira2/kiraConfig.toml
-	ConfigTomlValues    []TomlValue            `toml:"-"` // List of configs for update
+	ConfigTomlValues    []TomlValue            //`toml:"-"` // List of configs for update
 	Recover             bool                   `toml:"-"` // switch for recover mode
 	MasterMnamonicSet   *vlg.MasterMnemonicSet `toml:"-"`
 	// NOTE Default time of block is ~5 seconds!
