@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
-	manager "github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/blacklist"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/closePort"
@@ -59,7 +59,7 @@ func validateFlags(cmd *cobra.Command) error {
 
 func mainFirewall(cmd *cobra.Command) {
 
-	kiraCfg := manager.GenerateKiraConfigForFirewallManager()
+	kiraCfg, err := config.ReadOrCreateConfig()
 
 	log.Println("validating flags")
 

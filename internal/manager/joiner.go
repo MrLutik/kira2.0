@@ -62,33 +62,40 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context, recover bool) (*
 		return nil, err
 	}
 
-	cfg := &config.KiraConfig{
-		NetworkName:         networkInfo.NetworkName,
-		SekaidHome:          "/data/.sekai",
-		InterxHome:          "/data/.interx",
-		KeyringBackend:      "test",
-		DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
-		DockerImageVersion:  "v0.13.11",
-		DockerNetworkName:   "kira_network",
-		SekaiVersion:        "latest", // or v0.3.16
-		InterxVersion:       "latest", // or v0.4.33
-		SekaidContainerName: "sekaid",
-		InterxContainerName: "interx",
-		VolumeName:          "kira_volume:/data",
-		MnemonicDir:         "~/mnemonics",
-		RpcPort:             "26657",
-		P2PPort:             "26656",
-		GrpcPort:            "9090",
-		InterxPort:          "11000",
-		PrometheusPort:       "26660",
-		Moniker:             "VALIDATOR",
-		SekaiDebFileName:    "sekai-linux-amd64.deb",
-		InterxDebFileName:   "interx-linux-amd64.deb",
-		TimeBetweenBlocks:   time.Second * 10,
-		ConfigTomlValues:    configs,
-		Recover:             recover,
-	}
+	// cfg := &config.KiraConfig{
+	// 	NetworkName:         networkInfo.NetworkName,
+	// 	SekaidHome:          "/data/.sekai",
+	// 	InterxHome:          "/data/.interx",
+	// 	KeyringBackend:      "test",
+	// 	DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
+	// 	DockerImageVersion:  "v0.13.11",
+	// 	DockerNetworkName:   "kira_network",
+	// 	SekaiVersion:        "latest", // or v0.3.16
+	// 	InterxVersion:       "latest", // or v0.4.33
+	// 	SekaidContainerName: "sekaid",
+	// 	InterxContainerName: "interx",
+	// 	VolumeName:          "kira_volume:/data",
+	// 	MnemonicDir:         "~/mnemonics",
+	// 	RpcPort:             "26657",
+	// 	P2PPort:             "26656",
+	// 	GrpcPort:            "9090",
+	// 	InterxPort:          "11000",
+	// 	PrometheusPort:       "26660",
+	// 	Moniker:             "VALIDATOR",
+	// 	SekaiDebFileName:    "sekai-linux-amd64.deb",
+	// 	InterxDebFileName:   "interx-linux-amd64.deb",
+	// 	TimeBetweenBlocks:   time.Second * 10,
+	// 	ConfigTomlValues:    configs,
+	// 	Recover:             recover,
+	// }
 
+	cfg, err := config.ReadOrCreateConfig()
+
+	cfg.NetworkName = networkInfo.NetworkName
+	cfg.ConfigTomlValues = configs
+	cfg.Recover = recover
+	filePath, _ := config.GetConfigFilePath()
+	config.WriteConfigFile(filePath, cfg)
 	return cfg, nil
 }
 

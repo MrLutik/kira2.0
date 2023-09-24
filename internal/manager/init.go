@@ -15,7 +15,7 @@ const debFileDestInContainer = "/tmp/"
 // The method will terminate the program with a fatal error if any step encounters an error.
 func (s *SekaidManager) mustInitializeAndRunContainer(ctx context.Context, genesis []byte, isGenesisValidator bool) {
 	//removing and creating again .secrets folder
-	usr := s.helper.GetCurrentOSUser()
+	usr := osutils.GetCurrentOSUser()
 	s.config.SecretsFolder = usr.HomeDir + "/.secrets"
 
 	check, err := osutils.CheckItPathExist(s.config.SecretsFolder)
