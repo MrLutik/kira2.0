@@ -2,9 +2,11 @@ package osutils
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/exec"
+	"os/user"
 	"runtime"
 	"strconv"
 	"strings"
@@ -15,7 +17,73 @@ import (
 
 var log = logging.Log
 
+func CopyFile(src, dst string) error {
+	// Open source file for reading
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	// Create destination file for writing
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	// Copy the contents from srcFile to dstFile
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CreateDirPath(dirPath string) error {
+	log.Debugf("CreateDirPath(): Creating dir path: <%s>\n", dirPath)
+	err := os.MkdirAll(dirPath, 0755) // 0755 are the standard permissions for directories.
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CheckIfFileExist(filePath string) (bool, error) {
+	info, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	log.Debugf("CheckIfFileExist(): Checking if <%s> exist: %v\n", filePath, !info.IsDir())
+	return !info.IsDir(), nil
+}
+
+func GetCurrentOSUser() *user.User {
+	//geting curent user home folder even if it runned by sudo
+	sudoUser := os.Getenv("SUDO_USER")
+
+	if sudoUser != "" {
+		usr, err := user.Lookup(sudoUser)
+		if err != nil {
+			panic(err)
+		}
+		log.Debugf("GetCurrentOSUser(): Geting current user: <%+v>\n", usr)
+		return usr
+	} else {
+		// Fallback to the current user if not running via sudo
+		usr, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+		log.Debugf("GetCurrentOSUser(): Geting current user: <%+v>\n", usr)
+		return usr
+	}
+}
+
 func CheckItPathExist(path string) (bool, error) {
+	log.Debugf("CheckItPathExist():Checking if path exist: <%s>\n", path)
+
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil

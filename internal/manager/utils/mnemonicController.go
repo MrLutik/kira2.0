@@ -93,7 +93,7 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 		return err
 	}
 
-	h.copyFile(h.config.SecretsFolder+"/validator_node_key.json", h.config.SecretsFolder+"/node_key.json")
+	osutils.CopyFile(h.config.SecretsFolder+"/validator_node_key.json", h.config.SecretsFolder+"/node_key.json")
 	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/node_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
 		log.Errorf("cannot send validator_node_key.json to container\n")
