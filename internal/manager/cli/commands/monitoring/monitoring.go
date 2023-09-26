@@ -2,8 +2,8 @@ package monitoring
 
 import (
 	"context"
-	"strconv"
 
+	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/logging"
@@ -17,20 +17,20 @@ const (
 	long  = "Monitoring sekaid network"
 )
 
-const (
-	// SEKAID_HOME           = `/root/.sekai`
-	// DOCKER_NETWORK_NAME   = "kiranet"
-	// SEKAID_CONTAINER_NAME = "validator"
-	// RPC_PORT              = 36657
+// const (
+// 	// SEKAID_HOME           = `/root/.sekai`
+// 	// DOCKER_NETWORK_NAME   = "kiranet"
+// 	// SEKAID_CONTAINER_NAME = "validator"
+// 	// RPC_PORT              = 36657
 
-	SEKAID_HOME           = `/data/.sekai`
-	DOCKER_NETWORK_NAME   = "kira_network"
-	SEKAID_CONTAINER_NAME = "sekaid"
-	RPC_PORT              = 26657
-	KEYRING_BACKEND       = "test"
-	INTERX_CONTAINER_NAME = "interx"
-	INTERX_PORT           = 11000
-)
+// 	SEKAID_HOME           = `/data/.sekai`
+// 	DOCKER_NETWORK_NAME   = "kira_network"
+// 	SEKAID_CONTAINER_NAME = "sekaid"
+// 	RPC_PORT              = 26657
+// 	KEYRING_BACKEND       = "test"
+// 	INTERX_CONTAINER_NAME = "interx"
+// 	INTERX_PORT           = 11000
+// )
 
 var log = logging.Log
 
@@ -56,7 +56,7 @@ func mainMonitoring() {
 	containerManager, err := docker.NewTestContainerManager()
 	errors.HandleFatalErr("Can't create instance of container docker manager", err)
 	defer dockerManager.Cli.Close()
-
+	kiraCfg, err := config.ReadOrCreateConfig()
 	ctx := context.Background()
 
 	err = dockerManager.VerifyDockerInstallation(ctx)
@@ -64,7 +64,7 @@ func mainMonitoring() {
 
 	monitoring := monitoring.NewMonitoringService(dockerManager, containerManager)
 
-	networkResource, _ := monitoring.GetDockerNetwork(ctx, DOCKER_NETWORK_NAME)
+	networkResource, _ := monitoring.GetDockerNetwork(ctx, kiraCfg.DockerNetworkName)
 	log.Infof("%+v", networkResource)
 
 	cpuLoadPercentage, _ := monitoring.GetCPULoadPercentage()
@@ -82,27 +82,27 @@ func mainMonitoring() {
 	interfacesIPaddresses, _ := monitoring.GetInterfacesIP()
 	log.Infof("Interfaces IP: %+v", interfacesIPaddresses)
 
-	validatorAddress, _ := monitoring.GetValidatorAddress(ctx, SEKAID_CONTAINER_NAME, KEYRING_BACKEND, SEKAID_HOME)
+	validatorAddress, _ := monitoring.GetValidatorAddress(ctx, kiraCfg.SekaidContainerName, kiraCfg.KeyringBackend, kiraCfg.SekaidHome)
 	log.Infof("Validator address: %s", validatorAddress)
 
-	topOfValidator, _ := monitoring.GetTopForValidator(ctx, strconv.Itoa(INTERX_PORT), validatorAddress)
+	topOfValidator, _ := monitoring.GetTopForValidator(ctx, kiraCfg.InterxPort, validatorAddress)
 	log.Infof("Validator top: %s", topOfValidator)
 
-	valopersInfo, _ := monitoring.GetValopersInfo(ctx, strconv.Itoa(INTERX_PORT))
+	valopersInfo, _ := monitoring.GetValopersInfo(ctx, kiraCfg.InterxPort)
 	log.Infof("Valopers info: %+v", valopersInfo)
 
-	consensusInfo, _ := monitoring.GetConsensusInfo(ctx, strconv.Itoa(INTERX_PORT))
+	consensusInfo, _ := monitoring.GetConsensusInfo(ctx, kiraCfg.InterxPort)
 	log.Infof("Consensus info: %+v", consensusInfo)
 
-	sekaidContainerInfo, _ := monitoring.GetContainerInfo(ctx, SEKAID_CONTAINER_NAME, DOCKER_NETWORK_NAME)
+	sekaidContainerInfo, _ := monitoring.GetContainerInfo(ctx, kiraCfg.SekaidContainerName, kiraCfg.DockerNetworkName)
 	log.Infof("%+v", sekaidContainerInfo)
 
-	interxContainerInfo, _ := monitoring.GetContainerInfo(ctx, INTERX_CONTAINER_NAME, DOCKER_NETWORK_NAME)
+	interxContainerInfo, _ := monitoring.GetContainerInfo(ctx, kiraCfg.InterxContainerName, kiraCfg.DockerNetworkName)
 	log.Infof("%+v", interxContainerInfo)
 
-	sekaidNetworkInfo, _ := monitoring.GetSekaidInfo(ctx, strconv.Itoa(RPC_PORT))
+	sekaidNetworkInfo, _ := monitoring.GetSekaidInfo(ctx, kiraCfg.RpcPort)
 	log.Infof("Sekaid network info: %+v", sekaidNetworkInfo)
 
-	interxNetworkInfo, _ := monitoring.GetInterxInfo(ctx, strconv.Itoa(INTERX_PORT))
+	interxNetworkInfo, _ := monitoring.GetInterxInfo(ctx, kiraCfg.InterxPort)
 	log.Infof("Interx network info: %+v", interxNetworkInfo)
 }
