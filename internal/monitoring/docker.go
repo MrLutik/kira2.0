@@ -97,10 +97,11 @@ func (m *MonitoringService) GetContainerInfo(ctx context.Context, containerName,
 		return nil, fmt.Errorf("network '%s' does not exist", dockerNetworkName)
 	}
 
-	return &ContainerInfo{
-		ID:          resultInspect.ID,
-		State:       resultInspect.State.Status,
-		Health:      resultInspect.State.Health.Status,
+	
+	r := &ContainerInfo{
+		ID:    resultInspect.ID,
+		State: resultInspect.State.Status,
+		// Health:      resultInspect.State.Health.Status,
 		Paused:      resultInspect.State.Paused,
 		Restarting:  resultInspect.State.Restarting,
 		StartingAt:  startingAt,
@@ -108,5 +109,7 @@ func (m *MonitoringService) GetContainerInfo(ctx context.Context, containerName,
 		Hostname:    resultInspect.Config.Hostname,
 		IP:          network.IPAddress,
 		PortBinding: portBinding,
-	}, nil
+	}
+	log.Debugf("%+v", *r)
+	return r, nil
 }
