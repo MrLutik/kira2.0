@@ -233,16 +233,16 @@ func (dm *ContainerManager) GetFileFromContainer(ctx context.Context, folderPath
 // The containerIdentification parameter is the identifier of the container to inspect, such as the container ID or name.
 // The function returns the docker package types.ContainerJSON struct containing the detailed information about the container,
 // or an error if the inspection fails.
-func (dm *ContainerManager) GetInspectOfContainer(ctx context.Context, containerIdentification string) (types.ContainerJSON, error) {
+func (dm *ContainerManager) GetInspectOfContainer(ctx context.Context, containerIdentification string) (*types.ContainerJSON, error) {
 	log.Infof("Inspecting container '%s'", containerIdentification)
 
 	containerInfo, err := dm.Cli.ContainerInspect(ctx, containerIdentification)
 	if err != nil {
 		log.Errorf("Inspection container error: %s", err)
-		return types.ContainerJSON{}, err
+		return &types.ContainerJSON{}, err
 	}
 
-	return containerInfo, nil
+	return &containerInfo, nil
 }
 
 // InitAndCreateContainer initializes and creates a new container.
