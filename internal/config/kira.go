@@ -19,37 +19,6 @@ type JsonValue struct {
 	Value any
 }
 
-func NewDefaultKiraConfig() *KiraConfig {
-	return &KiraConfig{
-		NetworkName:    "testnet-1",
-		SekaidHome:     "/data/.sekai",
-		InterxHome:     "/data/.interx",
-		KeyringBackend: "test",
-		// DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
-		// DockerImageVersion:  "v0.13.11",
-		DockerImageName:     "ubuntu",
-		DockerImageVersion:  "latest",
-		DockerNetworkName:   "kira_network",
-		SekaiVersion:        "latest", // or v0.3.16
-		InterxVersion:       "latest", // or v0.4.33
-		SekaidContainerName: "sekaid",
-		InterxContainerName: "interx",
-		VolumeName:          "kira_volume:/data",
-		MnemonicDir:         "~/mnemonics",
-		RpcPort:             "26657",
-		P2PPort:             "26656",
-		GrpcPort:            "9090",
-		PrometheusPort:      "26660",
-		InterxPort:          "11000",
-		Moniker:             "VALIDATOR",
-		SekaiDebFileName:    "sekai-linux-amd64.deb",
-		InterxDebFileName:   "interx-linux-amd64.deb",
-		TimeBetweenBlocks:   time.Second * 10,
-		KiraConfigFilePath:  "/home/$USER/.config/km2",
-	}
-
-}
-
 // KiraConfig is a configuration for sekaid or interx manager.
 type KiraConfig struct {
 	NetworkName         string                 // name of a blockchain name (chain-ID)

@@ -2,6 +2,7 @@ package configFileController
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mrlutik/kira2.0/internal/config"
 	configHandler "github.com/mrlutik/kira2.0/internal/config/configFileController/configFileHandler"
@@ -35,7 +36,7 @@ func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	log.Debugf("%s exist?:%v\n", filePath, okFile)
 	if !okFile {
 		log.Infof("cannot find file <%s> file, creating new config file with default values\n", filePath)
-		defaultCfg := config.NewDefaultKiraConfig()
+		defaultCfg := newDefaultKiraConfig()
 		defaultCfg.KiraConfigFilePath = filePath
 		err = configHandler.WriteConfigFile(filePath, defaultCfg)
 		if err != nil {
@@ -53,4 +54,35 @@ func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	}
 	log.Debugf("RETURTING %+v \n", cfg)
 	return cfg, nil
+}
+
+func newDefaultKiraConfig() *config.KiraConfig {
+	return &config.KiraConfig{
+		NetworkName:    "testnet-1",
+		SekaidHome:     "/data/.sekai",
+		InterxHome:     "/data/.interx",
+		KeyringBackend: "test",
+		// DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
+		// DockerImageVersion:  "v0.13.11",
+		DockerImageName:     "ubuntu",
+		DockerImageVersion:  "latest",
+		DockerNetworkName:   "kira_network",
+		SekaiVersion:        "latest", // or v0.3.16
+		InterxVersion:       "latest", // or v0.4.33
+		SekaidContainerName: "sekaid",
+		InterxContainerName: "interx",
+		VolumeName:          "kira_volume:/data",
+		MnemonicDir:         "~/mnemonics",
+		RpcPort:             "26657",
+		P2PPort:             "26656",
+		GrpcPort:            "9090",
+		PrometheusPort:      "26660",
+		InterxPort:          "11000",
+		Moniker:             "VALIDATOR",
+		SekaiDebFileName:    "sekai-linux-amd64.deb",
+		InterxDebFileName:   "interx-linux-amd64.deb",
+		TimeBetweenBlocks:   time.Second * 10,
+		KiraConfigFilePath:  "/home/$USER/.config/km2",
+	}
+
 }
