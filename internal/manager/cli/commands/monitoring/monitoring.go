@@ -3,7 +3,7 @@ package monitoring
 import (
 	"context"
 
-	"github.com/mrlutik/kira2.0/internal/config"
+	"github.com/mrlutik/kira2.0/internal/config/configFileController"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/logging"
@@ -56,7 +56,7 @@ func mainMonitoring() {
 	containerManager, err := docker.NewTestContainerManager()
 	errors.HandleFatalErr("Can't create instance of container docker manager", err)
 	defer dockerManager.Cli.Close()
-	kiraCfg, err := config.ReadOrCreateConfig()
+	kiraCfg, err := configFileController.ReadOrCreateConfig()
 	ctx := context.Background()
 
 	err = dockerManager.VerifyDockerInstallation(ctx)

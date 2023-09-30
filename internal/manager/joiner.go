@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/mrlutik/kira2.0/internal/config"
+	"github.com/mrlutik/kira2.0/internal/config/configFileController"
+	"github.com/mrlutik/kira2.0/internal/config/configFileController/configFileHandler"
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/types"
@@ -89,13 +91,14 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context, recover bool) (*
 	// 	Recover:             recover,
 	// }
 
-	cfg, err := config.ReadOrCreateConfig()
+	cfg, err := configFileController.ReadOrCreateConfig()
 
 	cfg.NetworkName = networkInfo.NetworkName
 	cfg.ConfigTomlValues = configs
 	cfg.Recover = recover
-	filePath, _ := config.GetConfigFilePath()
-	config.WriteConfigFile(filePath, cfg)
+	filePath, _ := configFileHandler.GetConfigFilePath()
+	configFileHandler.WriteConfigFile(filePath, cfg)
+
 	return cfg, nil
 }
 

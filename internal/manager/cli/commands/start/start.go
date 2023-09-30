@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
-	"github.com/mrlutik/kira2.0/internal/config"
+	"github.com/mrlutik/kira2.0/internal/config/configFileController"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
@@ -83,7 +83,7 @@ func mainStart() {
 	// 	Recover:             recover,
 	// }
 
-	cfg, err := config.ReadOrCreateConfig()
+	cfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 	// TODO Do we need to safe deb packages in temporary directory?
