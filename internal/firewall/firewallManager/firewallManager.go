@@ -77,7 +77,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	log.Infof("***FIREWALL SETUP***\n")
 
 	log.Infof("Restarting docker service\n")
-	err := fm.FirewallHandler.RestartDockerService()
+	err := fm.DockerManager.RestartDockerService()
 	if err != nil {
 		return fmt.Errorf("cannot restart docker service: %s", err)
 	}
@@ -220,7 +220,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	}
 
 	log.Infof("Restarting docker service\n")
-	err = fm.FirewallHandler.RestartDockerService()
+	err = fm.DockerManager.RestartDockerService()
 	if err != nil {
 		return fmt.Errorf("cannot restart docker service: %s", err)
 	}

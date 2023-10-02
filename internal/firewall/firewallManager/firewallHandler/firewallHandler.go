@@ -185,10 +185,4 @@ func (fh *FirewallHandler) RemoveFromWhitelistIP(ip, zoneName string) error {
 	return nil
 }
 
-func (fh *FirewallHandler) RestartDockerService() error {
-	out, err := osutils.RunCommandV2("sudo systemctl restart docker")
-	if err != nil {
-		return fmt.Errorf("failed to restart:\n %s\n%w", string(out), err)
-	}
-	return nil
-}
+
