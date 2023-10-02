@@ -149,7 +149,6 @@ func mainJoin(cmd *cobra.Command) {
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
 	errors.HandleFatalErr("Can't get genesis", err)
 
-	log.Infof("%+v", cfg)
 
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 
@@ -162,6 +161,7 @@ func mainJoin(cmd *cobra.Command) {
 	errors.HandleFatalErr("Error while checking valid firewalld setup", err)
 	if !check {
 		err = firewallManager.SetUpFirewall(ctx)
+		errors.HandleFatalErr("Error while setuping firewall", err)
 	}
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
