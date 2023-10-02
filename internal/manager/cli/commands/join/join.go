@@ -149,7 +149,9 @@ func mainJoin(cmd *cobra.Command) {
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
 	errors.HandleFatalErr("Can't get genesis", err)
 
-
+	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
+	err = dockerManager.RestartDockerService()
+	errors.HandleFatalErr("Restarting docker service", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 
 	// TODO Do we need to safe deb packages in temporary directory?

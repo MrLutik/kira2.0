@@ -17,9 +17,6 @@ func VerifyingDockerEnvironment(ctx context.Context, dockerManager *DockerManage
 	err := dockerManager.VerifyDockerInstallation(ctx)
 	errors.HandleFatalErr("Docker is not available", err)
 
-	err = dockerManager.RestartDockerService()
-	errors.HandleFatalErr("Restarting docker service", err)
-
 	dockerImage := fmt.Sprintf("%s:%s", cfg.DockerImageName, cfg.DockerImageVersion)
 	err = dockerManager.PullImage(ctx, dockerImage)
 	errors.HandleFatalErr("Pulling image", err)

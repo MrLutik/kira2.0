@@ -2,7 +2,6 @@ package start
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/config/configFileController"
@@ -36,7 +35,7 @@ func Start() *cobra.Command {
 			mainStart()
 		},
 	}
-	startCmd.PersistentFlags().Bool("recover", false, fmt.Sprintf("If true recover keys and mnemonic from master mnemonic, otherwise generate random one"))
+	startCmd.PersistentFlags().Bool("recover", false, "If true recover keys and mnemonic from master mnemonic, otherwise generate random one")
 
 	return startCmd
 }
@@ -56,6 +55,12 @@ func mainStart() {
 
 	cfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
+	cfg.Recover = recover
+	log.Traceln(recover)
+
+	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
+	err = dockerManager.RestartDockerService()
+	errors.HandleFatalErr("Restarting docker service", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
