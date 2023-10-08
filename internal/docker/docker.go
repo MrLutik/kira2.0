@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/mrlutik/kira2.0/internal/logging"
+	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
 var log = logging.Log
@@ -155,4 +157,47 @@ func (dm *DockerManager) GetNetworksInfo(ctx context.Context) ([]types.NetworkRe
 	}
 
 	return resources, nil
+}
+
+func (dm *DockerManager) RestartDockerService() error {
+	log.Info("Restarting docker service")
+	out, err := osutils.RunCommandV2("sudo systemctl restart docker")
+	if err != nil {
+		return fmt.Errorf("failed to restart:\n %s\n%w", string(out), err)
+	}
+	return nil
+}
+
+func (dm *DockerManager) DisableIpTablesForDocker() error {
+	log.Info("Disabling iptables for docker")
+	filepath := "/etc/docker/daemon.json"
+	type dockerServiceConfig struct {
+		Iptables bool `json:"iptables"`
+	}
+	var config dockerServiceConfig
+	file, err := os.Open(filepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			config.Iptables = false
+		} else {
+			return err
+		}
+	} else {
+		defer file.Close()
+		if err := json.NewDecoder(file).Decode(&config); err != nil {
+			return err
+		}
+		config.Iptables = false
+	}
+	outFile, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	encoder := json.NewEncoder(outFile)
+	encoder.SetIndent("", "    ")
+	if err := encoder.Encode(config); err != nil {
+		return err
+	}
+	return nil
 }

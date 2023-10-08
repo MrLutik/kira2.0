@@ -13,6 +13,7 @@ require (
 require (
 	cosmossdk.io/errors v1.0.0 // indirect
 	cosmossdk.io/math v1.0.1 // indirect
+	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/KiraCore/tools v0.3.46 // indirect
 	github.com/PeepoFrog/validator-key-gen v0.0.0-20230822005145-4e776dbd2b2e // indirect
 	github.com/btcsuite/btcd v0.22.1 // indirect

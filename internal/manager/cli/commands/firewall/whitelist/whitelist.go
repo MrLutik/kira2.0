@@ -3,6 +3,7 @@ package whitelist
 import (
 	"fmt"
 
+	"github.com/mrlutik/kira2.0/internal/config/configFileController"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
@@ -91,7 +92,7 @@ func mainWhitelist(cmd *cobra.Command) {
 		errors.HandleFatalErr("error retrieving 'remove' flag", err)
 	}
 
-	kiraCfg := firewallManager.GenerateKiraConfigForFirewallManager()
+	kiraCfg, err := configFileController.ReadOrCreateConfig()
 
 	if add {
 		if ip != "" {

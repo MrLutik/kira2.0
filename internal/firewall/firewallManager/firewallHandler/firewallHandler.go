@@ -2,10 +2,8 @@ package firewallHandler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"regexp"
 	"strings"
 
@@ -187,43 +185,4 @@ func (fh *FirewallHandler) RemoveFromWhitelistIP(ip, zoneName string) error {
 	return nil
 }
 
-func (fh *FirewallHandler) RestartDockerService() error {
-	out, err := osutils.RunCommandV2("sudo systemctl restart docker")
-	if err != nil {
-		return fmt.Errorf("failed to restart:\n %s\n%w", string(out), err)
-	}
-	return nil
-}
 
-func (fh *FirewallHandler) DisableIpTablesForDocker() error {
-	filepath := "/etc/docker/daemon.json"
-	type dockerServiceConfig struct {
-		Iptables bool `json:"iptables"`
-	}
-	var config dockerServiceConfig
-	file, err := os.Open(filepath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			config.Iptables = false
-		} else {
-			return err
-		}
-	} else {
-		defer file.Close()
-		if err := json.NewDecoder(file).Decode(&config); err != nil {
-			return err
-		}
-		config.Iptables = false
-	}
-	outFile, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-	encoder := json.NewEncoder(outFile)
-	encoder.SetIndent("", "    ")
-	if err := encoder.Encode(config); err != nil {
-		return err
-	}
-	return nil
-}

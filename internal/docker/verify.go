@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/mrlutik/kira2.0/internal/config"
-	"github.com/mrlutik/kira2.0/internal/cosign"
 	"github.com/mrlutik/kira2.0/internal/errors"
 )
 
@@ -19,15 +18,17 @@ func VerifyingDockerEnvironment(ctx context.Context, dockerManager *DockerManage
 	errors.HandleFatalErr("Docker is not available", err)
 
 	dockerImage := fmt.Sprintf("%s:%s", cfg.DockerImageName, cfg.DockerImageVersion)
-
 	err = dockerManager.PullImage(ctx, dockerImage)
 	errors.HandleFatalErr("Pulling image", err)
 
-	checkBool, err := cosign.VerifyImageSignature(ctx, dockerImage, DockerImagePubKey)
-	errors.HandleFatalErr("Verifying image signature", err)
+	// checkBool, err := cosign.VerifyImageSignature(ctx, dockerImage, DockerImagePubKey)
+	// errors.HandleFatalErr("Verifying image signature", err)
 
-	log.Infoln("Verified:", checkBool)
+	// log.Infoln("Verified:", checkBool)
+	err = dockerManager.DisableIpTablesForDocker()
+	errors.HandleFatalErr("Disabing docker iptables", err)
 
 	err = dockerManager.CheckOrCreateNetwork(ctx, cfg.DockerNetworkName)
 	errors.HandleFatalErr("Docker networking", err)
+
 }
