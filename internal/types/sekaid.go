@@ -42,3 +42,16 @@ type ResponseBlock struct {
 		} `json:"block"`
 	} `json:"result"`
 }
+
+// sekaid query customstaking validator --addr=kira19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7rh32an --output json
+type ValidatorStatus struct {
+	ValKey string                `json:"val_key"`
+	PubKey validatorStatusPubKey `json:"pub_key"`
+	Status string                `json:"status"`
+	Rank   string                `json:"rank"`
+	Streak string                `json:"streak"`
+}
+type validatorStatusPubKey struct {
+	Type string `json:"@type"`
+	Key  string `json:"key"`
+}
