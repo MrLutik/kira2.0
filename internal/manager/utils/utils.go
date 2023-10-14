@@ -53,6 +53,9 @@ func (h *HelperManager) GetTxQuery(ctx context.Context, transactionHash string) 
 // and returns an error if the timeout is exceeded.
 // If the next block is reached within the timeout, the method returns nil.
 func (h *HelperManager) AwaitNextBlock(ctx context.Context, timeout time.Duration) error {
+
+	//adding 1 more second because in real case scenario block propagation takes a few seconds\miliseconds longer
+	timeout += time.Second * 5
 	log := logging.Log
 
 	log.Infof("Checking current block height")
