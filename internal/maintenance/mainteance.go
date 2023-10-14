@@ -83,7 +83,7 @@ func PauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Cont
 		return err
 	}
 	log.Debugf("VALIDATOR STATUS %s\n", strings.ToLower(nodeStatus.Status))
-	if strings.ToLower(nodeStatus.Status) != types.Active {
+	if strings.ToLower(nodeStatus.Status) != types.Paused {
 		return fmt.Errorf("cannot pause validator, node status is not <%s>, curent status <%s>", types.Active, nodeStatus.Status)
 	}
 	return nil
