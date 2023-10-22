@@ -395,7 +395,7 @@ func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 	log.Infof("Setting up '%s' genesis container", s.config.SekaidContainerName)
 
 	// TODO move all args to config.toml
-	command := fmt.Sprintf("sekaid start --home=%s --trace", s.config.SekaidHome)
+	command := fmt.Sprintf(`sekaid start --home=%s --grpc.address "0.0.0.0:%s" --trace`, s.config.SekaidHome, s.config.GrpcPort)
 	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
