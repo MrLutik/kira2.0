@@ -297,8 +297,9 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 	err := s.helper.SetSekaidKeys(ctx)
 	if err != nil {
 		log.Errorf("Can't set sekaid keys: %s", err)
-		return fmt.Errorf("Can't set sekaid keys %w", err)
+		return fmt.Errorf("can't set sekaid keys %w", err)
 	}
+	s.helper.SetEmptyValidatorState(ctx)
 	// s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{initcmd})
 
 	commands := []string{
@@ -343,6 +344,7 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 	log := logging.Log
 	log.Infof("Setting up '%s' joiner container", s.config.SekaidContainerName)
 	s.helper.SetSekaidKeys(ctx)
+	s.helper.SetEmptyValidatorState(ctx)
 	commands := []string{
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
 		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
@@ -393,7 +395,7 @@ func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 	log.Infof("Setting up '%s' genesis container", s.config.SekaidContainerName)
 
 	// TODO move all args to config.toml
-	command := fmt.Sprintf("sekaid start --home=%s --trace", s.config.SekaidHome)
+	command := fmt.Sprintf(`sekaid start --home=%s --grpc.address "0.0.0.0:%s" --trace`, s.config.SekaidHome, s.config.GrpcPort)
 	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)

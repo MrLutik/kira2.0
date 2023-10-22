@@ -172,3 +172,19 @@ func hasInternetAccess(ifaceName string) bool {
 	out, err := cmd.CombinedOutput()
 	return err == nil && !strings.Contains(string(out), "100% packet loss")
 }
+
+// accepts file path with file name for example "/tmp/hello.txt" and data to write in []byte
+func CreateFileWithData(filePath string, data []byte) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	if err != nil {
+		return fmt.Errorf("failed to write data to file: %v", err)
+	}
+
+	return nil
+}

@@ -101,3 +101,23 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 	}
 	return nil
 }
+
+// sets empty state of validator into $sekaidHome/data/priv_validator_state.json
+func (h *HelperManager) SetEmptyValidatorState(ctx context.Context) error {
+	log := logging.Log
+	commandToCreateEmptyState := `
+	{
+		"height": "0",
+		"round": 0,
+		"step": 0
+	}`
+
+	tmpFile := "/tmp/priv_validator_state.json"
+	osutils.CreateFileWithData(tmpFile, []byte(commandToCreateEmptyState))
+	err := h.containerManager.SendFileToContainer(ctx, tmpFile, h.config.SekaidHome+"/data", h.config.SekaidContainerName)
+	if err != nil {
+		log.Errorf("cannot send %s to container\n", tmpFile)
+		return err
+	}
+	return nil
+}
