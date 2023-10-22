@@ -67,8 +67,8 @@ func newDefaultKiraConfig() *config.KiraConfig {
 		DockerImageName:     "ubuntu",
 		DockerImageVersion:  "latest",
 		DockerNetworkName:   "kira_network",
-		SekaiVersion:        "latest", // or v0.3.16
-		InterxVersion:       "latest", // or v0.4.33
+		SekaiVersion:        "v0.3.32", // or v0.3.32 or latest
+		InterxVersion:       "latest",  // or v0.4.33 or latest
 		SekaidContainerName: "sekaid",
 		InterxContainerName: "interx",
 		VolumeName:          "kira_volume:/data",
