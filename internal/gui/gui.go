@@ -1,14 +1,19 @@
 package gui
 
 import (
+	"bytes"
 	"fmt"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/mrlutik/kira2.0/internal/gui/dialogs"
 	"github.com/mrlutik/kira2.0/internal/gui/tabs"
 	"golang.org/x/crypto/ssh"
 )
+
+var sshSessionForTerminal *ssh.Session
+var sshSessionForCommands *ssh.Session
 
 type Gui struct {
 	// term *terminal.Terminal
@@ -17,20 +22,15 @@ type Gui struct {
 }
 
 func (g *Gui) MakeGui() fyne.CanvasObject {
-
 	title := widget.NewLabel("Component name")
 	info := widget.NewLabel("An introduction would probably go\nhere, as well as a")
 	// g.content = container.NewStack()
 	mainWindow := container.NewStack()
 
-	sshS, err := makeSSHsession()
-	if err != nil {
-		panic(err)
-	}
-	tabs.SshSession = sshS
-	go tabs.SshSession.Shell()
-	tabs.SshIn, _ = tabs.SshSession.StdinPipe()
-	tabs.SshOut, _ = tabs.SshSession.StdoutPipe()
+	// a := fyne.CurrentApp()
+	// a.Lifecycle().SetOnStarted(func() {
+	g.showConnect()
+	// })
 
 	tab := container.NewBorder(container.NewVBox(title, info), nil, nil, nil, mainWindow)
 
@@ -90,17 +90,101 @@ func (g *Gui) makeNav(setTab func(t tabs.Tab)) fyne.CanvasObject {
 	return tree
 }
 
-func makeSSHsession() (*ssh.Session, error) {
+func (g *Gui) showConnect() {
+	// home := widget.NewLabel("here you can create ssh connection")
+	var wizard *dialogs.Wizard
+	userEntry := widget.NewEntry()
+	ipEntry := widget.NewEntry()
+	passwordEntry := widget.NewPasswordEntry()
+	errorLabel := widget.NewLabel("")
+	connectButton := widget.NewButton("connect to remote host", func() {
+		// g.showConnect()
+		sshS, err := makeSSHsessionForTerminal(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+		if err != nil {
+			errorLabel.Wrapping = 2
+			errorLabel.SetText(err.Error())
+
+			// panic(err)
+		} else {
+			sshSessionForTerminal = sshS
+			go sshSessionForTerminal.Shell()
+			tabs.SshIn, _ = sshSessionForTerminal.StdinPipe()
+			tabs.SshOut, _ = sshSessionForTerminal.StdoutPipe()
+			wizard.Hide()
+			// fmt.Println(sshSessionForTerminal.Run("bash ls"))
+			sshSessionForCommands, _ := makeSSHsessionForCommands(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+			// fmt.Println(sshSessionForCommands.Run("ls /"))
+			commands := []string{"ls ~", "ls /"}
+			for _, cmd := range commands {
+				output, err := runCommand(sshSessionForCommands, cmd)
+				if err != nil {
+					fmt.Println("Failed to run command '%s': %v", cmd, err)
+				}
+				fmt.Printf("Output of '%s':\n%s\n", cmd, output)
+			}
+		}
+	})
+	loging := container.NewVBox(
+		widget.NewLabel("ip and port"),
+		ipEntry,
+		widget.NewLabel("user"),
+		userEntry,
+		widget.NewLabel("password"),
+		passwordEntry,
+		connectButton,
+		errorLabel,
+	)
+
+	wizard = dialogs.NewWizard("Create ssh connection", loging)
+	wizard.Show(g.Window)
+}
+
+func runCommand(session *ssh.Session, command string) (string, error) {
+	var stdoutBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+
+	if err := session.Run(command); err != nil {
+		return "", err
+	}
+
+	return stdoutBuf.String(), nil
+}
+
+func makeSSHsessionForCommands(ipPort, user, psswrd string) (*ssh.Session, error) {
 	config := &ssh.ClientConfig{
-		User: "d",
+		User: user,
 		Auth: []ssh.AuthMethod{
-			ssh.Password("d"),
+			ssh.Password(psswrd),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	// Connect to the SSH server
-	client, err := ssh.Dial("tcp", "192.168.1.104:22", config)
+	client, err := ssh.Dial("tcp", ipPort, config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a session
+	session, err := client.NewSession()
+	if err != nil {
+		client.Close()
+		return nil, err
+	}
+
+	return session, nil
+}
+func makeSSHsessionForTerminal(ipPort, user, psswrd string) (*ssh.Session, error) {
+	config := &ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			ssh.Password(psswrd),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	// Connect to the SSH server
+	client, err := ssh.Dial("tcp", ipPort, config)
 	if err != nil {
 		return nil, err
 	}
@@ -125,32 +209,5 @@ func makeSSHsession() (*ssh.Session, error) {
 		return nil, err
 	}
 
-	// // Get stdin and stdout for the session
-	// stdin, err := session.StdinPipe()
-	// if err != nil {
-	// 	session.Close()
-	// 	client.Close()
-	// 	return nil, nil, nil, err
-	// }
-
-	// stdout, err := session.StdoutPipe()
-	// if err != nil {
-	// 	stdin.Close()
-	// 	session.Close()
-	// 	client.Close()
-	// 	return nil, nil, nil, err
-	// }
-
-	// // Start a shell
-	// if err := session.Shell(); err != nil {
-
-	// 	stdin.Close()
-	// 	session.Close()
-	// 	client.Close()
-	// 	return nil, nil, nil, err
-	// }
-
-	// Return the stdin and stdout
-	// return stdin, stdout, session, nil
 	return session, nil
 }
