@@ -6,8 +6,8 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/mrlutik/kira2.0/internal/gui/tabs"
 	"golang.org/x/crypto/ssh"
-	// "github.com/mrlutik/kira2.0/internal/gui"
 )
 
 type Gui struct {
@@ -27,14 +27,14 @@ func (g *Gui) MakeGui() fyne.CanvasObject {
 	if err != nil {
 		panic(err)
 	}
-	sshSession = sshS
-	go sshSession.Shell()
-	sshIn, _ = sshSession.StdinPipe()
-	sshOut, _ = sshSession.StdoutPipe()
+	tabs.SshSession = sshS
+	go tabs.SshSession.Shell()
+	tabs.SshIn, _ = tabs.SshSession.StdinPipe()
+	tabs.SshOut, _ = tabs.SshSession.StdoutPipe()
 
 	tab := container.NewBorder(container.NewVBox(title, info), nil, nil, nil, mainWindow)
 
-	setTab := func(t Tab) {
+	setTab := func(t tabs.Tab) {
 		title.SetText(t.Title)
 		info.SetText(t.Info)
 		mainWindow.Objects = []fyne.CanvasObject{t.View(g.Window)}
@@ -45,16 +45,16 @@ func (g *Gui) MakeGui() fyne.CanvasObject {
 
 }
 
-func (g *Gui) makeNav(setTab func(t Tab)) fyne.CanvasObject {
+func (g *Gui) makeNav(setTab func(t tabs.Tab)) fyne.CanvasObject {
 	a := fyne.CurrentApp()
 	const preferenceCurrentTutorial = "currentTutorial"
 
 	tree := &widget.Tree{
 		ChildUIDs: func(uid string) []string {
-			return TabsIndex[uid]
+			return tabs.TabsIndex[uid]
 		},
 		IsBranch: func(uid string) bool {
-			children, ok := TabsIndex[uid]
+			children, ok := tabs.TabsIndex[uid]
 
 			return ok && len(children) > 0
 		},
@@ -62,7 +62,7 @@ func (g *Gui) makeNav(setTab func(t Tab)) fyne.CanvasObject {
 			return widget.NewLabel("Collection Widgets")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t, ok := Tabs[uid]
+			t, ok := tabs.Tabs[uid]
 			if !ok {
 				fyne.LogError("Missing tutorial panel: "+uid, nil)
 				return
@@ -76,7 +76,7 @@ func (g *Gui) makeNav(setTab func(t Tab)) fyne.CanvasObject {
 			obj.(*widget.Label).TextStyle = fyne.TextStyle{}
 		},
 		OnSelected: func(uid string) {
-			if t, ok := Tabs[uid]; ok {
+			if t, ok := tabs.Tabs[uid]; ok {
 				// if unsupportedTutorial(t) {
 				// 	return
 				// }
