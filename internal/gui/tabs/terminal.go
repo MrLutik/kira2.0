@@ -10,8 +10,9 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// var term *terminal.Terminal
-var term = terminal.New()
+var term *terminal.Terminal
+
+// term = terminal.New()
 var sshSessionForTerminal *ssh.Session
 
 var sshIn io.WriteCloser
@@ -32,11 +33,14 @@ func TryToRunSSHSessionForTerminal(c *ssh.Client) (err error) {
 	if err != nil {
 		return err
 	}
+	term = terminal.New()
+	go term.RunWithConnection(sshIn, sshOut)
+
 	return nil
 }
 
 func makeTerminalScreen(_ fyne.Window) fyne.CanvasObject {
-	go term.RunWithConnection(sshIn, sshOut)
+
 	return container.NewVScroll(term)
 }
 
