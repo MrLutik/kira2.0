@@ -12,9 +12,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var sshSessionForTerminal *ssh.Session
-var sshSessionForCommands *ssh.Session
-
 type Gui struct {
 	// term *terminal.Terminal
 	// sshConnection
@@ -91,39 +88,23 @@ func (g *Gui) makeNav(setTab func(t tabs.Tab)) fyne.CanvasObject {
 }
 
 func (g *Gui) showConnect() {
-	// home := widget.NewLabel("here you can create ssh connection")
 	var wizard *dialogs.Wizard
 	userEntry := widget.NewEntry()
 	ipEntry := widget.NewEntry()
 	passwordEntry := widget.NewPasswordEntry()
 	errorLabel := widget.NewLabel("")
-	connectButton := widget.NewButton("connect to remote host", func() {
-		// g.showConnect()
-		sshS, err := makeSSHsessionForTerminal(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+	errorLabel.Wrapping = 2
+	submitFunc := func() {
+		err := tabs.TryToRunSSHSessionForTerminal(ipEntry.Text, userEntry.Text, passwordEntry.Text)
 		if err != nil {
-			errorLabel.Wrapping = 2
 			errorLabel.SetText(err.Error())
-
-			// panic(err)
 		} else {
-			sshSessionForTerminal = sshS
-			go sshSessionForTerminal.Shell()
-			tabs.SshIn, _ = sshSessionForTerminal.StdinPipe()
-			tabs.SshOut, _ = sshSessionForTerminal.StdoutPipe()
 			wizard.Hide()
-			// fmt.Println(sshSessionForTerminal.Run("bash ls"))
-			sshSessionForCommands, _ := makeSSHsessionForCommands(ipEntry.Text, userEntry.Text, passwordEntry.Text)
-			// fmt.Println(sshSessionForCommands.Run("ls /"))
-			commands := []string{"ls ~", "ls /"}
-			for _, cmd := range commands {
-				output, err := runCommand(sshSessionForCommands, cmd)
-				if err != nil {
-					fmt.Println("Failed to run command '%s': %v", cmd, err)
-				}
-				fmt.Printf("Output of '%s':\n%s\n", cmd, output)
-			}
 		}
-	})
+	}
+	passwordEntry.OnSubmitted = func(s string) { submitFunc() }
+	connectButton := widget.NewButton("connect to remote host", func() { submitFunc() })
+
 	loging := container.NewVBox(
 		widget.NewLabel("ip and port"),
 		ipEntry,
@@ -148,66 +129,4 @@ func runCommand(session *ssh.Session, command string) (string, error) {
 	}
 
 	return stdoutBuf.String(), nil
-}
-
-func makeSSHsessionForCommands(ipPort, user, psswrd string) (*ssh.Session, error) {
-	config := &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(psswrd),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	// Connect to the SSH server
-	client, err := ssh.Dial("tcp", ipPort, config)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a session
-	session, err := client.NewSession()
-	if err != nil {
-		client.Close()
-		return nil, err
-	}
-
-	return session, nil
-}
-func makeSSHsessionForTerminal(ipPort, user, psswrd string) (*ssh.Session, error) {
-	config := &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(psswrd),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	// Connect to the SSH server
-	client, err := ssh.Dial("tcp", ipPort, config)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a session
-	session, err := client.NewSession()
-	if err != nil {
-		client.Close()
-		return nil, err
-	}
-
-	// Request a pty (pseudo-terminal)
-	modes := ssh.TerminalModes{
-		ssh.ECHO:          1,     // Enable echoing
-		ssh.TTY_OP_ISPEED: 14400, // Input speed = 14.4kbaud
-		ssh.TTY_OP_OSPEED: 14400, // Output speed = 14.4kbaud
-	}
-
-	if err := session.RequestPty("ansi", 80, 40, modes); err != nil {
-		session.Close()
-		client.Close()
-		return nil, err
-	}
-
-	return session, nil
 }
