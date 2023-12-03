@@ -17,11 +17,7 @@ var sshSessionForTerminal *ssh.Session
 var sshIn io.WriteCloser
 var sshOut io.Reader
 
-func TryToRunSSHSessionForTerminal(ipAndPort string, user string, psswrd string) (err error) {
-	c, err := sshC.MakeSHH_Client(ipAndPort, user, psswrd)
-	if err != nil {
-		return err
-	}
+func TryToRunSSHSessionForTerminal(c *ssh.Client) (err error) {
 	s, err := sshC.MakeSSHsessionForTerminal(c)
 	if err != nil {
 		return err

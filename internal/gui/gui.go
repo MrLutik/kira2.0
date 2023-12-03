@@ -1,13 +1,13 @@
 package gui
 
 import (
-	"bytes"
 	"fmt"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/mrlutik/kira2.0/internal/gui/dialogs"
+	"github.com/mrlutik/kira2.0/internal/gui/sshC"
 	"github.com/mrlutik/kira2.0/internal/gui/tabs"
 	"golang.org/x/crypto/ssh"
 )
@@ -15,7 +15,8 @@ import (
 type Gui struct {
 	// term *terminal.Terminal
 	// sshConnection
-	Window fyne.Window
+	sshClient *ssh.Client
+	Window    fyne.Window
 }
 
 func (g *Gui) MakeGui() fyne.CanvasObject {
@@ -95,13 +96,21 @@ func (g *Gui) showConnect() {
 	errorLabel := widget.NewLabel("")
 	errorLabel.Wrapping = 2
 	submitFunc := func() {
-		err := tabs.TryToRunSSHSessionForTerminal(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+		var err error
+		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
 		if err != nil {
-			errorLabel.SetText(err.Error())
+			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
 		} else {
-			wizard.Hide()
+			err = tabs.TryToRunSSHSessionForTerminal(g.sshClient)
+			if err != nil {
+			} else {
+				wizard.Hide()
+			}
 		}
+
 	}
+	ipEntry.OnSubmitted = func(s string) { submitFunc() }
+	userEntry.OnSubmitted = func(s string) { submitFunc() }
 	passwordEntry.OnSubmitted = func(s string) { submitFunc() }
 	connectButton := widget.NewButton("connect to remote host", func() { submitFunc() })
 
@@ -115,18 +124,7 @@ func (g *Gui) showConnect() {
 		connectButton,
 		errorLabel,
 	)
-
 	wizard = dialogs.NewWizard("Create ssh connection", loging)
 	wizard.Show(g.Window)
-}
-
-func runCommand(session *ssh.Session, command string) (string, error) {
-	var stdoutBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-
-	if err := session.Run(command); err != nil {
-		return "", err
-	}
-
-	return stdoutBuf.String(), nil
+	wizard.Resize(fyne.NewSize(300, 200))
 }
