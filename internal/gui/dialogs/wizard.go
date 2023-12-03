@@ -24,6 +24,13 @@ func (w *Wizard) Hide() {
 	w.d.Hide()
 }
 
+func (w *Wizard) Resize(size fyne.Size) {
+	if w.d == nil {
+		return
+	}
+	w.d.Resize(size)
+}
+
 func (w *Wizard) Show(win fyne.Window) {
 	w.d = dialog.NewCustomWithoutButtons(w.title, w.content, win)
 
