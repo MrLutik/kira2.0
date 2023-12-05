@@ -94,17 +94,21 @@ func (g *Gui) showConnect() {
 	ipEntry := widget.NewEntry()
 	passwordEntry := widget.NewPasswordEntry()
 	errorLabel := widget.NewLabel("")
+
 	errorLabel.Wrapping = 2
 	submitFunc := func() {
 		var err error
 		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
 		if err != nil {
+
 			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
 		} else {
 			err = tabs.TryToRunSSHSessionForTerminal(g.sshClient)
 			if err != nil {
 			} else {
+
 				wizard.Hide()
+
 			}
 		}
 
@@ -123,7 +127,13 @@ func (g *Gui) showConnect() {
 		passwordEntry,
 		connectButton,
 		errorLabel,
+
+		widget.NewButton("test", func() {
+			wizard.Push("set up your node", widget.NewLabel("Create node or smth"))
+
+		}),
 	)
+
 	wizard = dialogs.NewWizard("Create ssh connection", loging)
 	wizard.Show(g.Window)
 	wizard.Resize(fyne.NewSize(300, 200))
