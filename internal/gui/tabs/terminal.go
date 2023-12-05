@@ -38,7 +38,7 @@ func TryToRunSSHSessionForTerminal(c *ssh.Client) (err error) {
 	return nil
 }
 
-func makeTerminalScreen(_ fyne.Window) fyne.CanvasObject {
+func makeTerminalScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 
 	return container.NewVScroll(term)
 }

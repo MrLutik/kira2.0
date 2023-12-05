@@ -1,4 +1,4 @@
-package gui
+package tabs
 
 import (
 	"fmt"
@@ -8,8 +8,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/mrlutik/kira2.0/internal/gui/dialogs"
 	"github.com/mrlutik/kira2.0/internal/gui/sshC"
-	"github.com/mrlutik/kira2.0/internal/gui/tabs"
-
 	"golang.org/x/crypto/ssh"
 )
 
@@ -31,10 +29,10 @@ func (g *Gui) MakeGui() fyne.CanvasObject {
 
 	tab := container.NewBorder(container.NewVBox(title, info), nil, nil, nil, mainWindow)
 
-	setTab := func(t tabs.Tab) {
+	setTab := func(t Tab) {
 		title.SetText(t.Title)
 		info.SetText(t.Info)
-		mainWindow.Objects = []fyne.CanvasObject{t.View(g.Window)}
+		mainWindow.Objects = []fyne.CanvasObject{t.View(g.Window, g)}
 	}
 	menuAndTab := container.NewHSplit(g.makeNav(setTab), tab)
 	menuAndTab.Offset = 0.2
@@ -42,16 +40,16 @@ func (g *Gui) MakeGui() fyne.CanvasObject {
 
 }
 
-func (g *Gui) makeNav(setTab func(t tabs.Tab)) fyne.CanvasObject {
+func (g *Gui) makeNav(setTab func(t Tab)) fyne.CanvasObject {
 	a := fyne.CurrentApp()
 	const preferenceCurrentTutorial = "currentTutorial"
 
 	tree := &widget.Tree{
 		ChildUIDs: func(uid string) []string {
-			return tabs.TabsIndex[uid]
+			return TabsIndex[uid]
 		},
 		IsBranch: func(uid string) bool {
-			children, ok := tabs.TabsIndex[uid]
+			children, ok := TabsIndex[uid]
 
 			return ok && len(children) > 0
 		},
@@ -59,7 +57,7 @@ func (g *Gui) makeNav(setTab func(t tabs.Tab)) fyne.CanvasObject {
 			return widget.NewLabel("Collection Widgets")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t, ok := tabs.Tabs[uid]
+			t, ok := Tabs[uid]
 			if !ok {
 				fyne.LogError("Missing tutorial panel: "+uid, nil)
 				return
@@ -73,7 +71,7 @@ func (g *Gui) makeNav(setTab func(t tabs.Tab)) fyne.CanvasObject {
 			obj.(*widget.Label).TextStyle = fyne.TextStyle{}
 		},
 		OnSelected: func(uid string) {
-			if t, ok := tabs.Tabs[uid]; ok {
+			if t, ok := Tabs[uid]; ok {
 				// if unsupportedTutorial(t) {
 				// 	return
 				// }
@@ -97,15 +95,15 @@ func (g *Gui) showConnect() {
 	errorLabel.Wrapping = 2
 	submitFunc := func() {
 		var err error
-		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+		// g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+		g.sshClient, err = sshC.MakeSHH_Client("192.168.0.44:22", "d", "d")
 		if err != nil {
 
 			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
 		} else {
-			err = tabs.TryToRunSSHSessionForTerminal(g.sshClient)
+			err = TryToRunSSHSessionForTerminal(g.sshClient)
 			if err != nil {
 			} else {
-
 				wizard.Hide()
 
 			}
