@@ -18,9 +18,13 @@ var (
 			Title: "Host Terminal",
 			View:  makeTerminalScreen,
 		},
+		"status": {
+			Title: "Node Status",
+			View:  makeStatusScreen,
+		},
 	}
 
 	TabsIndex = map[string][]string{
-		"": {"welcome", "terminal"},
+		"": {"welcome", "terminal", "status"},
 	}
 )
