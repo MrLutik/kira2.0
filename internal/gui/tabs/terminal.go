@@ -19,11 +19,10 @@ var sshIn io.WriteCloser
 var sshOut io.Reader
 
 func TryToRunSSHSessionForTerminal(c *ssh.Client) (err error) {
-	s, err := sshC.MakeSSHsessionForTerminal(c)
+	sshSessionForTerminal, err = sshC.MakeSSHsessionForTerminal(c)
 	if err != nil {
 		return err
 	}
-	sshSessionForTerminal = s
 	go sshSessionForTerminal.Shell()
 	sshIn, err = sshSessionForTerminal.StdinPipe()
 	if err != nil {
