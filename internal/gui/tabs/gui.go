@@ -75,7 +75,7 @@ func (g *Gui) makeNav(setTab func(t Tab)) fyne.CanvasObject {
 				// if unsupportedTutorial(t) {
 				// 	return
 				// }
-				fmt.Println(uid)
+				// fmt.Println(uid)
 				a.Preferences().SetString(preferenceCurrentTutorial, uid)
 				setTab(t)
 			}
