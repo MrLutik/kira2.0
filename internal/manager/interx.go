@@ -219,7 +219,7 @@ func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
 // If any errors occur during the process, an error is returned.
 func (i *InterxManager) runInterxContainer(ctx context.Context) error {
 	log := logging.Log
-	const delay = time.Second * 3
+	const delay = time.Second * 11
 
 	err := i.startInterxBinInContainer(ctx)
 	if err != nil {
