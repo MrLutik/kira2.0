@@ -22,9 +22,14 @@ var (
 			Title: "Node Status",
 			View:  makeStatusScreen,
 		},
+		"controll": {
+			Title: "Node Controll",
+			Info:  "Controll your node with buttons",
+			View:  makeNodeControllScreen,
+		},
 	}
 
 	TabsIndex = map[string][]string{
-		"": {"welcome", "terminal", "status"},
+		"": {"welcome", "terminal", "controll", "status"},
 	}
 )
