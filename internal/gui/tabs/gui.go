@@ -5,9 +5,12 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 	"github.com/mrlutik/kira2.0/internal/gui/dialogs"
+	"github.com/mrlutik/kira2.0/internal/gui/guiHelper"
 	"github.com/mrlutik/kira2.0/internal/gui/sshC"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -21,7 +24,7 @@ func (g *Gui) MakeGui() fyne.CanvasObject {
 	info := widget.NewLabel("An introduction would probably go\nhere, as well as a")
 	// g.content = container.NewStack()
 	mainWindow := container.NewStack()
-
+	log.SetLevel(logrus.DebugLevel)
 	// a := fyne.CurrentApp()
 	// a.Lifecycle().SetOnStarted(func() {
 	g.showConnect()
@@ -95,8 +98,8 @@ func (g *Gui) showConnect() {
 	errorLabel.Wrapping = 2
 	submitFunc := func() {
 		var err error
-		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
-		// g.sshClient, err = sshC.MakeSHH_Client("192.168.0.44:22", "d", "d")
+		// g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+		g.sshClient, err = sshC.MakeSHH_Client("192.168.1.101:22", "d", "d")
 		if err != nil {
 
 			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
@@ -134,4 +137,83 @@ func (g *Gui) showConnect() {
 	wizard = dialogs.NewWizard("Create ssh connection", loging)
 	wizard.Show(g.Window)
 	wizard.Resize(fyne.NewSize(300, 200))
+}
+
+func showCmdExecDialogV2(g *Gui, infoMSG string, outputChan chan guiHelper.Result) {
+	var wizard *dialogs.Wizard
+	outputMsg := binding.NewString()
+	statusMsg := binding.NewString()
+	statusMsg.Set("loading...")
+	loadiningWidget := widget.NewProgressBarInfinite()
+
+	label := widget.NewLabelWithData(outputMsg)
+	closeButton := widget.NewButton("CLOSE", func() { wizard.Hide() })
+
+	loadingDialog := container.NewBorder(
+		widget.NewLabelWithData(statusMsg),
+		container.NewVBox(loadiningWidget, closeButton),
+		nil,
+		nil,
+		container.NewHScroll(container.NewVScroll(label)),
+	)
+	closeButton.Hide()
+	wizard = dialogs.NewWizard(infoMSG, loadingDialog)
+	wizard.Show(g.Window)
+	wizard.Resize(fyne.NewSize(300, 400))
+	wizard.ChangeTitle(infoMSG)
+
+	output := <-outputChan
+	log.Printf("Command Output: %s", output)
+	outputMsg.Set(output.Output)
+	// loadiningWidget.Stop()
+	loadiningWidget.Hide()
+	closeButton.Show()
+	if output.Err != nil {
+		statusMsg.Set(fmt.Sprintf("Error:\n%s", output.Err))
+	} else {
+		statusMsg.Set("Seccusess")
+	}
+}
+
+func showCmdExecDialogAndRunCmdV3(g *Gui, infoMSG string, cmd string) {
+	resultChan := make(chan guiHelper.Result)
+	go func() {
+		output, err := guiHelper.ExecuteSSHCommand(g.sshClient, cmd)
+		resultChan <- guiHelper.Result{Output: output, Err: err}
+		close(resultChan)
+	}()
+
+	var wizard *dialogs.Wizard
+	outputMsg := binding.NewString()
+	statusMsg := binding.NewString()
+	statusMsg.Set("loading...")
+	loadiningWidget := widget.NewProgressBarInfinite()
+
+	label := widget.NewLabelWithData(outputMsg)
+	closeButton := widget.NewButton("CLOSE", func() { wizard.Hide() })
+
+	loadingDialog := container.NewBorder(
+		widget.NewLabelWithData(statusMsg),
+		container.NewVBox(loadiningWidget, closeButton),
+		nil,
+		nil,
+		container.NewHScroll(container.NewVScroll(label)),
+	)
+	closeButton.Hide()
+	wizard = dialogs.NewWizard(infoMSG, loadingDialog)
+	wizard.Show(g.Window)
+	wizard.Resize(fyne.NewSize(300, 400))
+	wizard.ChangeTitle(infoMSG)
+
+	output := <-resultChan
+	log.Printf("Command Output: %s", output)
+	outputMsg.Set(output.Output)
+	// loadiningWidget.Stop()
+	loadiningWidget.Hide()
+	closeButton.Show()
+	if output.Err != nil {
+		statusMsg.Set(fmt.Sprintf("Error:\n%s", output.Err))
+	} else {
+		statusMsg.Set("Seccusess")
+	}
 }

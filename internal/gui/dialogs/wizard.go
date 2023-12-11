@@ -54,6 +54,10 @@ func (w *Wizard) Show(win fyne.Window) {
 	w.d.Show()
 }
 
+func (w *Wizard) ChangeTitle(title string) {
+	w.title = title
+}
+
 func (w *Wizard) wrap(title string, content fyne.CanvasObject) fyne.CanvasObject {
 	nav := container.NewHBox(
 		widget.NewButtonWithIcon("", theme.NavigateBackIcon(), w.Pop),

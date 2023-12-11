@@ -6,8 +6,16 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/mrlutik/kira2.0/internal/logging"
 	"golang.org/x/crypto/ssh"
 )
+
+var log = logging.Log
+
+type Result struct {
+	Output string
+	Err    error
+}
 
 func GetIPFromSshClient(sshClient *ssh.Client) (net.IP, error) {
 	if sshClient == nil {
@@ -25,6 +33,7 @@ func GetIPFromSshClient(sshClient *ssh.Client) (net.IP, error) {
 // exec cmd on remote host, returns the outpot of execution or error
 func ExecuteSSHCommand(client *ssh.Client, command string) (string, error) {
 	// Create a session. It is important to defer closing the session.
+	log.Printf("RUNNING CMD:\n%s", command)
 	session, err := client.NewSession()
 	if err != nil {
 		return "", fmt.Errorf("failed to create session: %v", err)
@@ -34,8 +43,10 @@ func ExecuteSSHCommand(client *ssh.Client, command string) (string, error) {
 	// Run the command and capture the output.
 	output, err := session.CombinedOutput(command)
 	if err != nil {
-		return "", fmt.Errorf("failed to run command: %v", err)
+		log.Printf("OUT OF CMD: %s\n ERROR OUT: %s", string(output), err)
+		return string(output), fmt.Errorf("failed to run command: %v", err)
 	}
+	log.Printf("OUT OF CMD: %s\n ERROR OUT: %s", string(output), err)
 
 	return string(output), nil
 }
