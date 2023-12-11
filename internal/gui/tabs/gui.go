@@ -98,8 +98,8 @@ func (g *Gui) showConnect() {
 	errorLabel.Wrapping = 2
 	submitFunc := func() {
 		var err error
-		// g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
-		g.sshClient, err = sshC.MakeSHH_Client("192.168.1.101:22", "d", "d")
+		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+		// g.sshClient, err = sshC.MakeSHH_Client("192.168.1.101:22", "d", "d")
 		if err != nil {
 
 			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
