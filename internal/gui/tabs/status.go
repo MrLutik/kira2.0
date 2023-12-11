@@ -20,7 +20,7 @@ func makeStatusScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 	// h.GetIP(g.sshClient)
 	ip, err := guiHelper.GetIPFromSshClient(g.sshClient)
 
-	fmt.Println(g.sshClient.SessionID(), "iP::::", ip)
+	fmt.Println(g.sshClient.SessionID(), "iP::::", ip, err)
 
 	// }
 	// ip, _ := "pepeg", "pepeg"
@@ -31,15 +31,10 @@ func makeStatusScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 	)
 	// normalLs, err1 := guiHelper.ExecuteSSHCommand(g.sshClient, "ls")
 	// errorLS, err2 := guiHelper.ExecuteSSHCommand(g.sshClient, "lsssssss")
-	return container.NewVScroll(container.NewVBox(
-		// widget.NewLabel(fmt.Sprintf("Host ip: %s, err: %s", ip.String(), err)),
-		// widget.NewLabel(fmt.Sprintf("normalLS: %s, err1: %s", normalLs, err1)),
-		// widget.NewLabel(fmt.Sprintf("errorLS: %s, err1: %s", errorLS, err2)),
-		// widget.NewLabel(fmt.Sprintf("status: %s, errs: %s", status2, errStatus2)),
-		tabs,
-		widget.NewLabel(fmt.Sprintf("%s", err)),
-	),
-	)
+	// return container.NewVBox(
+	return tabs
+	// widget.NewLabel(fmt.Sprintf("%s", err)),
+	// )
 
 	// widget.NewLabel(fmt.Sprintf("%s,", ip)),
 
@@ -54,15 +49,25 @@ func makeTab1Status(ip string) fyne.CanvasObject {
 	status.Set(string(s))
 	errStatus.Set(fmt.Sprintf("%s", e))
 
-	return container.NewVBox(
+	return container.NewBorder(
 		widget.NewButton("REFRESH", func() {
 			s, e = guiHelper.MakeHttpRequest(fmt.Sprintf("http://%s:11000/api/status", ip))
 			status.Set("status:" + string(s))
 			errStatus.Set("error:" + fmt.Sprintf("%s", e))
 		}),
-		// widget.NewLabelWithData(fmt.Sprintf("status: %s, errs: %s", status, errStatus)),
-		widget.NewLabelWithData(status),
-		widget.NewLabelWithData(errStatus),
+		nil,
+		nil,
+		nil,
+		container.NewVScroll(container.NewVBox(
+			container.NewBorder(
+				nil,
+				widget.NewLabelWithData(errStatus),
+				nil,
+				nil,
+				widget.NewLabelWithData(status),
+			),
+		),
+		),
 	)
 
 }
@@ -74,12 +79,24 @@ func makeTab2Dashboard(ip string) fyne.CanvasObject {
 	data.Set(string(out) + fmt.Sprintf("%s", err))
 
 	// return widget.NewLabel(fmt.Sprintf("status: %s, errs: %s", out, err))
-	return container.NewVBox(
+	return container.NewBorder(
 		widget.NewButton("REFRESH", func() {
 			out, err = guiHelper.MakeHttpRequest(fmt.Sprintf("http://%s:11000/api/dashboard", ip))
 			data.Set(string(out) + fmt.Sprintf("%s", err))
 		}),
+		nil,
+		nil,
+		nil,
 		// widget.NewLabelWithData(fmt.Sprintf("status: %s, errs: %s", status, errStatus)),
-		widget.NewLabelWithData(data),
+		container.NewVScroll(container.NewVBox(
+			container.NewBorder(
+				nil,
+				nil,
+				nil,
+				nil,
+				widget.NewLabelWithData(data),
+			),
+		),
+		),
 	)
 }
