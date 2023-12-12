@@ -232,13 +232,13 @@ func showCmdExecDialogAndRunCmdV4(g *Gui, infoMSG string, cmd string) {
 
 	label := widget.NewLabelWithData(outputMsg)
 	closeButton := widget.NewButton("CLOSE", func() { wizard.Hide() })
-
+	outputScroll := container.NewVScroll(label)
 	loadingDialog := container.NewBorder(
 		widget.NewLabelWithData(statusMsg),
 		container.NewVBox(loadiningWidget, closeButton),
 		nil,
 		nil,
-		container.NewHScroll(container.NewVScroll(label)),
+		container.NewHScroll(outputScroll),
 	)
 	closeButton.Hide()
 	wizard = dialogs.NewWizard(infoMSG, loadingDialog)
@@ -250,7 +250,9 @@ func showCmdExecDialogAndRunCmdV4(g *Gui, infoMSG string, cmd string) {
 		cleanLine := cleanString(line)
 		out = fmt.Sprintf("%s\n%s", out, cleanLine)
 		outputMsg.Set(out)
+		outputScroll.ScrollToBottom()
 	}
+	outputScroll.ScrollToBottom()
 	loadiningWidget.Hide()
 	closeButton.Show()
 	errcheck := <-errorChannel
