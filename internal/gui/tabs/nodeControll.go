@@ -4,7 +4,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/mrlutik/kira2.0/internal/gui/guiHelper"
 )
 
 func makeNodeControllScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
@@ -21,8 +20,8 @@ func makeNodeControllScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 }
 
 func runLScmd(g *Gui) {
-	cmd := "sleep 1  && lss"
-	go showCmdExecDialogAndRunCmdV3(g, "executing ls", cmd)
+	cmd := "ls && sleep 1  && ls && sleep 1 && ls && ls && ls && ls && ls "
+	showCmdExecDialogAndRunCmdV4(g, "executing ls", cmd)
 }
 
 func startKM2(g *Gui) {
@@ -30,11 +29,11 @@ func startKM2(g *Gui) {
 
 	// need to make km2 non dependet from sudo user
 	cmd := `echo 'd' | sudo -S -E sh -c 'export GITHUB_TOKEN=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 && ./main start --log-level debug'`
-	resultChan := make(chan guiHelper.Result)
-	go func() {
-		output, err := guiHelper.ExecuteSSHCommand(g.sshClient, cmd)
-		resultChan <- guiHelper.Result{Output: output, Err: err}
-		close(resultChan)
-	}()
-	go showCmdExecDialogV2(g, "starting node", resultChan)
+	// resultChan := make(chan guiHelper.Result)
+	// go func() {
+	// 	output, err := guiHelper.ExecuteSSHCommand(g.sshClient, cmd)
+	// 	resultChan <- guiHelper.Result{Output: output, Err: err}
+	// 	close(resultChan)
+	// }()
+	go showCmdExecDialogAndRunCmdV4(g, "starting node", cmd)
 }

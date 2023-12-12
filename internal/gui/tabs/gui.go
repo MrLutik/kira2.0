@@ -2,6 +2,7 @@ package tabs
 
 import (
 	"fmt"
+	"regexp"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -216,4 +217,51 @@ func showCmdExecDialogAndRunCmdV3(g *Gui, infoMSG string, cmd string) {
 	} else {
 		statusMsg.Set("Seccusess")
 	}
+}
+
+func showCmdExecDialogAndRunCmdV4(g *Gui, infoMSG string, cmd string) {
+	outputchannnel := make(chan string)
+	errorChannel := make(chan guiHelper.ResultV2)
+	go guiHelper.ExecuteSSHCommandV2(g.sshClient, cmd, outputchannnel, errorChannel)
+
+	var wizard *dialogs.Wizard
+	outputMsg := binding.NewString()
+	statusMsg := binding.NewString()
+	statusMsg.Set("loading...")
+	loadiningWidget := widget.NewProgressBarInfinite()
+
+	label := widget.NewLabelWithData(outputMsg)
+	closeButton := widget.NewButton("CLOSE", func() { wizard.Hide() })
+
+	loadingDialog := container.NewBorder(
+		widget.NewLabelWithData(statusMsg),
+		container.NewVBox(loadiningWidget, closeButton),
+		nil,
+		nil,
+		container.NewHScroll(container.NewVScroll(label)),
+	)
+	closeButton.Hide()
+	wizard = dialogs.NewWizard(infoMSG, loadingDialog)
+	wizard.Show(g.Window)
+	wizard.Resize(fyne.NewSize(300, 400))
+	wizard.ChangeTitle(infoMSG)
+	var out string
+	for line := range outputchannnel {
+		cleanLine := cleanString(line)
+		out = fmt.Sprintf("%s\n%s", out, cleanLine)
+		outputMsg.Set(out)
+	}
+	loadiningWidget.Hide()
+	closeButton.Show()
+	errcheck := <-errorChannel
+	if errcheck.Err != nil {
+		statusMsg.Set(fmt.Sprintf("Error:\n%s", errcheck.Err))
+	} else {
+		statusMsg.Set("Seccusess")
+	}
+}
+
+func cleanString(s string) string {
+	re := regexp.MustCompile("[^\x20-\x7E\n]+")
+	return re.ReplaceAllString(s, "")
 }
