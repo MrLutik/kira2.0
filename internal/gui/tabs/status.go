@@ -16,27 +16,16 @@ var log = logging.Log
 
 func makeStatusScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 	log.SetLevel(logrus.DebugLevel)
-	// var h helper
-	// h.GetIP(g.sshClient)
 	ip, err := guiHelper.GetIPFromSshClient(g.sshClient)
 
 	fmt.Println(g.sshClient.SessionID(), "iP::::", ip, err)
 
-	// }
-	// ip, _ := "pepeg", "pepeg"
-	// content := container.NewStack()
 	tabs := container.NewAppTabs(
 		container.NewTabItem("api/status", makeTab1Status(ip.String())),
 		container.NewTabItem("api/dashboard", makeTab2Dashboard(ip.String())),
 	)
-	// normalLs, err1 := guiHelper.ExecuteSSHCommand(g.sshClient, "ls")
-	// errorLS, err2 := guiHelper.ExecuteSSHCommand(g.sshClient, "lsssssss")
-	// return container.NewVBox(
-	return tabs
-	// widget.NewLabel(fmt.Sprintf("%s", err)),
-	// )
 
-	// widget.NewLabel(fmt.Sprintf("%s,", ip)),
+	return tabs
 
 }
 
@@ -58,7 +47,7 @@ func makeTab1Status(ip string) fyne.CanvasObject {
 		nil,
 		nil,
 		nil,
-		container.NewVScroll(container.NewVBox(
+		container.NewVScroll(
 			container.NewBorder(
 				nil,
 				widget.NewLabelWithData(errStatus),
@@ -66,7 +55,6 @@ func makeTab1Status(ip string) fyne.CanvasObject {
 				nil,
 				widget.NewLabelWithData(status),
 			),
-		),
 		),
 	)
 
@@ -78,7 +66,6 @@ func makeTab2Dashboard(ip string) fyne.CanvasObject {
 	data := binding.NewString()
 	data.Set(string(out) + fmt.Sprintf("%s", err))
 
-	// return widget.NewLabel(fmt.Sprintf("status: %s, errs: %s", out, err))
 	return container.NewBorder(
 		widget.NewButton("REFRESH", func() {
 			out, err = guiHelper.MakeHttpRequest(fmt.Sprintf("http://%s:11000/api/dashboard", ip))
@@ -88,7 +75,7 @@ func makeTab2Dashboard(ip string) fyne.CanvasObject {
 		nil,
 		nil,
 		// widget.NewLabelWithData(fmt.Sprintf("status: %s, errs: %s", status, errStatus)),
-		container.NewVScroll(container.NewVBox(
+		container.NewVScroll(
 			container.NewBorder(
 				nil,
 				nil,
@@ -96,7 +83,6 @@ func makeTab2Dashboard(ip string) fyne.CanvasObject {
 				nil,
 				widget.NewLabelWithData(data),
 			),
-		),
 		),
 	)
 }
