@@ -1,9 +1,13 @@
 package tabs
 
 import (
+	"fmt"
+	"reflect"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/mrlutik/kira2.0/internal/gui/guiHelper"
 )
 
 func makeNodeControllScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
@@ -12,7 +16,10 @@ func makeNodeControllScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 			widget.NewButton("start node", func() {
 				startKM2(g)
 			}),
-			widget.NewButton("test", func() {
+			widget.NewButton("show curent config", func() {
+				showKiraConfig(g)
+			}),
+			widget.NewButton(",", func() {
 				runLScmd(g)
 			}),
 		),
@@ -24,11 +31,28 @@ func runLScmd(g *Gui) {
 	showCmdExecDialogAndRunCmdV4(g, "executing ls", cmd)
 }
 
+func showKiraConfig(g *Gui) {
+	cfg, err := guiHelper.ReadKiraConfigFromKM2cfgFile(g.sshClient)
+	val := reflect.ValueOf(cfg)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	var outputString string
+	t := val.Type()
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		// fmt.Printf("%s: %v\n", t.Field(i).Name, field.Interface())
+		outputString += fmt.Sprintf("%s: %v\n", t.Field(i).Name, field.Interface())
+	}
+	showInfoDialog(g, "Kira Config", fmt.Sprintf("cfg:\n%s\nerr:\n%s", outputString, err))
+	fmt.Println(cfg, err)
+}
+
 func startKM2(g *Gui) {
 	// cmd := "export GITHUB_TOKEN=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 && sudo -E ~/main start   --log-level debug"
 
 	// need to make km2 non dependet from sudo user
-	cmd := `echo 'd' | sudo -S -E sh -c 'export GITHUB_TOKEN=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 && ./main start --log-level debug'`
+	cmd := fmt.Sprintf(`echo 'd' | sudo -S -E sh -c 'export GITHUB_TOKEN=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 && %s start --log-level debug'`, guiHelper.KM2BinaryPath)
 	// resultChan := make(chan guiHelper.Result)
 	// go func() {
 	// 	output, err := guiHelper.ExecuteSSHCommand(g.sshClient, cmd)

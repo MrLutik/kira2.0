@@ -3,17 +3,22 @@ package guiHelper
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"sync"
 
+	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/logging"
+	cmdConfig "github.com/mrlutik/kira2.0/internal/manager/cli/commands/config"
 	"golang.org/x/crypto/ssh"
 )
 
 var log = logging.Log
+
+const KM2BinaryPath = "~/main"
 
 type Result struct {
 	Output string
@@ -139,4 +144,35 @@ func MakeHttpRequest(url string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// reads cfg file from kira config on remote host
+func ReadKiraConfigFromKM2cfgFile(client *ssh.Client) (*config.KiraConfig, error) {
+	session, err := client.NewSession()
+	if err != nil {
+		log.Fatalf("Failed to create session: %s", err)
+		return nil, err
+	}
+	defer session.Close()
+
+	// var b bytes.Buffer
+	// session.Stdout = &b
+	// if err := session.Run(fmt.Sprintf("cat %s", configFileController.KiraCfgFilePath)); err != nil { // replace with the path to your config file
+	// 	log.Fatalf("Failed to run command: %s", err)
+	// 	return nil, err
+	// }
+	out, err := ExecuteSSHCommand(client, fmt.Sprintf("%s %s --%s", KM2BinaryPath, cmdConfig.Use, cmdConfig.PrintFlag))
+	if err != nil {
+		return nil, fmt.Errorf(out, err)
+	}
+
+	// Parse the TOML content
+	var config config.KiraConfig
+	err = json.Unmarshal([]byte(out), &config)
+	if err != nil {
+		log.Fatalf("Error unmarshalling JSON: %s", err)
+	}
+
+	log.Println(config)
+	return &config, nil
 }
