@@ -267,3 +267,21 @@ func cleanString(s string) string {
 	re := regexp.MustCompile("[^\x20-\x7E\n]+")
 	return re.ReplaceAllString(s, "")
 }
+
+func showInfoDialog(g *Gui, infoTitle, infoString string) {
+	var wizard *dialogs.Wizard
+	closeButton := widget.NewButton("Close", func() { wizard.Hide() })
+	infoLabel := widget.NewLabel(infoString)
+	infoLabel.Wrapping = 2
+	content := container.NewBorder(nil, closeButton, nil, nil,
+		container.NewHScroll(
+			container.NewVScroll(
+				infoLabel,
+			),
+		),
+	)
+
+	wizard = dialogs.NewWizard(infoTitle, content)
+	wizard.Show(g.Window)
+	wizard.Resize(fyne.NewSize(400, 400))
+}
