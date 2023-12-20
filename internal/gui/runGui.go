@@ -8,7 +8,7 @@ import (
 
 func RunGui() {
 	a := app.NewWithID("kira manager 2.0")
-	w := a.NewWindow("Title")
+	w := a.NewWindow("KM2")
 	w.SetMaster()
 	w.Resize(fyne.NewSize(1024, 768))
 	g := tabs.Gui{
