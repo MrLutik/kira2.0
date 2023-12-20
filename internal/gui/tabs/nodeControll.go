@@ -19,15 +19,23 @@ func makeNodeControllScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 			widget.NewButton("show curent config", func() {
 				showKiraConfig(g)
 			}),
-			widget.NewButton(",", func() {
-				runLScmd(g)
+			widget.NewButton("With no error", func() {
+				runLScmd(g, false)
+			}),
+			widget.NewButton("With  error", func() {
+				runLScmd(g, true)
 			}),
 		),
 	)
 }
 
-func runLScmd(g *Gui) {
-	cmd := "ls && sleep 1  && ls && sleep 1 && ls && ls && ls && ls && ls "
+func runLScmd(g *Gui, e bool) {
+	var cmd string
+	if e {
+		cmd = "lss && sleep 1  && ls && sleep 1 && ls && ls && ls && ls && ls "
+	} else {
+		cmd = "ls && sleep 1  && ls && sleep 1 && ls && ls && ls && ls && ls "
+	}
 	showCmdExecDialogAndRunCmdV4(g, "executing ls", cmd)
 }
 
