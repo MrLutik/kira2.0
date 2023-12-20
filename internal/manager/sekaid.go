@@ -28,11 +28,6 @@ type SekaidManager struct {
 	dockerManager          *docker.DockerManager
 }
 
-const (
-	validatorAccountName = "validator"
-	genesisFileName      = "genesis.json"
-)
-
 // Returns configured SekaidManager.
 //
 //	*docker.DockerManager // The pointer for docker.DockerManager instance.
@@ -307,15 +302,15 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 			s.config.NetworkName, s.config.SekaidHome, s.config.Moniker),
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
 		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
-			s.config.MasterMnamonicSet.ValidatorAddrMnemonic, validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
+			s.config.MasterMnamonicSet.ValidatorAddrMnemonic, types.ValidatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf(`yes %s | sekaid keys add "signer" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
 			s.config.MasterMnamonicSet.SignerAddrMnemonic, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf(`sekaid keys add "faucet" --keyring-backend=%s --home=%s --output=json | jq .mnemonic > %s/faucet.mnemonic`,
 			s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 		fmt.Sprintf("sekaid add-genesis-account %s 150000000000000ukex,300000000000000test,2000000000000000000000000000samolean,1000000lol --keyring-backend=%s --home=%s",
-			validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome),
+			types.ValidatorAccountName, s.config.KeyringBackend, s.config.SekaidHome),
 		fmt.Sprintf(`sekaid gentx-claim %s --keyring-backend=%s --moniker="%s" --home=%s`,
-			validatorAccountName, s.config.KeyringBackend, s.config.Moniker, s.config.SekaidHome),
+			types.ValidatorAccountName, s.config.KeyringBackend, s.config.Moniker, s.config.SekaidHome),
 	}
 
 	err = s.runCommands(ctx, commands)
@@ -348,7 +343,7 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 	commands := []string{
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
 		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
-			s.config.MasterMnamonicSet.ValidatorAddrMnemonic, validatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
+			s.config.MasterMnamonicSet.ValidatorAddrMnemonic, types.ValidatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 	}
 
 	err := s.runCommands(ctx, commands)
@@ -359,7 +354,7 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 
 	// TODO Do we need to validate genesisData here?!
 
-	err = s.containerManager.WriteFileDataToContainer(ctx, genesisData, genesisFileName,
+	err = s.containerManager.WriteFileDataToContainer(ctx, genesisData, types.GenesisFileName,
 		fmt.Sprintf("%s/config", s.config.SekaidHome), s.config.SekaidContainerName)
 	if err != nil {
 		log.Errorf("Write genesis file error: %s", err)
@@ -522,7 +517,7 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 	// 	return fmt.Errorf("propagating transaction error: %w", err)
 	// }
 
-	// err = s.helper.UpdateIdentityRegistrarFromValidator(ctx, validatorAccountName)
+	// err = s.helper.UpdateIdentityRegistrarFromValidator(ctx, types.ValidatorAccountName)
 	// if err != nil {
 	// 	log.Errorf("updating identity registrar error: %s", err)
 	// 	return fmt.Errorf("updating identity registrar error: %w", err)
@@ -589,7 +584,7 @@ func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []by
 func (s *SekaidManager) postGenesisProposals(ctx context.Context) error {
 	log := logging.Log
 
-	address, err := s.helper.GetAddressByName(ctx, validatorAccountName)
+	address, err := s.helper.GetAddressByName(ctx, types.ValidatorAccountName)
 	if err != nil {
 		log.Errorf("Getting address in '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("getting address in '%s' container error: %w", s.config.SekaidContainerName, err)

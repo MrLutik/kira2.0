@@ -80,6 +80,8 @@
         - [14.9.33 whitelisted-role-addresses](#14933-whitelisted-role-addresses)
       - [14.10 customslashing](#1410-customslashing)
       - [14.11 customstaking](#1411-customstaking)
+        - [14.11.1 validator](#14111-validator)
+        - [14.11.2 validators](#14112-validators)
       - [14.12 distributor](#1412-distributor)
       - [14.13 layer2](#1413-layer2)
       - [14.14 multistaking](#1414-multistaking)
@@ -8354,7 +8356,183 @@ sekaid q customgov whitelisted-role-addresses 1 -o json | jq
 
 #### 14.11 customstaking
 
+Querying commands for the staking module
+
+Usage:
+```
+sekaid query customstaking [flags]
+sekaid query customstaking [command]
+```
+
+| Commands        |                             Description                            | Work   |
+|--------------|:------------------------------------------------------------------:|--------|
+| `validator`  | Query a validator by account address, validator address or moniker | ✅ yes |
+| `validators` | Validators  Query a validators by specific filter    [`--addr`  `--val-addr`  `--moniker`  `--status`  `--pubkey`  `--proposer`] | ✅ yes |
+
+
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| ` -h, --help `        | help for customstaking           | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--chain-id string`   | The network chain ID                                                                   | ✅ yes |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+```
+# sekaid q customstaking -h
+Querying commands for the staking module
+
+Usage:
+  sekaid query customstaking [flags]
+  sekaid query customstaking [command]
+
+Available Commands:
+  validator   Query a validator by account address, validator address or moniker
+  validators  Query a validators by specific filter  [--addr || --val-addr || --moniker || --status || --pubkey || --proposer ]
+
+Flags:
+  -h, --help   help for customstaking
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+
+Use "sekaid query customstaking [command] --help" for more information about a command.
+```
+
 [Return to top](#sekai)
+
+
+##### 14.11.1 validator
+
+Query a validator by account address, validator address or moniker
+
+Usage:
+```
+sekaid query customstaking validator [--addr || --val-addr || --moniker]  [flags]
+
+```
+
+| Flags                 | Description                                                                                      | Work  |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `--addr string`       | the addres in AccAddress format.            | ✅ yes |
+| `--height int`        | Use a specific height to query state at (this can error if the node is pruning state)            | ❌ no ?|
+| `-h, --help`          | help for validator                          | ✅ yes |
+| `--moniker string`    | the moniker                                 | ✅ yes |
+| `--node string`       | <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")   | ✅ yes |
+| `-o, --output string` | Output format (text|json) (default "text")                                            | ✅ yes |
+| `--val-addr string`   | the addres in ValAddress format.                                                      | ✅ yes |
+
+
+
+| Global Flags          | Description                                                                            | Work      |
+| --------------------- | -------------------------------------------------------------------------------------- | --------- |
+| `--chain-id string`   | The network chain ID                                                                   | ❌ no |
+| `--home string`       | directory for config and data (default `"/root/.sekaid"`)                              | ✅ yes |
+| `--log_format string` | The logging format (`json\|plain`) (default `"plain"`)                                 | ❌ ?       |
+| `--log_level string`  | The logging level (`trace\|debug\|info\|warn\|error\|fatal\|panic`) (default `"info"`) | ❌ ?       |
+| `--trace`             | Print out full stack trace on errors                                                   | ❌ ?       |
+
+
+```
+# sekaid q customstaking validator -h
+Query a validator by account address, validator address or moniker
+
+Usage:
+  sekaid query customstaking validator [--addr || --val-addr || --moniker]  [flags]
+
+Flags:
+      --addr string       the addres in AccAddress format.
+      --height int        Use a specific height to query state at (this can error if the node is pruning state)
+  -h, --help              help for validator
+      --moniker string    the moniker
+      --node string       <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+  -o, --output string     Output format (text|json) (default "text")
+      --val-addr string   the addres in ValAddress format.
+
+Global Flags:
+      --chain-id string     The network chain ID
+      --home string         directory for config and data (default "/root/.sekaid")
+      --log_format string   The logging format (json|plain) (default "plain")
+      --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
+      --trace               print out full stack trace on errors
+```
+
+
+using regular validator's kira address 
+
+```
+# sekaid q customstaking validator --addr kira19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7rh32an
+pub_key:
+  '@type': /cosmos.crypto.ed25519.PubKey
+  key: c5lx/sFcXDCjIhYSPUS1JHSYp1zaA/WQzAhZM1oiZUo=
+rank: "486118"
+status: ACTIVE
+streak: "8"
+val_key: kiravaloper19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7s3df9l
+```
+
+using val-address 
+
+```
+sekaid q customstaking validator --val-addr kiravaloper19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7s3df9l
+pub_key:
+  '@type': /cosmos.crypto.ed25519.PubKey
+  key: c5lx/sFcXDCjIhYSPUS1JHSYp1zaA/WQzAhZM1oiZUo=
+rank: "486118"
+status: ACTIVE
+streak: "447"
+val_key: kiravaloper19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7s3df9l
+
+```
+
+
+<details>
+you can get kiravaloper address with: 
+
+```
+# sekaid val-address kira19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7rh32an && echo 
+kiravaloper19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7s3df9l
+```
+
+</details>
+
+<br>
+<br>
+
+geting info with moniker that you enters when claiming validator seat
+
+```
+# sekaid q customstaking validator --moniker "D's node"
+pub_key:
+  '@type': /cosmos.crypto.ed25519.PubKey
+  key: c5lx/sFcXDCjIhYSPUS1JHSYp1zaA/WQzAhZM1oiZUo=
+rank: "486118"
+status: ACTIVE
+streak: "359"
+val_key: kiravaloper19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7s3df9l
+
+```
+
+
+
+[Return to top](#sekai)
+
+
+##### 14.11.2 validators
+
+[Return to top](#sekai)
+
 
 #### 14.12 distributor
 

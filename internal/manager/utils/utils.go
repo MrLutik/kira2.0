@@ -25,7 +25,7 @@ func NewHelperManager(containerManager *docker.ContainerManager, config *config.
 }
 
 // Getting TX by parsing json output of `sekaid query tx <TXhash>`
-func (h *HelperManager) getTxQuery(ctx context.Context, transactionHash string) (types.TxData, error) {
+func (h *HelperManager) GetTxQuery(ctx context.Context, transactionHash string) (types.TxData, error) {
 	log := logging.Log
 	var data types.TxData
 
@@ -47,12 +47,15 @@ func (h *HelperManager) getTxQuery(ctx context.Context, transactionHash string) 
 	return data, nil
 }
 
-// awaitNextBlock waits for the next block to be propagated and reached by the sekaid node.
+// AwaitNextBlock waits for the next block to be propagated and reached by the sekaid node.
 // It continuously checks the current block height and compares it with the initial height.
 // The method waits for a specified timeout duration for the next block to be reached,
 // and returns an error if the timeout is exceeded.
 // If the next block is reached within the timeout, the method returns nil.
-func (h *HelperManager) awaitNextBlock(ctx context.Context, timeout time.Duration) error {
+func (h *HelperManager) AwaitNextBlock(ctx context.Context, timeout time.Duration) error {
+
+	//adding 1 more second because in real case scenario block propagation takes a few seconds\miliseconds longer
+	timeout += time.Second * 5
 	log := logging.Log
 
 	log.Infof("Checking current block height")
@@ -71,7 +74,7 @@ func (h *HelperManager) awaitNextBlock(ctx context.Context, timeout time.Duratio
 		select {
 		case <-ticker.C:
 			elapsed := time.Since(startTime)
-			if elapsed > timeout {
+			if elapsed > timeout-1 {
 				log.Errorf("Awaiting next block reached timeout: %0.0f seconds", timeout.Seconds())
 				return fmt.Errorf("timeout, failed to await next block within %0.2f s limit", timeout.Seconds())
 			}
@@ -133,7 +136,7 @@ func (h *HelperManager) getBlockHeight(ctx context.Context) (string, error) {
 // Using command: sekaid tx customgov permission whitelist --from "$KM_ACC" --keyring-backend=test --permission="$PERM" --addr="$ADDR" --chain-id=$NETWORK_NAME --home=$SEKAID_HOME --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json | txAwait $TIMEOUT
 //
 // Then unmarshaling json output and checking sekaid hex of tx
-// Then waiting timeWaitBetweenBlocks for tx to propagate in blockchain and checking status code of Tx with getTxQuery
+// Then waiting timeWaitBetweenBlocks for tx to propagate in blockchain and checking status code of Tx with GetTxQuery
 func (h *HelperManager) GivePermissionToAddress(ctx context.Context, permissionToAdd int, address string) error {
 	log := logging.Log
 	command := fmt.Sprintf(`sekaid tx customgov permission whitelist --from %s --keyring-backend=test --permission=%v --addr=%s --chain-id=%s --home=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, address, permissionToAdd, address, h.config.NetworkName, h.config.SekaidHome)
@@ -152,13 +155,13 @@ func (h *HelperManager) GivePermissionToAddress(ctx context.Context, permissionT
 	}
 	log.Debugf("Give permission to address output: Hash: '%s'.Code: %d", data.Txhash, data.Code)
 
-	err = h.awaitNextBlock(ctx, h.config.TimeBetweenBlocks)
+	err = h.AwaitNextBlock(ctx, h.config.TimeBetweenBlocks)
 	if err != nil {
 		log.Errorf("Awaiting error: %s", err)
 		return fmt.Errorf("awaiting error: %s", err)
 	}
 
-	txData, err := h.getTxQuery(ctx, data.Txhash)
+	txData, err := h.GetTxQuery(ctx, data.Txhash)
 	if err != nil {
 		log.Errorf("Getting transaction query error: %s", err)
 		return fmt.Errorf("getting tx query error: %w", err)
@@ -322,13 +325,13 @@ func (h *HelperManager) UpsertIdentityRecord(ctx context.Context, address, accou
 
 	log.Debugf("Register identity record output: Hash: '%s'. Code: %d", data.Txhash, data.Code)
 
-	err = h.awaitNextBlock(ctx, h.config.TimeBetweenBlocks)
+	err = h.AwaitNextBlock(ctx, h.config.TimeBetweenBlocks)
 	if err != nil {
 		log.Errorf("Awaiting error: %s", err)
 		return fmt.Errorf("awaiting error: %s", err)
 	}
 
-	txData, err := h.getTxQuery(ctx, data.Txhash)
+	txData, err := h.GetTxQuery(ctx, data.Txhash)
 	if err != nil {
 		log.Errorf("Getting transaction query error: %s", err)
 		return fmt.Errorf("getting tx query error: %w", err)
