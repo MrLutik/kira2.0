@@ -533,19 +533,6 @@ func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
 func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []byte) error {
 	log := logging.Log
 
-	// log.Println("stoping container before docker service restart")
-	// if err := s.containerManager.StopContainer(ctx, s.config.SekaidContainerName); err != nil {
-	// 	return fmt.Errorf("stop '%s' container error: %w", s.config.SekaidContainerName, err)
-	// }
-	// firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
-	// err := firewallManager.SetUpFirewall(ctx)
-	// //TODO: ADD FUNCTIONALITY FOR RESTART CONTAINER, FIREWALLSETUP IS RESTARTING DOCKER SERVICE SO CONTAINER SHOULD BE STARTED AGAIN
-	// log.Println("starting container again")
-	// if err = s.containerManager.StartContainer(ctx, s.config.SekaidContainerName); err != nil {
-	// 	log.Errorf("Cannot start container second time '%s' container error: %s", s.config.SekaidContainerName, err)
-	// 	return fmt.Errorf("start '%s' container error: %w", s.config.SekaidContainerName, err)
-	// }
-
 	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of joiner", s.config.SekaidContainerName)
 
 	if err := s.initJoinerSekaidBinInContainer(ctx, genesis); err != nil {
