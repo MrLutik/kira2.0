@@ -88,3 +88,46 @@ func (i *InterxManager) MustInitAndRunInterx(ctx context.Context) {
 	err = i.runInterxContainer(ctx)
 	errors.HandleFatalErr("Setup container", err)
 }
+
+//run_stop_init branch
+
+func (s *SekaidManager) MustInitJoiner(ctx context.Context, genesis []byte) {
+	s.mustInitializeJoiner(ctx, genesis, false)
+}
+
+// mustInitializeJoiner sets up containers based on the provided configuration and runs the Sekaid container.
+// If the 'isGenesisValidator' flag is set to true, it sets up the container for the genesis validator, otherwise for the joiner.
+// The method will terminate the program with a fatal error if any step encounters an error.
+func (s *SekaidManager) mustInitializeJoiner(ctx context.Context, genesis []byte, isGenesisValidator bool) {
+	usr := osutils.GetCurrentOSUser()
+	s.config.SecretsFolder = usr.HomeDir + "/.secrets"
+
+	check, err := osutils.CheckItPathExist(s.config.SecretsFolder)
+	errors.HandleFatalErr("Error checking secrets folder path", err)
+	if !check {
+		os.Mkdir(s.config.SecretsFolder, os.ModePerm)
+	}
+
+	err = s.ReadOrGenerateMasterMnemonic()
+	errors.HandleFatalErr("Reading or generating master mnemonic", err)
+	check, err = s.containerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
+	errors.HandleFatalErr("Checking container names", err)
+	if check {
+		err = s.containerManager.StopAndDeleteContainer(ctx, s.config.SekaidContainerName)
+		errors.HandleFatalErr("Deleting container", err)
+	}
+
+	err = s.containerManager.InitAndCreateContainer(ctx, s.ContainerConfig, s.SekaidNetworkingConfig, s.SekaiHostConfig, s.config.SekaidContainerName)
+	errors.HandleFatalErr("Sekaid initialization", err)
+
+	err = s.containerManager.SendFileToContainer(ctx, s.config.SekaiDebFileName, debFileDestInContainer, s.config.SekaidContainerName)
+	errors.HandleFatalErr("Sending file to container", err)
+
+	// TODO Do we need to delete file after sending?
+
+	err = s.containerManager.InstallDebPackage(ctx, s.config.SekaidContainerName, debFileDestInContainer+s.config.SekaiDebFileName)
+	errors.HandleFatalErr("Installing dep package in container", err)
+
+	err = s.initJoinerSekaidBinInContainer(ctx, genesis)
+	errors.HandleFatalErr("Setup container", err)
+}
