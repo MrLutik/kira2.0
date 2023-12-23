@@ -19,7 +19,6 @@ const (
 )
 
 var log = logging.Log
-var recover bool
 
 func Start() *cobra.Command {
 	log.Info("Adding `start` command...")
@@ -28,11 +27,9 @@ func Start() *cobra.Command {
 		Short: short,
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
-			recover, _ = cmd.Flags().GetBool("recover")
 			mainStart()
 		},
 	}
-	startCmd.PersistentFlags().Bool("recover", false, "If true recover keys and mnemonic from master mnemonic, otherwise generate random one")
 
 	return startCmd
 }
@@ -96,8 +93,6 @@ func mainStart() {
 
 	cfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
-	cfg.Recover = recover
-	log.Traceln(recover)
 
 	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
 	// err = dockerManager.RestartDockerService()
