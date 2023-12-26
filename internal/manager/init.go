@@ -162,4 +162,7 @@ func (i *InterxManager) MustInitInterx(ctx context.Context) {
 
 	err = i.containerManager.InstallDebPackage(ctx, i.config.InterxContainerName, debFileDestInContainer+i.config.InterxDebFileName)
 	errors.HandleFatalErr("Installing dep package in container", err)
+
+	err = i.initInterxBinInContainer(ctx)
+	errors.HandleFatalErr("Setup container", err)
 }
