@@ -85,8 +85,10 @@ func mainNew(*cobra.Command) {
 	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
 	sekaiManager.MustInitNew(ctx)
+	sekaiManager.MustRunSekaid(ctx)
 
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
 	interxManager.MustInitInterx(ctx)
+	interxManager.MustRunInterx(ctx)
 }

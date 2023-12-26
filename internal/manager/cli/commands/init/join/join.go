@@ -169,8 +169,10 @@ func mainJoin(cmd *cobra.Command) {
 	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
 	errors.HandleFatalErr("Can't create new 'sekai' manager instance", err)
 	sekaiManager.MustInitJoiner(ctx, genesis)
+	sekaiManager.MustRunSekaid(ctx)
 
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Can't create new 'interx' manager instance", err)
 	interxManager.MustInitInterx(ctx)
+	interxManager.MustRunInterx(ctx)
 }
