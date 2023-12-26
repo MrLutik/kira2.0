@@ -27,7 +27,7 @@ func Start() *cobra.Command {
 		Short: short,
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
-			mainStart()
+			mainStart(cmd)
 		},
 	}
 
@@ -78,7 +78,7 @@ func Start() *cobra.Command {
 // 	interxManager.MustInitAndRunInterx(ctx)
 // }
 
-func mainStart() {
+func mainStart(cmd *cobra.Command) {
 	systemd.DockerServiceManagement()
 
 	dockerManager, err := docker.NewTestDockerManager()
