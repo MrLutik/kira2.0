@@ -2,6 +2,7 @@ package new
 
 import (
 	"context"
+	"time"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/config/configFileController"
@@ -86,7 +87,7 @@ func mainNew(*cobra.Command) {
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
 	sekaiManager.MustInitNew(ctx)
 	sekaiManager.MustRunSekaid(ctx)
-
+	time.Sleep(cfg.TimeBetweenBlocks + time.Second)
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
 	interxManager.MustInitInterx(ctx)

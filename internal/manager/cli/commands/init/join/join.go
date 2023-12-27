@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -170,7 +171,7 @@ func mainJoin(cmd *cobra.Command) {
 	errors.HandleFatalErr("Can't create new 'sekai' manager instance", err)
 	sekaiManager.MustInitJoiner(ctx, genesis)
 	sekaiManager.MustRunSekaid(ctx)
-
+	time.Sleep(cfg.TimeBetweenBlocks + time.Second)
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Can't create new 'interx' manager instance", err)
 	interxManager.MustInitInterx(ctx)
