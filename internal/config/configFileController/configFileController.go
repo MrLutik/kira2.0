@@ -57,6 +57,7 @@ func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 }
 
 func newDefaultKiraConfig() *config.KiraConfig {
+	volumeName := "kira_volume"
 	return &config.KiraConfig{
 		NetworkName:    "testnet-1",
 		SekaidHome:     "/data/.sekai",
@@ -71,7 +72,8 @@ func newDefaultKiraConfig() *config.KiraConfig {
 		InterxVersion:       "latest",  // or v0.4.33 or latest
 		SekaidContainerName: "sekaid",
 		InterxContainerName: "interx",
-		VolumeName:          "kira_volume:/data",
+		VolumeName:          volumeName,
+		DataPathInVolume:    volumeName + ":/data",
 		MnemonicDir:         "~/mnemonics",
 		RpcPort:             "26657",
 		P2PPort:             "26656",

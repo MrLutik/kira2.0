@@ -35,7 +35,7 @@ type SekaidManager struct {
 func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *docker.DockerManager, config *config.KiraConfig) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
-		config.P2PPort, config.RpcPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
+		config.P2PPort, config.RpcPort, config.DockerImageName, config.DataPathInVolume, config.DockerNetworkName)
 
 	natRpcPort, err := nat.NewPort("tcp", config.RpcPort)
 	if err != nil {
@@ -72,7 +72,7 @@ func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *
 
 	sekaiHostConfig := &container.HostConfig{
 		Binds: []string{
-			config.VolumeName,
+			config.DataPathInVolume,
 		},
 		PortBindings: nat.PortMap{
 			natRpcPort:        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.RpcPort}},
@@ -288,14 +288,17 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 	log := logging.Log
 	log.Infof("Setting up '%s' (sekaid) genesis container", s.config.SekaidContainerName)
 
-	// initcmd := fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`, s.config.NetworkName, s.config.SekaidHome, s.config.Moniker)
-	err := s.helper.SetSekaidKeys(ctx)
+	// have to do this because need to initialize sekaid folder
+	initcmd := fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`, s.config.NetworkName, s.config.SekaidHome, s.config.Moniker)
+	log.Tracef("running %s\n", initcmd)
+	out, err := s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", initcmd})
+	log.Tracef("out: %s, err:%v\n", string(out), err)
+	err = s.helper.SetSekaidKeys(ctx)
 	if err != nil {
 		log.Errorf("Can't set sekaid keys: %s", err)
 		return fmt.Errorf("can't set sekaid keys %w", err)
 	}
 	s.helper.SetEmptyValidatorState(ctx)
-	// s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{initcmd})
 
 	commands := []string{
 		fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`,

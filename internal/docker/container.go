@@ -506,6 +506,7 @@ func (dm *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName s
 	log.Debugf("Volumes list %v\n", volumes.Volumes)
 
 	for _, volume := range volumes.Volumes {
+		log.Tracef("searching for %s, curent: %s\n", volumeName, volume.Name)
 		if volume.Name == volumeName {
 			log.Debugf("Volume with <%s> name was found\n", volumeName)
 			return true, nil
