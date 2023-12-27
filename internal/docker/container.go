@@ -12,8 +12,10 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/mrlutik/kira2.0/internal/config"
 )
 
 type ContainerManager struct {
@@ -491,5 +493,58 @@ func (dm *ContainerManager) StopAndDeleteContainer(ctx context.Context, containe
 	}
 
 	log.Infof("Container %s is deleted", containerNameToStop)
+	return nil
+}
+
+func (dm *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName string) (bool, error) {
+	log.Println("Geting volumes list")
+	volumes, err := dm.Cli.VolumeList(ctx, volume.ListOptions{})
+	if err != nil {
+		log.Errorf("cannot get list of volumes: %s", err)
+		return false, err
+	}
+	log.Debugf("Volumes list %v\n", volumes.Volumes)
+
+	for _, volume := range volumes.Volumes {
+		if volume.Name == volumeName {
+			log.Debugf("Volume with <%s> name was found\n", volumeName)
+			return true, nil
+		}
+	}
+	log.Debugf("Volume with <%s> name was not found\n", volumeName)
+	return false, nil
+}
+
+func (dm *ContainerManager) CleanupContainversAndVolumes(ctx context.Context, kiraCfg *config.KiraConfig) error {
+	check, err := dm.CheckForContainersName(ctx, kiraCfg.SekaidContainerName)
+	if err != nil {
+		return err
+	}
+	if check {
+		err = dm.StopAndDeleteContainer(ctx, kiraCfg.SekaidContainerName)
+		if err != nil {
+			return err
+		}
+	}
+	check, err = dm.CheckForContainersName(ctx, kiraCfg.InterxContainerName)
+	if err != nil {
+		return err
+	}
+	if check {
+		dm.StopAndDeleteContainer(ctx, kiraCfg.InterxContainerName)
+		if err != nil {
+			return err
+		}
+	}
+	check, err = dm.CheckForVolumeName(ctx, kiraCfg.VolumeName)
+	if err != nil {
+		return err
+	}
+	if check {
+		err = dm.Cli.VolumeRemove(ctx, kiraCfg.VolumeName, true)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
