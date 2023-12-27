@@ -67,27 +67,27 @@ func (s *SekaidManager) MustInitAndRunJoiner(ctx context.Context, genesis []byte
 
 // MustInitAndRunInterx initializes and runs the Interx container.
 // The method will terminate the program with a fatal error if any step encounters an error.
-func (i *InterxManager) MustInitAndRunInterx(ctx context.Context) {
-	check, err := i.containerManager.CheckForContainersName(ctx, i.config.InterxContainerName)
-	errors.HandleFatalErr("Checking container names", err)
-	if check {
-		i.containerManager.StopAndDeleteContainer(ctx, i.config.InterxContainerName)
-		errors.HandleFatalErr("Deleting container", err)
-	}
+// func (i *InterxManager) MustInitAndRunInterx(ctx context.Context) {
+// 	check, err := i.containerManager.CheckForContainersName(ctx, i.config.InterxContainerName)
+// 	errors.HandleFatalErr("Checking container names", err)
+// 	if check {
+// 		i.containerManager.StopAndDeleteContainer(ctx, i.config.InterxContainerName)
+// 		errors.HandleFatalErr("Deleting container", err)
+// 	}
 
-	errors.HandleFatalErr("Interx managing", err)
-	err = i.containerManager.InitAndCreateContainer(ctx, i.ContainerConfig, i.InterxNetworkConfig, i.InterxHostConfig, i.config.InterxContainerName)
-	errors.HandleFatalErr("Interx initialization", err)
+// 	errors.HandleFatalErr("Interx managing", err)
+// 	err = i.containerManager.InitAndCreateContainer(ctx, i.ContainerConfig, i.InterxNetworkConfig, i.InterxHostConfig, i.config.InterxContainerName)
+// 	errors.HandleFatalErr("Interx initialization", err)
 
-	err = i.containerManager.SendFileToContainer(ctx, i.config.InterxDebFileName, debFileDestInContainer, i.config.InterxContainerName)
-	errors.HandleFatalErr("Sending file to container", err)
+// 	err = i.containerManager.SendFileToContainer(ctx, i.config.InterxDebFileName, debFileDestInContainer, i.config.InterxContainerName)
+// 	errors.HandleFatalErr("Sending file to container", err)
 
-	err = i.containerManager.InstallDebPackage(ctx, i.config.InterxContainerName, debFileDestInContainer+i.config.InterxDebFileName)
-	errors.HandleFatalErr("Installing dep package in container", err)
+// 	err = i.containerManager.InstallDebPackage(ctx, i.config.InterxContainerName, debFileDestInContainer+i.config.InterxDebFileName)
+// 	errors.HandleFatalErr("Installing dep package in container", err)
 
-	err = i.runInterxContainer(ctx)
-	errors.HandleFatalErr("Setup container", err)
-}
+// 	err = i.runInterxContainer(ctx)
+// 	errors.HandleFatalErr("Setup container", err)
+// }
 
 //run_stop_init branch
 
@@ -116,12 +116,18 @@ func (s *SekaidManager) mustInitializeContainer(ctx context.Context, genesis []b
 
 	err = s.ReadOrGenerateMasterMnemonic()
 	errors.HandleFatalErr("Reading or generating master mnemonic", err)
-	check, err = s.containerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
-	errors.HandleFatalErr("Checking container names", err)
-	if check {
-		err = s.containerManager.StopAndDeleteContainer(ctx, s.config.SekaidContainerName)
-		errors.HandleFatalErr("Deleting container", err)
-	}
+	// check, err = s.containerManager.CheckForContainersName(ctx, s.config.SekaidContainerName)
+	// errors.HandleFatalErr("Checking container names", err)
+	// if check {
+	// 	err = s.containerManager.StopAndDeleteContainer(ctx, s.config.SekaidContainerName)
+	// 	errors.HandleFatalErr("Deleting container", err)
+	// }
+	// check, err = s.containerManager.CheckForVolumeName(ctx, s.config.VolumeName)
+	// errors.HandleFatalErr("Checking volume name", err)
+	// if check {
+	// 	err = s.dockerManager.Cli.VolumeRemove(ctx, s.config.VolumeName, true)
+	// 	errors.HandleFatalErr("Deleting volume", err)
+	// }
 
 	err = s.containerManager.InitAndCreateContainer(ctx, s.ContainerConfig, s.SekaidNetworkingConfig, s.SekaiHostConfig, s.config.SekaidContainerName)
 	errors.HandleFatalErr("Sekaid initialization", err)
@@ -137,7 +143,6 @@ func (s *SekaidManager) mustInitializeContainer(ctx context.Context, genesis []b
 	if isGenesisValidator {
 		err = s.initGenesisSekaidBinInContainer(ctx)
 	} else {
-		// err = s.runJoinerSekaidContainer(ctx, genesis)
 		err = s.initJoinerSekaidBinInContainer(ctx, genesis)
 	}
 	errors.HandleFatalErr("Setup container", err)
@@ -146,15 +151,15 @@ func (s *SekaidManager) mustInitializeContainer(ctx context.Context, genesis []b
 // MustInitAndRunInterx initializes and runs the Interx container.
 // The method will terminate the program with a fatal error if any step encounters an error.
 func (i *InterxManager) MustInitInterx(ctx context.Context) {
-	check, err := i.containerManager.CheckForContainersName(ctx, i.config.InterxContainerName)
-	errors.HandleFatalErr("Checking container names", err)
-	if check {
-		i.containerManager.StopAndDeleteContainer(ctx, i.config.InterxContainerName)
-		errors.HandleFatalErr("Deleting container", err)
-	}
+	// check, err := i.containerManager.CheckForContainersName(ctx, i.config.InterxContainerName)
+	// errors.HandleFatalErr("Checking container names", err)
+	// if check {
+	// 	i.containerManager.StopAndDeleteContainer(ctx, i.config.InterxContainerName)
+	// 	errors.HandleFatalErr("Deleting container", err)
+	// }
 
-	errors.HandleFatalErr("Interx managing", err)
-	err = i.containerManager.InitAndCreateContainer(ctx, i.ContainerConfig, i.InterxNetworkConfig, i.InterxHostConfig, i.config.InterxContainerName)
+	// errors.HandleFatalErr("Interx managing", err)
+	err := i.containerManager.InitAndCreateContainer(ctx, i.ContainerConfig, i.InterxNetworkConfig, i.InterxHostConfig, i.config.InterxContainerName)
 	errors.HandleFatalErr("Interx initialization", err)
 
 	err = i.containerManager.SendFileToContainer(ctx, i.config.InterxDebFileName, debFileDestInContainer, i.config.InterxContainerName)
