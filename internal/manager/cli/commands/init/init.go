@@ -22,11 +22,6 @@ func Init() *cobra.Command {
 		Short: short,
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
-			if err := validateFlags(cmd); err != nil {
-				log.Errorf("Some flag are not valid: %s", err)
-				cmd.Help()
-				return
-			}
 			mainInit(cmd)
 		},
 	}
@@ -35,10 +30,6 @@ func Init() *cobra.Command {
 	initCmd.AddCommand(new.New())
 
 	return initCmd
-}
-
-func validateFlags(cmd *cobra.Command) error {
-	return nil
 }
 
 func mainInit(cmd *cobra.Command) {

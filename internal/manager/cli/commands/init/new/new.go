@@ -31,11 +31,6 @@ func New() *cobra.Command {
 		Short: short,
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
-			if err := validateFlags(cmd); err != nil {
-				log.Errorf("Some flag is not valid: %s", err)
-				cmd.Help()
-				return
-			}
 			mainNew(cmd)
 		},
 	}
@@ -45,9 +40,6 @@ func New() *cobra.Command {
 	return newCmd
 }
 
-func validateFlags(*cobra.Command) error {
-	return nil
-}
 func mainNew(*cobra.Command) {
 	systemd.DockerServiceManagement()
 

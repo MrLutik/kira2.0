@@ -34,50 +34,6 @@ func Start() *cobra.Command {
 	return startCmd
 }
 
-// func mainStart() {
-// 	systemd.DockerServiceManagement()
-
-// 	dockerManager, err := docker.NewTestDockerManager()
-// 	errors.HandleFatalErr("Can't create instance of docker manager", err)
-// 	defer dockerManager.Cli.Close()
-
-// 	containerManager, err := docker.NewTestContainerManager()
-// 	errors.HandleFatalErr("Can't create instance of container docker manager", err)
-// 	defer containerManager.Cli.Close()
-
-// 	ctx := context.Background()
-
-// 	cfg, err := configFileController.ReadOrCreateConfig()
-// 	errors.HandleFatalErr("Error while reading cfg file", err)
-// 	cfg.Recover = recover
-// 	log.Traceln(recover)
-
-// 	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
-// 	err = dockerManager.RestartDockerService()
-// 	errors.HandleFatalErr("Restarting docker service", err)
-// 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
-// 	// TODO Do we need to safe deb packages in temporary directory?
-// 	// Right now the files are downloaded in current directory, where the program starts
-
-// 	adapters.MustDownloadBinaries(ctx, cfg)
-
-// 	firewallManager := firewallManager.NewFirewallManager(dockerManager, cfg)
-// 	check, err := firewallManager.CheckFirewallSetUp(ctx)
-// 	errors.HandleFatalErr("Error while checking valid firewalld setup", err)
-// 	if !check {
-// 		err = firewallManager.SetUpFirewall(ctx)
-// 		errors.HandleFatalErr("Error while setuping firewall", err)
-// 	}
-
-// 	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
-// 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
-// 	sekaiManager.MustInitAndRunGenesisValidator(ctx)
-
-// 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
-// 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
-// 	interxManager.MustInitAndRunInterx(ctx)
-// }
-
 func mainStart(cmd *cobra.Command) {
 	systemd.DockerServiceManagement()
 
@@ -95,21 +51,9 @@ func mainStart(cmd *cobra.Command) {
 	errors.HandleFatalErr("Error while reading cfg file", err)
 
 	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
-	// err = dockerManager.RestartDockerService()
-	// errors.HandleFatalErr("Restarting docker service", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
-
-	// adapters.MustDownloadBinaries(ctx, cfg)
-
-	// firewallManager := firewallManager.NewFirewallManager(dockerManager, cfg)
-	// check, err := firewallManager.CheckFirewallSetUp(ctx)
-	// errors.HandleFatalErr("Error while checking valid firewalld setup", err)
-	// if !check {
-	// 	err = firewallManager.SetUpFirewall(ctx)
-	// 	errors.HandleFatalErr("Error while setuping firewall", err)
-	// }
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
