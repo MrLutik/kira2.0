@@ -203,14 +203,37 @@ func getLocalSekaidNodeID(port string) (string, error) {
 // startInterxBinInContainer starts interx binary inside InterxContainerName
 // Returns an error if any issue occurs during the start process.
 func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
-	command := fmt.Sprintf("%s start -home=%s", interxProcessName, i.config.InterxHome)
+	command := fmt.Sprintf("%s start -home=%s > /proc/1/fd/1 2>/proc/1/fd/2", interxProcessName, i.config.InterxHome)
+
+	log := logging.Log
+
 	_, err := i.containerManager.ExecCommandInContainerInDetachMode(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
 	}
-	const delay = time.Second * 3
-	log.Warningf("Waiting to start '%s' for %0.0f seconds", interxProcessName, delay.Seconds())
+
+	log.Infoln("'interx' started")
+	return nil
+}
+
+// runInterxContainer starts the 'interx' container and checks if the process is running.
+// If the 'interx' process is not running, it initializes the 'interx' binary in the container
+// and starts it again. It checks if the process is running after the initialization.
+// The method waits for a specified duration before checking if the process is running.
+// If any errors occur during the process, an error is returned.
+func (i *InterxManager) runInterxContainer(ctx context.Context) error {
+	log := logging.Log
+	const delay = time.Second * 11
+
+	err := i.startInterxBinInContainer(ctx)
+	if err != nil {
+		log.Errorf("Starting 'interx' bin in '%s' container error: %s", i.config.InterxContainerName, err)
+		return err
+	}
+
+	log.Warningf("Waiting for %0.0f seconds for process", delay.Seconds())
+
 	time.Sleep(delay)
 
 	check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, interxProcessName, i.config.InterxContainerName)
