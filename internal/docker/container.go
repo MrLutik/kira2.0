@@ -516,7 +516,7 @@ func (dm *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName s
 	return false, nil
 }
 
-func (dm *ContainerManager) CleanupContainversAndVolumes(ctx context.Context, kiraCfg *config.KiraConfig) error {
+func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kiraCfg *config.KiraConfig) error {
 	check, err := dm.CheckForContainersName(ctx, kiraCfg.SekaidContainerName)
 	if err != nil {
 		return err
