@@ -20,7 +20,7 @@ func (s *SekaidManager) MustStopSekaid(ctx context.Context) {
 		errors.HandleFatalErr(fmt.Sprintf("cannot kill <%s> process inside  <%s> container\nout: %s", p, s.config.SekaidContainerName, string(out)), err)
 	}
 	log.Printf("<%s> proccess was successfully stoped\n", p)
-
+	log.Printf("Stoping <%s> container\n", s.config.SekaidContainerName)
 	err = s.dockerManager.Cli.ContainerStop(ctx, s.config.SekaidContainerName, container.StopOptions{})
 	errors.HandleFatalErr("cannot stop container", err)
 }
@@ -34,7 +34,7 @@ func (i *InterxManager) MustStopInterxd(ctx context.Context) {
 		errors.HandleFatalErr(fmt.Sprintf("cannot kill <%s> process inside <%s> container\nout: %s", p, i.config.InterxContainerName, string(out)), err)
 	}
 	log.Printf("<%s> proccess was successfully stoped\n", p)
-
+	log.Printf("Stoping <%s> container\n", i.config.InterxContainerName)
 	err = i.containerManager.Cli.ContainerStop(ctx, i.config.InterxContainerName, container.StopOptions{})
 	errors.HandleFatalErr("cannot stop container", err)
 }
