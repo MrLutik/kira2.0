@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	vlg "github.com/PeepoFrog/validator-key-gen/MnemonicsGenerator"
@@ -33,7 +34,7 @@ type KiraConfig struct {
 	SekaidContainerName string // name for sekai container
 	InterxContainerName string // name for interx container
 	VolumeName          string // the name of a docker's volume that will be SekaidContainerName and InterxContainerName will be using
-	DataPathInVolume    string
+	VolumeMoutPath      string
 	MnemonicDir         string                 // destination where mnemonics file will be saved
 	RpcPort             string                 // sekaid's rpc port
 	GrpcPort            string                 // sekaid's grpc port
@@ -52,4 +53,8 @@ type KiraConfig struct {
 	// NOTE Default time of block is ~5 seconds!
 	// Check (m *MonitoringService) GetConsensusInfo method
 	// from cmd/monitoring/main.go
+}
+
+func (cfg *KiraConfig) GetVolumeMountPoint() string {
+	return fmt.Sprintf("%s:%s", cfg.VolumeName, cfg.VolumeMoutPath)
 }
