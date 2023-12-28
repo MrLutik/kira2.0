@@ -35,7 +35,7 @@ type SekaidManager struct {
 func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *docker.DockerManager, config *config.KiraConfig) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
-		config.P2PPort, config.RpcPort, config.DockerImageName, config.DataPathInVolume, config.DockerNetworkName)
+		config.P2PPort, config.RpcPort, config.DockerImageName, config.GetVolumeMountPoint(), config.DockerNetworkName)
 
 	natRpcPort, err := nat.NewPort("tcp", config.RpcPort)
 	if err != nil {
@@ -72,7 +72,7 @@ func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *
 
 	sekaiHostConfig := &container.HostConfig{
 		Binds: []string{
-			config.DataPathInVolume,
+			config.GetVolumeMountPoint(),
 		},
 		PortBindings: nat.PortMap{
 			natRpcPort:        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.RpcPort}},

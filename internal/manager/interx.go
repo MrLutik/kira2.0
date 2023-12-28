@@ -31,7 +31,7 @@ type InterxManager struct {
 func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*InterxManager, error) {
 	log := logging.Log
 	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
-		config.InterxPort, config.DockerImageName, config.DataPathInVolume, config.DockerNetworkName)
+		config.InterxPort, config.DockerImageName, config.GetVolumeMountPoint(), config.DockerNetworkName)
 
 	natInterxPort, err := nat.NewPort("tcp", config.InterxPort)
 	if err != nil {
@@ -56,7 +56,7 @@ func NewInterxManager(containerManager *docker.ContainerManager, config *config.
 	}
 	interxHostConfig := &container.HostConfig{
 		Binds: []string{
-			config.DataPathInVolume,
+			config.GetVolumeMountPoint(),
 		},
 		PortBindings: nat.PortMap{
 			natInterxPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.InterxPort}},
