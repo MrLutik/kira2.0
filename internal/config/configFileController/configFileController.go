@@ -57,7 +57,6 @@ func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 }
 
 func newDefaultKiraConfig() *config.KiraConfig {
-	volumeName := "kira_volume"
 	return &config.KiraConfig{
 		NetworkName:    "testnet-1",
 		SekaidHome:     "/data/.sekai",
@@ -68,12 +67,12 @@ func newDefaultKiraConfig() *config.KiraConfig {
 		DockerImageName:     "ubuntu",
 		DockerImageVersion:  "latest",
 		DockerNetworkName:   "kira_network",
-		SekaiVersion:        "v0.3.32", // or v0.3.32 or latest
+		SekaiVersion:        "latest	", // or v0.3.32 or latest
 		InterxVersion:       "latest",  // or v0.4.33 or latest
 		SekaidContainerName: "sekaid",
 		InterxContainerName: "interx",
-		VolumeName:          volumeName,
-		DataPathInVolume:    volumeName + ":/data",
+		VolumeName:          "kira_volume",
+		VolumeMoutPath:      ":/data",
 		MnemonicDir:         "~/mnemonics",
 		RpcPort:             "26657",
 		P2PPort:             "26656",
