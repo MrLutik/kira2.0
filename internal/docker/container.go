@@ -532,7 +532,7 @@ func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kir
 		return err
 	}
 	if check {
-		dm.StopAndDeleteContainer(ctx, kiraCfg.InterxContainerName)
+		err = dm.StopAndDeleteContainer(ctx, kiraCfg.InterxContainerName)
 		if err != nil {
 			return err
 		}
