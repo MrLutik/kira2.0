@@ -154,7 +154,7 @@ func mainJoin(cmd *cobra.Command) {
 	err = dockerManager.RestartDockerService()
 	errors.HandleFatalErr("Restarting docker service", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
-	containerManager.CleanupContainversAndVolumes(ctx, cfg)
+	containerManager.CleanupContainersAndVolumes(ctx, cfg)
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
 	adapters.MustDownloadBinaries(ctx, cfg)
