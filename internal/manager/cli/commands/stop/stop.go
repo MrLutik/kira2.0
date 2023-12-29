@@ -56,5 +56,5 @@ func mainStop(cmd *cobra.Command) {
 
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
-	interxManager.MustStopInterxd(ctx)
+	interxManager.MustStopInterx(ctx)
 }

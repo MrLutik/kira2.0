@@ -25,8 +25,8 @@ func (s *SekaidManager) MustStopSekaid(ctx context.Context) {
 	errors.HandleFatalErr("cannot stop container", err)
 }
 
-func (i *InterxManager) MustStopInterxd(ctx context.Context) {
-	p := "interxd"
+func (i *InterxManager) MustStopInterx(ctx context.Context) {
+	p := "interx"
 	code := "9"
 	log.Printf("Stoping <%s> proccess\n", p)
 	out, err := i.containerManager.ExecCommandInContainer(ctx, i.config.InterxContainerName, []string{"pkill", "-" + code, p})
