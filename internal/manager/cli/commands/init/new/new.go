@@ -61,7 +61,8 @@ func mainNew(*cobra.Command) {
 	err = dockerManager.RestartDockerService()
 	errors.HandleFatalErr("Restarting docker service", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
-	containerManager.CleanupContainersAndVolumes(ctx, cfg)
+	err = containerManager.CleanupContainersAndVolumes(ctx, cfg)
+	errors.HandleFatalErr("Cleaning docker volume and containers", err)
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
 
@@ -79,6 +80,7 @@ func mainNew(*cobra.Command) {
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
 	sekaiManager.MustInitNew(ctx)
 	sekaiManager.MustRunSekaid(ctx)
+	log.Printf("Waiting for %v\n", cfg.TimeBetweenBlocks)
 	time.Sleep(cfg.TimeBetweenBlocks + time.Second)
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
