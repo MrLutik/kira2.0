@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -201,12 +202,26 @@ func getLocalSekaidNodeID(port string) (string, error) {
 // Returns an error if any issue occurs during the start process.
 func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
 	log := logging.Log
-	command := fmt.Sprintf("interx start -home=%s", i.config.InterxHome)
+	const processName = "interx"
+	command := fmt.Sprintf("%s start -home=%s", processName, i.config.InterxHome)
 	_, err := i.containerManager.ExecCommandInContainerInDetachMode(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
 	}
-	log.Infoln("'interx' started")
+	const delay = time.Second * 3
+	log.Warningf("Waiting to start '%s' for %0.0f seconds", processName, delay.Seconds())
+	time.Sleep(delay)
+
+	check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, processName, i.config.InterxContainerName)
+	if err != nil {
+		log.Errorf("Starting '%s' bin second time in '%s' container error: %s", processName, i.config.InterxContainerName, err)
+		return fmt.Errorf("starting '%s' bin second time in '%s' container error: %w", processName, i.config.InterxContainerName, err)
+	}
+	if !check {
+		log.Errorf("Process '%s' is not running in '%s' container", processName, i.config.InterxContainerName)
+		return fmt.Errorf("process '%s' is not running in '%s' container", processName, i.config.InterxContainerName)
+	}
+	log.Infof("'%s' started\n", processName)
 	return nil
 }

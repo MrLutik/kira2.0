@@ -391,14 +391,26 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' genesis container", s.config.SekaidContainerName)
-
+	const processName = "sekaid"
 	// TODO move all args to config.toml
-	command := fmt.Sprintf(`sekaid start --home=%s --grpc.address "0.0.0.0:%s" --trace`, s.config.SekaidHome, s.config.GrpcPort)
+	command := fmt.Sprintf(`%s start --home=%s --grpc.address "0.0.0.0:%s" --trace`, processName, s.config.SekaidHome, s.config.GrpcPort)
 	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 	}
+	const delay = time.Second * 3
+	log.Warningf("Waiting to start '%s' for %0.0f seconds", processName, delay.Seconds())
+	time.Sleep(delay)
 
+	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, processName, s.config.SekaidContainerName)
+	if err != nil {
+		log.Errorf("Starting '%s' bin second time in '%s' container error: %s", processName, s.config.SekaidContainerName, err)
+		return fmt.Errorf("starting '%s' bin second time in '%s' container error: %w", processName, s.config.SekaidContainerName, err)
+	}
+	if !check {
+		log.Errorf("Process '%s' is not running in '%s' container", processName, s.config.SekaidContainerName)
+		return fmt.Errorf("process '%s' is not running in '%s' container", processName, s.config.SekaidContainerName)
+	}
 	return nil
 }
 
