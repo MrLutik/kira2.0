@@ -542,6 +542,7 @@ func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kir
 		return err
 	}
 	if check {
+		log.Printf("Removing <%s> volume\n", kiraCfg.VolumeName)
 		err = dm.Cli.VolumeRemove(ctx, kiraCfg.VolumeName, true)
 		if err != nil {
 			return err
