@@ -28,7 +28,7 @@ func (i *InterxManager) MustStopInterx(ctx context.Context) {
 	errors.HandleFatalErr(fmt.Sprintf("cannot stop %s container", i.config.InterxContainerName), err)
 }
 
-func stopProcessInsideContainer(ctx context.Context, processName string, codeTopStopWIth int, containerName string, containerManager *docker.ContainerManager) error {
+func stopProcessInsideContainer(ctx context.Context, processName string, codeTopStopWith int, containerName string, containerManager *docker.ContainerManager) error {
 	log.Printf("Checking if %s is running inside container", processName)
 	check, _, err := containerManager.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
 	if err != nil {
@@ -39,7 +39,7 @@ func stopProcessInsideContainer(ctx context.Context, processName string, codeTop
 		return nil
 	}
 	log.Printf("Stoping <%s> proccess\n", processName)
-	out, err := containerManager.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeTopStopWIth), processName})
+	out, err := containerManager.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeTopStopWith), processName})
 	if err != nil {
 		log.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %v\n", processName, containerName, string(out), err)
 		return fmt.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %s", processName, containerName, string(out), err)
