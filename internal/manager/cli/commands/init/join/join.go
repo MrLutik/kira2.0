@@ -151,7 +151,8 @@ func mainJoin(cmd *cobra.Command) {
 	errors.HandleFatalErr("Can't get genesis", err)
 
 	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because laucnher is not ready
-	err = dockerManager.RestartDockerService()
+	// temp remove docker restarting, only need once after firewalld instalation
+	// err = dockerManager.RestartDockerService()
 	errors.HandleFatalErr("Restarting docker service", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 	err = containerManager.CleanupContainersAndVolumes(ctx, cfg)
