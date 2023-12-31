@@ -16,6 +16,8 @@ func (s *SekaidManager) MustInitJoiner(ctx context.Context, genesis []byte) {
 	s.mustInitializeContainer(ctx, genesis, false)
 }
 
+// initilazing new network with genesis validator
+// It delegates the setup process to mustInitializeAndRunContainer method with 'isGenesisValidator' - true
 func (s *SekaidManager) MustInitNew(ctx context.Context) {
 	s.mustInitializeContainer(ctx, nil, true)
 }
