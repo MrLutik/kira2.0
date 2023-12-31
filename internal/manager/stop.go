@@ -11,6 +11,7 @@ import (
 
 var log = logging.Log
 
+// MustStopSekaid is stoping sekaid process with StopProcessInsideContainer func (signal code - 15) and stoping sekaid container
 func (s *SekaidManager) MustStopSekaid(ctx context.Context) {
 	err := s.containerManager.StopProcessInsideContainer(ctx, "sekaid", 15, s.config.SekaidContainerName)
 	errors.HandleFatalErr("Stoping sekaid bin in container", err)
@@ -19,6 +20,7 @@ func (s *SekaidManager) MustStopSekaid(ctx context.Context) {
 	errors.HandleFatalErr(fmt.Sprintf("cannot stop %s container", s.config.SekaidContainerName), err)
 }
 
+// MustStopInterx is stoping interx process with StopProcessInsideContainer func (signal code - 9) and stoping interx container
 func (i *InterxManager) MustStopInterx(ctx context.Context) {
 	err := i.containerManager.StopProcessInsideContainer(ctx, interxProcessName, 9, i.config.InterxContainerName)
 	errors.HandleFatalErr("Stoping interx bin in container", err)
