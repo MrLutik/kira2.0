@@ -73,7 +73,7 @@ func mainMaitenance(cmd *cobra.Command) error {
 
 	err = validateBoolFlags(cmd, pause, unpause, activate, status)
 	if err != nil {
-		return fmt.Errorf("error, only 1 flag allowed")
+		return err
 	}
 	log.Debugln(pause, unpause, activate, status)
 	kiraCfg, err := configFileController.ReadOrCreateConfig()
@@ -126,7 +126,7 @@ func validateBoolFlags(cmd *cobra.Command, flags ...bool) error {
 	if sum > 1 {
 		return fmt.Errorf("only one flag at a time is allowed")
 	} else if sum == 0 {
-		cmd.Help()
+		return fmt.Errorf("select flag")
 	}
 	return nil
 }
