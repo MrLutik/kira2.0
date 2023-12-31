@@ -496,6 +496,7 @@ func (dm *ContainerManager) StopAndDeleteContainer(ctx context.Context, containe
 	return nil
 }
 
+// CheckForVolumeName is checking if docker volume with volumeName exist, if do - returns true
 func (dm *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName string) (bool, error) {
 	log.Println("Geting volumes list")
 	volumes, err := dm.Cli.VolumeList(ctx, volume.ListOptions{})
@@ -516,6 +517,8 @@ func (dm *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName s
 	return false, nil
 }
 
+// CleanupContainersAndVolumes is cleaning up container and volumes (needed for new node initializing),
+// accepts only *KiraConfig and takes all values from it
 func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kiraCfg *config.KiraConfig) error {
 	check, err := dm.CheckForContainersName(ctx, kiraCfg.SekaidContainerName)
 	if err != nil {
@@ -551,7 +554,12 @@ func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kir
 	return nil
 }
 
-func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, processName string, codeTopStopWith int, containerName string) error {
+// StopProcessInsideContainer is checking if process is running inside container, then execcuting pkill, then checking again if process exist
+//
+// processName - process to kill,
+// codeToStopWith - signal code to stop with,
+// containerName - container name in which pkill will be executed
+func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, processName string, codeToStopWith int, containerName string) error {
 	log.Printf("Checking if %s is running inside container", processName)
 	check, _, err := dm.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
 	if err != nil {
@@ -562,7 +570,7 @@ func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, proc
 		return nil
 	}
 	log.Printf("Stoping <%s> proccess\n", processName)
-	out, err := dm.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeTopStopWith), processName})
+	out, err := dm.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeToStopWith), processName})
 	if err != nil {
 		log.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %v\n", processName, containerName, string(out), err)
 		return fmt.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %s", processName, containerName, string(out), err)
