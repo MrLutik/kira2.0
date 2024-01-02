@@ -35,7 +35,7 @@ type SekaidManager struct {
 func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *docker.DockerManager, config *config.KiraConfig) (*SekaidManager, error) {
 	log := logging.Log
 	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
-		config.P2PPort, config.RpcPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
+		config.P2PPort, config.RpcPort, config.DockerImageName, config.GetVolumeMountPoint(), config.DockerNetworkName)
 
 	natRpcPort, err := nat.NewPort("tcp", config.RpcPort)
 	if err != nil {
@@ -72,7 +72,7 @@ func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *
 
 	sekaiHostConfig := &container.HostConfig{
 		Binds: []string{
-			config.VolumeName,
+			config.GetVolumeMountPoint(),
 		},
 		PortBindings: nat.PortMap{
 			natRpcPort:        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.RpcPort}},
@@ -288,14 +288,17 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 	log := logging.Log
 	log.Infof("Setting up '%s' (sekaid) genesis container", s.config.SekaidContainerName)
 
-	// initcmd := fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`, s.config.NetworkName, s.config.SekaidHome, s.config.Moniker)
-	err := s.helper.SetSekaidKeys(ctx)
+	// have to do this because need to initialize sekaid folder
+	initcmd := fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`, s.config.NetworkName, s.config.SekaidHome, s.config.Moniker)
+	log.Tracef("running %s\n", initcmd)
+	out, err := s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", initcmd})
+	log.Tracef("out: %s, err:%v\n", string(out), err)
+	err = s.helper.SetSekaidKeys(ctx)
 	if err != nil {
 		log.Errorf("Can't set sekaid keys: %s", err)
 		return fmt.Errorf("can't set sekaid keys %w", err)
 	}
 	s.helper.SetEmptyValidatorState(ctx)
-	// s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{initcmd})
 
 	commands := []string{
 		fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`,
@@ -388,191 +391,26 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' genesis container", s.config.SekaidContainerName)
-
+	const processName = "sekaid"
 	// TODO move all args to config.toml
-	command := fmt.Sprintf(`sekaid start --home=%s --grpc.address "0.0.0.0:%s" --trace`, s.config.SekaidHome, s.config.GrpcPort)
+	command := fmt.Sprintf(`%s start --home=%s --grpc.address "0.0.0.0:%s" --trace`, processName, s.config.SekaidHome, s.config.GrpcPort)
 	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 	}
-
-	return nil
-}
-
-// runGenesisSekaidContainer starts the 'sekaid' container and checks if the process is running.
-// If the 'sekaid' process is not running, it initializes the Sekaid node using the `initializeGenesisSekaid` method.
-// The method waits for a specified duration before checking if the 'sekaid' process is running.
-func (s *SekaidManager) runGenesisSekaidContainer(ctx context.Context) error {
-	log := logging.Log
-
-	if err := s.startSekaidBinInContainer(ctx); err != nil {
-		log.Errorf("Cannot start 'sekaid' bin in '%s' container, error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("cannot start 'sekaid' bin in '%s' container, error: %w", s.config.SekaidContainerName, err)
-	}
-
 	const delay = time.Second * 3
-	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
+	log.Warningf("Waiting to start '%s' for %0.0f seconds", processName, delay.Seconds())
 	time.Sleep(delay)
 
-	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, "sekaid", s.config.SekaidContainerName)
+	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, processName, s.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("Setup '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("setup '%s' container error: %w", s.config.SekaidContainerName, err)
+		log.Errorf("Starting '%s' bin second time in '%s' container error: %s", processName, s.config.SekaidContainerName, err)
+		return fmt.Errorf("starting '%s' bin second time in '%s' container error: %w", processName, s.config.SekaidContainerName, err)
 	}
-
 	if !check {
-		if err := s.initializeGenesisSekaid(ctx); err != nil {
-			return err
-		}
+		log.Errorf("Process '%s' is not running in '%s' container", processName, s.config.SekaidContainerName)
+		return fmt.Errorf("process '%s' is not running in '%s' container", processName, s.config.SekaidContainerName)
 	}
-
-	log.Printf("SEKAID GENESIS CONTAINER '%s' STARTED", s.config.SekaidContainerName)
-	return nil
-}
-
-// runJoinerSekaidContainer starts the 'sekaid' container and checks if the process is running.
-// If the 'sekaid' process is not running, it initializes the Sekaid joiner node using the `initializeJoinerSekaid` method.
-// The method waits for a specified duration before checking if the 'sekaid' process is running.
-func (s *SekaidManager) runJoinerSekaidContainer(ctx context.Context, genesis []byte) error {
-	log := logging.Log
-
-	if err := s.startSekaidBinInContainer(ctx); err != nil {
-		log.Errorf("Cannot start 'sekaid' bin in '%s' container, error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("cannot start 'sekaid' bin in '%s' container, error: %w", s.config.SekaidContainerName, err)
-	}
-
-	const delay = time.Second * 3
-	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
-	time.Sleep(delay)
-
-	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, "sekaid", s.config.SekaidContainerName)
-	if err != nil {
-		log.Errorf("Setup '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("setup '%s' container error: %w", s.config.SekaidContainerName, err)
-	}
-
-	if !check {
-		if err := s.initializeJoinerSekaid(ctx, genesis); err != nil {
-			return err
-		}
-	}
-
-	log.Printf("SEKAID JOINER CONTAINER '%s' STARTED", s.config.SekaidContainerName)
-	return nil
-}
-
-// initializeGenesisSekaid initializes the Sekaid node by performing several setup steps.
-// It starts the 'sekaid' binary for the first time in the specified container,
-// initializes a new instance, and waits for it to start.
-// If any errors occur during the initialization process, an error is returned.
-// The method also propagates genesis proposals and updates the identity registrar from the validator account.
-func (s *SekaidManager) initializeGenesisSekaid(ctx context.Context) error {
-	log := logging.Log
-
-	// log.Println("stoping container before docker service restart")
-	// if err := s.containerManager.StopContainer(ctx, s.config.SekaidContainerName); err != nil {
-	// 	return fmt.Errorf("stop '%s' container error: %w", s.config.SekaidContainerName, err)
-	// }
-	// firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
-	// err := firewallManager.SetUpFirewall(ctx)
-	// //TODO: ADD FUNCTIONALITY FOR RESTART CONTAINER, FIREWALLSETUP IS RESTARTING DOCKER SERVICE SO CONTAINER SHOULD BE STARTED AGAIN
-	// log.Println("starting container again")
-	// if err = s.containerManager.StartContainer(ctx, s.config.SekaidContainerName); err != nil {
-	// 	log.Errorf("Cannot start container second time '%s' container error: %s", s.config.SekaidContainerName, err)
-	// 	return fmt.Errorf("start '%s' container error: %w", s.config.SekaidContainerName, err)
-	// }
-
-	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of genesis validator", s.config.SekaidContainerName)
-
-	if err := s.initGenesisSekaidBinInContainer(ctx); err != nil {
-		log.Errorf("Setup '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("setup '%s' container error: %w", s.config.SekaidContainerName, err)
-	}
-
-	if err := s.startSekaidBinInContainer(ctx); err != nil {
-		log.Errorf("Starting 'sekaid' bin in '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("starting 'sekaid' bin in '%s' container error: %w", s.config.SekaidContainerName, err)
-	}
-
-	const delay = time.Second * 3
-	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
-	time.Sleep(delay)
-
-	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, "sekaid", s.config.SekaidContainerName)
-	if err != nil {
-		log.Errorf("Starting 'sekaid' bin second time in '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("starting 'sekaid' bin second time in '%s' container error: %w", s.config.SekaidContainerName, err)
-	}
-
-	if !check {
-		log.Errorf("Process 'sekaid' is not running in '%s' container", s.config.SekaidContainerName)
-		return fmt.Errorf("process 'sekaid' is not running in '%s' container", s.config.SekaidContainerName)
-	}
-
-	// TODO temporary skip this part
-
-	// err = s.postGenesisProposals(ctx)
-	// if err != nil {
-	// 	log.Errorf("propagating transaction error: %s", err)
-	// 	return fmt.Errorf("propagating transaction error: %w", err)
-	// }
-
-	// err = s.helper.UpdateIdentityRegistrarFromValidator(ctx, types.ValidatorAccountName)
-	// if err != nil {
-	// 	log.Errorf("updating identity registrar error: %s", err)
-	// 	return fmt.Errorf("updating identity registrar error: %w", err)
-	// }
-
-	return nil
-}
-
-// initializeJoinerSekaid initializes the Sekaid joiner node by performing several setup steps.
-// It starts the 'sekaid' binary for the first time in the specified container,
-// initializes a new instance using the provided Genesis data, and waits for it to start.
-// If any errors occur during the initialization process, an error is returned.
-func (s *SekaidManager) initializeJoinerSekaid(ctx context.Context, genesis []byte) error {
-	log := logging.Log
-
-	// log.Println("stoping container before docker service restart")
-	// if err := s.containerManager.StopContainer(ctx, s.config.SekaidContainerName); err != nil {
-	// 	return fmt.Errorf("stop '%s' container error: %w", s.config.SekaidContainerName, err)
-	// }
-	// firewallManager := firewallManager.NewFirewallManager(s.dockerManager, s.config)
-	// err := firewallManager.SetUpFirewall(ctx)
-	// //TODO: ADD FUNCTIONALITY FOR RESTART CONTAINER, FIREWALLSETUP IS RESTARTING DOCKER SERVICE SO CONTAINER SHOULD BE STARTED AGAIN
-	// log.Println("starting container again")
-	// if err = s.containerManager.StartContainer(ctx, s.config.SekaidContainerName); err != nil {
-	// 	log.Errorf("Cannot start container second time '%s' container error: %s", s.config.SekaidContainerName, err)
-	// 	return fmt.Errorf("start '%s' container error: %w", s.config.SekaidContainerName, err)
-	// }
-
-	log.Warningf("Starting sekaid binary first time in '%s' container, initializing new instance of joiner", s.config.SekaidContainerName)
-
-	if err := s.initJoinerSekaidBinInContainer(ctx, genesis); err != nil {
-		log.Errorf("Setup '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("setup '%s' container error: %w", s.config.SekaidContainerName, err)
-	}
-
-	if err := s.startSekaidBinInContainer(ctx); err != nil {
-		log.Errorf("Starting 'sekaid' bin in '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("starting 'sekaid' bin in '%s' container error: %w", s.config.SekaidContainerName, err)
-	}
-
-	const delay = time.Second * 3
-	log.Warningf("Waiting to start 'sekaid' for %0.0f seconds", delay.Seconds())
-	time.Sleep(delay)
-
-	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, "sekaid", s.config.SekaidContainerName)
-	if err != nil {
-		log.Errorf("Starting 'sekaid' bin second time in '%s' container error: %s", s.config.SekaidContainerName, err)
-		return fmt.Errorf("starting 'sekaid' bin second time in '%s' container error: %w", s.config.SekaidContainerName, err)
-	}
-
-	if !check {
-		log.Errorf("Process 'sekaid' is not running in '%s' container", s.config.SekaidContainerName)
-		return fmt.Errorf("process 'sekaid' is not running in '%s' container", s.config.SekaidContainerName)
-	}
-
 	return nil
 }
 

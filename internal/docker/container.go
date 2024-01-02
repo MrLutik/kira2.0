@@ -12,8 +12,10 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/mrlutik/kira2.0/internal/config"
 )
 
 type ContainerManager struct {
@@ -491,5 +493,97 @@ func (dm *ContainerManager) StopAndDeleteContainer(ctx context.Context, containe
 	}
 
 	log.Infof("Container %s is deleted", containerNameToStop)
+	return nil
+}
+
+// CheckForVolumeName is checking if docker volume with volumeName exist, if do - returns true
+func (dm *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName string) (bool, error) {
+	log.Println("Geting volumes list")
+	volumes, err := dm.Cli.VolumeList(ctx, volume.ListOptions{})
+	if err != nil {
+		log.Errorf("cannot get list of volumes: %s", err)
+		return false, err
+	}
+	log.Debugf("Volumes list %v\n", volumes.Volumes)
+
+	for _, volume := range volumes.Volumes {
+		log.Tracef("searching for %s, curent: %s\n", volumeName, volume.Name)
+		if volume.Name == volumeName {
+			log.Debugf("Volume with <%s> name was found\n", volumeName)
+			return true, nil
+		}
+	}
+	log.Debugf("Volume with <%s> name was not found\n", volumeName)
+	return false, nil
+}
+
+// CleanupContainersAndVolumes is cleaning up container and volumes (needed for new node initializing),
+// accepts only *KiraConfig and takes all values from it
+func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kiraCfg *config.KiraConfig) error {
+	check, err := dm.CheckForContainersName(ctx, kiraCfg.SekaidContainerName)
+	if err != nil {
+		return err
+	}
+	if check {
+		err = dm.StopAndDeleteContainer(ctx, kiraCfg.SekaidContainerName)
+		if err != nil {
+			return err
+		}
+	}
+	check, err = dm.CheckForContainersName(ctx, kiraCfg.InterxContainerName)
+	if err != nil {
+		return err
+	}
+	if check {
+		err = dm.StopAndDeleteContainer(ctx, kiraCfg.InterxContainerName)
+		if err != nil {
+			return err
+		}
+	}
+	check, err = dm.CheckForVolumeName(ctx, kiraCfg.VolumeName)
+	if err != nil {
+		return err
+	}
+	if check {
+		log.Printf("Removing <%s> volume\n", kiraCfg.VolumeName)
+		err = dm.Cli.VolumeRemove(ctx, kiraCfg.VolumeName, true)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// StopProcessInsideContainer is checking if process is running inside container, then execcuting pkill, then checking again if process exist
+//
+// processName - process to kill,
+// codeToStopWith - signal code to stop with,
+// containerName - container name in which pkill will be executed
+func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, processName string, codeToStopWith int, containerName string) error {
+	log.Printf("Checking if %s is running inside container", processName)
+	check, _, err := dm.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
+	if err != nil {
+		return fmt.Errorf("cant check if procces is running inside container, %s", err)
+	}
+	if !check {
+		log.Warnf("process <%s> is not running inside <%s> container\n", processName, containerName)
+		return nil
+	}
+	log.Printf("Stoping <%s> proccess\n", processName)
+	out, err := dm.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeToStopWith), processName})
+	if err != nil {
+		log.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %v\n", processName, containerName, string(out), err)
+		return fmt.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %s", processName, containerName, string(out), err)
+	}
+
+	check, _, err = dm.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
+	if err != nil {
+		return fmt.Errorf("cant check if procces is running inside container, %s", err)
+	}
+	if check {
+		log.Errorf("Process <%s> is still running inside <%s> container\n", processName, containerName)
+		return err
+	}
+	log.Printf("<%s> proccess was successfully stoped\n", processName)
 	return nil
 }

@@ -7,10 +7,11 @@ import (
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/join"
+	initnode "github.com/mrlutik/kira2.0/internal/manager/cli/commands/init"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/maintenance"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/monitoring"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/start"
+	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/stop"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +46,7 @@ func NewKiraCLI(commands []*cobra.Command) *cobra.Command {
 }
 
 func Start() {
-	commands := []*cobra.Command{start.Start(), monitoring.Monitoring(), join.Join(), firewall.Firewall(), maintenance.Maintenance()}
+	commands := []*cobra.Command{start.Start(), monitoring.Monitoring(), firewall.Firewall(), maintenance.Maintenance(), initnode.Init(), stop.Stop()}
 	c := NewKiraCLI(commands)
 	if err := c.Execute(); err != nil {
 		errors.HandleFatalErr("Failed to execute command", err)

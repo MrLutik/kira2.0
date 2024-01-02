@@ -25,8 +25,6 @@ func VerifyingDockerEnvironment(ctx context.Context, dockerManager *DockerManage
 	// errors.HandleFatalErr("Verifying image signature", err)
 
 	// log.Infoln("Verified:", checkBool)
-	err = dockerManager.DisableIpTablesForDocker()
-	errors.HandleFatalErr("Disabing docker iptables", err)
 
 	err = dockerManager.CheckOrCreateNetwork(ctx, cfg.DockerNetworkName)
 	errors.HandleFatalErr("Docker networking", err)

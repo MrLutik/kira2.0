@@ -19,6 +19,8 @@ import (
 	"github.com/mrlutik/kira2.0/internal/types"
 )
 
+const interxProcessName = "interx"
+
 // InterxManager represents a manager for Interx container and its associated configurations.
 type InterxManager struct {
 	ContainerConfig     *container.Config
@@ -32,7 +34,7 @@ type InterxManager struct {
 func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*InterxManager, error) {
 	log := logging.Log
 	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
-		config.InterxPort, config.DockerImageName, config.VolumeName, config.DockerNetworkName)
+		config.InterxPort, config.DockerImageName, config.GetVolumeMountPoint(), config.DockerNetworkName)
 
 	natInterxPort, err := nat.NewPort("tcp", config.InterxPort)
 	if err != nil {
@@ -57,7 +59,7 @@ func NewInterxManager(containerManager *docker.ContainerManager, config *config.
 	}
 	interxHostConfig := &container.HostConfig{
 		Binds: []string{
-			config.VolumeName,
+			config.GetVolumeMountPoint(),
 		},
 		PortBindings: nat.PortMap{
 			natInterxPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: config.InterxPort}},
@@ -80,7 +82,7 @@ func (i *InterxManager) initInterxBinInContainer(ctx context.Context) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' (interx) container", i.config.InterxContainerName)
 
-	command := fmt.Sprintf(`interx init --home=%s`, i.config.InterxHome)
+	command := fmt.Sprintf(`%s init --home=%s`, interxProcessName, i.config.InterxHome)
 	_, err := i.containerManager.ExecCommandInContainer(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
@@ -201,68 +203,25 @@ func getLocalSekaidNodeID(port string) (string, error) {
 // startInterxBinInContainer starts interx binary inside InterxContainerName
 // Returns an error if any issue occurs during the start process.
 func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
-	log := logging.Log
-	command := fmt.Sprintf("interx start -home=%s", i.config.InterxHome)
+	command := fmt.Sprintf("%s start -home=%s", interxProcessName, i.config.InterxHome)
 	_, err := i.containerManager.ExecCommandInContainerInDetachMode(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
 		log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
 	}
-	log.Infoln("'interx' started")
-	return nil
-}
-
-// runInterxContainer starts the 'interx' container and checks if the process is running.
-// If the 'interx' process is not running, it initializes the 'interx' binary in the container
-// and starts it again. It checks if the process is running after the initialization.
-// The method waits for a specified duration before checking if the process is running.
-// If any errors occur during the process, an error is returned.
-func (i *InterxManager) runInterxContainer(ctx context.Context) error {
-	log := logging.Log
 	const delay = time.Second * 3
-
-	err := i.startInterxBinInContainer(ctx)
-	if err != nil {
-		log.Errorf("Starting 'interx' bin in '%s' container error: %s", i.config.InterxContainerName, err)
-		return err
-	}
-
-	log.Warningf("Waiting for %0.0f seconds for process", delay.Seconds())
+	log.Warningf("Waiting to start '%s' for %0.0f seconds", interxProcessName, delay.Seconds())
 	time.Sleep(delay)
 
-	check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, "interx", i.config.InterxContainerName)
+	check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, interxProcessName, i.config.InterxContainerName)
 	if err != nil {
-		log.Errorf("Starting '%s' container error: %s", i.config.InterxContainerName, err)
-		return err
+		log.Errorf("Starting '%s' bin second time in '%s' container error: %s", interxProcessName, i.config.InterxContainerName, err)
+		return fmt.Errorf("starting '%s' bin second time in '%s' container error: %w", interxProcessName, i.config.InterxContainerName, err)
 	}
-
 	if !check {
-		log.Warningf("Error starting 'interx' binary first time in '%s' container, initialization new instance", i.config.InterxContainerName)
-		err = i.initInterxBinInContainer(ctx)
-		if err != nil {
-			log.Errorf("Initialization '%s' in container error: %s", i.config.InterxContainerName, err)
-			return err
-		}
-
-		err := i.startInterxBinInContainer(ctx)
-		if err != nil {
-			log.Errorf("Running 'interx' bin in '%s' container error: %s", i.config.InterxContainerName, err)
-			return fmt.Errorf("running 'interx' bin in '%s' container error: %w", i.config.InterxContainerName, err)
-		}
-
-		log.Warningf("Waiting for %0.0f seconds for process", delay.Seconds())
-		time.Sleep(delay)
-
-		check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, "interx", i.config.InterxContainerName)
-		if err != nil {
-			log.Errorf("Checking 'interx' process in '%s' container error: %s", i.config.InterxContainerName, err)
-			return fmt.Errorf("checking 'interx' process in '%s' container error: %w", i.config.InterxContainerName, err)
-		}
-		if !check {
-			log.Errorf("Error starting 'interx' binary second time in '%s' container", i.config.InterxContainerName)
-			return fmt.Errorf("cannot start 'interx' bin 'in' %s container", i.config.InterxContainerName)
-		}
+		log.Errorf("Process '%s' is not running in '%s' container", interxProcessName, i.config.InterxContainerName)
+		return fmt.Errorf("process '%s' is not running in '%s' container", interxProcessName, i.config.InterxContainerName)
 	}
-
+	log.Infof("'%s' started\n", interxProcessName)
 	return nil
 }

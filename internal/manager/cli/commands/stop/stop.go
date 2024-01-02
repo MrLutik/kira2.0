@@ -1,4 +1,4 @@
-package start
+package stop
 
 import (
 	"context"
@@ -13,28 +13,28 @@ import (
 )
 
 const (
-	use   = "start"
-	short = "Start new sekaid network"
-	long  = "Starting new genesis validator network"
+	use   = "stop"
+	short = "Stop kira node"
+	long  = "Stop node if running"
 )
 
 var log = logging.Log
 
-func Start() *cobra.Command {
+func Stop() *cobra.Command {
 	log.Info("Adding `start` command...")
 	startCmd := &cobra.Command{
 		Use:   use,
 		Short: short,
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
-			mainStart(cmd)
+			mainStop(cmd)
 		},
 	}
 
 	return startCmd
 }
 
-func mainStart(cmd *cobra.Command) {
+func mainStop(cmd *cobra.Command) {
 	systemd.DockerServiceManagement()
 
 	dockerManager, err := docker.NewTestDockerManager()
@@ -49,17 +49,12 @@ func mainStart(cmd *cobra.Command) {
 
 	cfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
-
-	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
-	// TODO Do we need to safe deb packages in temporary directory?
-	// Right now the files are downloaded in current directory, where the program starts
-
 	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
-	sekaiManager.MustRunSekaid(ctx)
+	sekaiManager.MustStopSekaid(ctx)
 
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
-	interxManager.MustRunInterx(ctx)
+	interxManager.MustStopInterx(ctx)
 }

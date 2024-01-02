@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -18,8 +19,8 @@ import (
 
 const (
 	use   = "join"
-	short = "Join to sekaid network"
-	long  = "Joining a running sekaid network"
+	short = "Join to network"
+	long  = "Join to existing network"
 )
 
 // Regular expression to match IPv4 and IPv6 addresses.
@@ -53,7 +54,7 @@ func Join() *cobra.Command {
 	joinCmd.Flags().String("interx-port", "11000", "Interx port of the validator")
 	joinCmd.Flags().String("rpc-port", "26657", "Sekaid RPC port of the validator")
 	joinCmd.Flags().String("p2p-port", "26656", "Sekaid P2P port of the validator")
-	joinCmd.PersistentFlags().Bool("recover", false, fmt.Sprintf("If true recover keys and mnemonic from master mnemonic, otherwise generate random one"))
+	joinCmd.PersistentFlags().Bool("recover", false, "If true recover keys and mnemonic from master mnemonic, otherwise generate random one")
 
 	return joinCmd
 }
@@ -149,11 +150,13 @@ func mainJoin(cmd *cobra.Command) {
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
 	errors.HandleFatalErr("Can't get genesis", err)
 
-	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
-	err = dockerManager.RestartDockerService()
+	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because laucnher is not ready
+	// temp remove docker restarting, only need once after firewalld instalation
+	// err = dockerManager.RestartDockerService()
 	errors.HandleFatalErr("Restarting docker service", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
-
+	err = containerManager.CleanupContainersAndVolumes(ctx, cfg)
+	errors.HandleFatalErr("Cleaning docker volume and containers", err)
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
 	adapters.MustDownloadBinaries(ctx, cfg)
@@ -168,9 +171,12 @@ func mainJoin(cmd *cobra.Command) {
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
 	errors.HandleFatalErr("Can't create new 'sekai' manager instance", err)
-	sekaiManager.MustInitAndRunJoiner(ctx, genesis)
-
+	sekaiManager.MustInitJoiner(ctx, genesis)
+	sekaiManager.MustRunSekaid(ctx)
+	log.Printf("Waiting for %v\n", cfg.TimeBetweenBlocks)
+	time.Sleep(cfg.TimeBetweenBlocks + time.Second)
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Can't create new 'interx' manager instance", err)
-	interxManager.MustInitAndRunInterx(ctx)
+	interxManager.MustInitInterx(ctx)
+	interxManager.MustRunInterx(ctx)
 }
