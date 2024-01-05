@@ -87,7 +87,15 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 	log := logging.Log
 	sekaidConfigFolder := h.config.SekaidHome + "/config"
 	// err := h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder+"/priv_validator_key.json", h.config.SekaidContainerName)
-	err := h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
+	out, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome)})
+	if err != nil {
+		return fmt.Errorf("unable to create h.config.SekaidHome: %s\n%s", out, err)
+	}
+	out, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidConfigFolder)})
+	if err != nil {
+		return fmt.Errorf("unable to create h.config.SecretsFolder: %s\n%s", out, err)
+	}
+	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
 		log.Errorf("cannot send priv_validator_key.json to container\n")
 		return err
@@ -114,7 +122,11 @@ func (h *HelperManager) SetEmptyValidatorState(ctx context.Context) error {
 
 	tmpFile := "/tmp/priv_validator_state.json"
 	osutils.CreateFileWithData(tmpFile, []byte(commandToCreateEmptyState))
-	err := h.containerManager.SendFileToContainer(ctx, tmpFile, h.config.SekaidHome+"/data", h.config.SekaidContainerName)
+	out, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome+"/data")})
+	if err != nil {
+		return fmt.Errorf("unable to create h.config.SekaidHome: %s\n%s", out, err)
+	}
+	err = h.containerManager.SendFileToContainer(ctx, tmpFile, h.config.SekaidHome+"/data", h.config.SekaidContainerName)
 	if err != nil {
 		log.Errorf("cannot send %s to container\n", tmpFile)
 		return err
