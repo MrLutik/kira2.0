@@ -2,6 +2,7 @@ package new
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
@@ -23,6 +24,10 @@ const (
 	short = "Create new blockchain network"
 	long  = "Create new blockchain network from genesis file"
 )
+const (
+	sekaiVersionFlag  = "sekai-version"
+	interxVersionFlag = "interx-version"
+)
 
 func New() *cobra.Command {
 	log.Info("Adding `join` command...")
@@ -35,12 +40,13 @@ func New() *cobra.Command {
 		},
 	}
 
-	newCmd.MarkFlagRequired("ip")
+	newCmd.Flags().String(sekaiVersionFlag, "latest", "Set this flag to choose what sekai version will be initialized")
+	newCmd.Flags().String(interxVersionFlag, "latest", "Set this flag to choose what interx version will be initialized")
 
 	return newCmd
 }
 
-func mainNew(*cobra.Command) {
+func mainNew(cmd *cobra.Command) {
 	systemd.DockerServiceManagement()
 
 	dockerManager, err := docker.NewTestDockerManager()
@@ -55,6 +61,17 @@ func mainNew(*cobra.Command) {
 
 	cfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
+
+	sekaiVersion, err := cmd.Flags().GetString(sekaiVersionFlag)
+	errors.HandleFatalErr(fmt.Sprintf("Cant get %s flag", sekaiVersionFlag), err)
+	interxVersion, err := cmd.Flags().GetString(interxVersionFlag)
+	errors.HandleFatalErr(fmt.Sprintf("Cant get %s flag", interxVersionFlag), err)
+	if sekaiVersion != cfg.SekaiVersion || interxVersion != cfg.InterxVersion {
+		cfg.SekaiVersion = sekaiVersion
+		cfg.InterxVersion = interxVersion
+		configFileController.ChangeConfigFile(cfg)
+	}
+
 	cfg.Recover = recover
 	log.Traceln(recover)
 	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
