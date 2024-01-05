@@ -153,8 +153,8 @@ func ActivateValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.C
 	if strings.ToLower(nodeStatus.Status) != types.Inactive {
 		return fmt.Errorf("cannot activate validator, node status is not <%s>, curent status <%s>", types.Inactive, nodeStatus.Status)
 	}
-	// sekaid tx customslashing activate --from "validator" --chain-id chaosnet-1 --keyring-backend=test --home /data/.sekai/ --fees 1000ukex --yes --broadcast-mode=async --log_format=json --output=json
-	command := fmt.Sprintf(`sekaid tx customslashing activate --from "%s" --chain-id %s --keyring-backend=test --home  %s --fees 1000ukex --broadcast-mode=async --yes --output json --log_format=json`, types.ValidatorAccountName, cfg.NetworkName, cfg.SekaidHome)
+	// sekaid tx customslashing activate --from validator --chain-id chaosnet-1 --keyring-backend=test --home /data/.sekai/ --fees 1000ukex --yes --broadcast-mode=async --log_format=json --output=json
+	command := fmt.Sprintf(`sekaid tx customslashing activate --from %s --chain-id %s --keyring-backend=test --home  %s --fees 1000ukex --broadcast-mode=async --yes --output json --log_format=json`, types.ValidatorAccountName, cfg.NetworkName, cfg.SekaidHome)
 	log.Debugf("Running command\n %s\n", command)
 	out, err := cm.ExecCommandInContainer(ctx, cfg.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
