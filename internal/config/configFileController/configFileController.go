@@ -13,6 +13,20 @@ import (
 
 var log = logging.Log
 
+func ChangeConfigFile(cfg *config.KiraConfig) error {
+	filePath, configPath := configHandler.GetConfigFilePath()
+	okPath, err := osutils.CheckItPathExist(configPath)
+	if err != nil {
+		return err
+	}
+	if !okPath {
+		return fmt.Errorf("config file does not exist")
+	}
+	log.Debugf("changing config to:\n%+v\n", cfg)
+	configHandler.WriteConfigFile(filePath, cfg)
+	return nil
+}
+
 func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	filePath, configPath := configHandler.GetConfigFilePath()
 	// filePath := configPath + "/" + fileName
