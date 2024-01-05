@@ -157,6 +157,7 @@ func mainJoin(cmd *cobra.Command) {
 		SekaidP2PPort: sekaidP2PPort,
 	}
 	joinerManager := manager.NewJoinerManager(joinerCfg)
+	recover, _ = cmd.Flags().GetBool("recover")
 	cfg, err := joinerManager.GenerateKiraConfig(ctx, recover)
 	errors.HandleFatalErr("Can't get kira config", err)
 
@@ -172,7 +173,7 @@ func mainJoin(cmd *cobra.Command) {
 	// TODO method called twice
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
 	errors.HandleFatalErr("Can't get genesis", err)
-	recover, _ = cmd.Flags().GetBool("recover")
+
 	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because laucnher is not ready
 	// temp remove docker restarting, only need once after firewalld instalation
 	// err = dockerManager.RestartDockerService()
