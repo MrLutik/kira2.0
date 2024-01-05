@@ -32,7 +32,7 @@ func Maintenance() *cobra.Command {
 				return
 			}
 			if err := mainMaitenance(cmd); err != nil {
-				log.Errorf("Errow while executing maintenance command: %s", err)
+				log.Errorf("Error while executing maintenance command: %s", err)
 				cmd.Help()
 				return
 			}
