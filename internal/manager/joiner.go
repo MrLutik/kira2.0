@@ -335,7 +335,7 @@ func (j *JoinerManager) checkGenSum(ctx context.Context, genesis []byte) error {
 func (h *httpKiraClient) doGetHttpQuery(ctx context.Context, url string) ([]byte, error) {
 	log := logging.Log
 
-	const timeoutQuery = time.Second * 3
+	const timeoutQuery = time.Second * 60
 
 	ctx, cancel := context.WithTimeout(ctx, timeoutQuery)
 	defer cancel()
