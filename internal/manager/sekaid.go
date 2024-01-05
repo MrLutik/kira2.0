@@ -341,15 +341,23 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, genesisData []byte) error {
 	log := logging.Log
 	log.Infof("Setting up '%s' joiner container", s.config.SekaidContainerName)
-	s.helper.SetSekaidKeys(ctx)
-	s.helper.SetEmptyValidatorState(ctx)
+	err := s.helper.SetSekaidKeys(ctx)
+	if err != nil {
+		log.Errorf("Unable to set sekaid keys: %s", err)
+		return err
+	}
+	err = s.helper.SetEmptyValidatorState(ctx)
+	if err != nil {
+		log.Errorf("Unable to set empty validator state: %s", err)
+		return err
+	}
 	commands := []string{
 		fmt.Sprintf("mkdir %s", s.config.MnemonicDir),
 		fmt.Sprintf(`yes %s | sekaid keys add "%s" --keyring-backend=%s --home=%s --output=json --recover | jq .mnemonic > %s/sekai.mnemonic`,
 			s.config.MasterMnamonicSet.ValidatorAddrMnemonic, types.ValidatorAccountName, s.config.KeyringBackend, s.config.SekaidHome, s.config.MnemonicDir),
 	}
 
-	err := s.runCommands(ctx, commands)
+	err = s.runCommands(ctx, commands)
 	if err != nil {
 		log.Errorf("Initialized container error: %s", err)
 		return err
