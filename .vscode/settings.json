@@ -1,0 +1,36 @@
+{
+    "editor.tabSize": 4,
+    "[go]": {
+        "editor.defaultFormatter": "golang.go",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+        "editor.formatOnSaveMode": "file",
+        "editor.formatOnSave": true,
+        "editor.snippetSuggestions": "inline",
+    },
+    "go.lintOnSave": "package",
+    "go.lintTool": "golangci-lint",
+    "go.formatTool": "gofumpt",
+    "go.formatFlags": [
+        "-extra"
+    ],
+    "go.toolsEnvVars": {
+        "GO111MODULE": "on"
+    },
+    "go.vetOnSave": "package",
+    "go.useLanguageServer": true,
+    "gopls": {
+        "ui.semanticTokens": true,
+        "ui.diagnostic.analyses": {
+            "nilness": true,
+            "shadow": true,
+            "unusedparams": true,
+            "unusedvariable": true,
+            "unusedwrite": true,
+        },
+        "ui.diagnostic.staticcheck": true,
+        "ui.navigation.importShortcut": "Definition",
+        "formatting.gofumpt": true,
+    },
+}
