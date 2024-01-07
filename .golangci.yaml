@@ -1,0 +1,368 @@
+# Config for golangci-lint metalinter
+
+run:
+
+  concurrency: 4 # Number of CPUs to use when running golangci-lint.
+  
+  timeout: 5m # Timeout for analysis, e.g. 30s, 5m.
+  
+  issues-exit-code: 1 # Exit code when at least one issue was found.
+  
+  tests: false # Include test files or not.
+  
+  skip-dirs: # Which dirs to skip: issues from them won't be reported.
+    - .git
+  
+  modules-download-mode: readonly
+
+  # Allow multiple parallel golangci-lint instances running.
+  # If false, golangci-lint acquires file lock on start.
+  allow-parallel-runners: false
+
+  go: '1.20.5' # Define the Go version limit.
+
+output:
+
+  format: colored-line-number # colored-line-number | line-number | json | colored-tab | tab | github-actions(for CI/CD)
+  
+  print-issued-lines: true # Print lines of code with issue.
+  
+  print-linter-name: true # Print linter name in the end of issue text.
+
+  uniq-by-line: false # Make issues output unique by line.
+
+  path-prefix: "" # Add a prefix to the output file references.
+
+  sort-results: true # Sort results by: filepath, line and column.
+
+linters:
+
+  disable-all: true
+
+  # enable:
+  #   - noctx
+  
+  enable:
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - cyclop
+    - decorder
+    - dogsled
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustruct
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - goconst
+    - gocognit
+    - gocritic
+    - gocyclo
+    - godot
+    - goerr113
+    - gofmt
+    - gofumpt
+    - goimports
+    - golint
+    - gomnd
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - ireturn
+    - lll
+    - misspell
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - prealloc
+    - predeclared
+    - reassign
+    - revive
+    - staticcheck
+    - stylecheck
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - varnamelen
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl
+  
+issues:
+
+  max-issues-per-linter: 0 # Maximum issues count per one linter.
+
+  max-same-issues: 0 # Maximum count of issues with the same text.
+
+  new: false # Show only new issues
+
+  # Fix found issues (if it's supported by the linter).
+  # I DO NOT want to AUTOFIX issues
+  # We have to do it by hands to memorize it
+  fix: false
+
+
+
+
+linters-settings:
+
+  cyclop:
+    # The maximal code complexity to report.
+    max-complexity: 10
+    # Should ignore tests.
+    skip-tests: true
+
+  decorder:
+    dec-order:
+        - type
+        - const
+        - var
+        - func
+    disable-dec-order-check: false # If true, order of declarations is not checked at all.
+    disable-init-func-first-check: false # If true, `init` func can be anywhere in file (does not have to be declared before all other functions)
+    disable-dec-num-check: false # If true, multiple global `type`, `const` and `var` declarations are allowed.
+    disable-type-dec-num-check: false # If true, type declarations will be ignored for dec num check
+    disable-const-dec-num-check: false # If true, const declarations will be ignored for dec num check
+    disable-var-dec-num-check: false # If true, var declarations will be ignored for dec num check
+  
+  dogsled:
+    max-blank-identifiers: 2 # Checks assignments with too many blank identifiers. (e.g. x, , , _, := f()).
+
+  dupl:
+    # Tokens count to trigger issue.
+    # Default: 150
+    threshold: 100
+
+  errcheck:
+    check-type-assertions: true # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
+    check-blank: true # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
+  
+  errchkjson:
+    check-error-free-encoding: true
+    report-no-exported: true
+
+  errorlint:
+    # Check whether fmt.Errorf uses the %w verb for formatting errors.
+    # See the https://github.com/polyfloyd/go-errorlint for caveats.
+    errorf: true
+    # Permit more than 1 %w verb, valid per Go 1.20 (Requires errorf:true)
+    errorf-multi: true
+    # Check for plain type assertions and type switches.
+    asserts: true
+    # Check for plain error comparisons.
+    comparison: true
+  
+  funlen:
+    # Checks the number of lines in a function.
+    lines: 40
+    # Checks the number of statements in a function.
+    statements: 20
+    # Ignore comments when counting lines.
+    ignore-comments: true
+
+  gocognit:
+    # Minimal code complexity to report.
+    # Default: 30 (but we recommend 10-20)
+    min-complexity: 10
+  
+  goconst:
+    min-len: 5 # Minimal length of string constant.
+    min-occurrences: 5 # Minimum occurrences of constant string count to trigger issue.
+    ignore-tests: false # Ignore test files.
+    match-constant: true # Look for existing constants matching the values.
+    numbers: true # Search also for duplicated numbers.
+    ignore-calls: true # Ignore when constant is not used as function argument.
+
+  gocritic:
+    # https://go-critic.com/overview#checks-overview.
+    enabled-checks:
+      - appendAssign
+      - appendCombine
+      - argOrder
+      - assignOp
+      - badCall
+      - badCond
+      - builtinShadow
+      - builtinShadowDecl
+      - captLocal
+      - caseOrder # ?
+      - commentFormatting
+      - commentedOutCode # ?
+      - commentedOutImport
+      - defaultCaseOrder
+      - deferInLoop
+      - deferUnlambda
+      - deprecatedComment
+      - dupArg
+      - dupBranchBody
+      - dupImport
+      - dupSubExpr
+      - elseif
+      - emptyStringTest
+      - equalFold
+      - evalOrder
+      - exitAfterDefer
+      - hexLiteral
+      - httpNoBody
+      - hugeParam
+      - ifElseChain
+      - importShadow
+      - mapKey
+      - newDeref
+      - nilValReturn
+      - offBy1
+      - paramTypeCombine
+      - regexpMust
+
+  gocyclo:
+    min-complexity: 10 # Minimal code complexity to report.
+  
+  godot:
+    scope: all # Comments to be checked: `declarations`, `toplevel`, or `all`.
+    exclude:
+      - "^todo:"
+    period: false # Check that each sentence ends with a period.
+    capital: true # Check that each sentence starts with a capital letter.
+  
+  gofmt:
+    # Simplify code: gofmt with `-s` option.
+    simplify: true
+    # Apply the rewrite rules to the source before reformatting.
+    # https://pkg.go.dev/cmd/gofmt
+    rewrite-rules:
+      - pattern: 'interface{}'
+        replacement: 'any'
+  
+  gofumpt:
+    extra-rules: true # Choose whether to use the extra rules.
+  
+  golint:
+    min-confidence: 0.7 # Minimal confidence for issues.
+    
+  gomnd:
+    # List of enabled checks, see https://github.com/tommy-muehle/go-mnd/#checks for description.
+    checks:
+      - argument
+      - case
+      - condition
+      - operation
+      - return
+      - assign
+    
+    ignored-numbers:
+      - '0666'
+      - '0755'
+  
+  gosimple:
+    # Deprecated: use the global `run.go` instead.
+    go: "1.20.5"
+    # Sxxxx checks in https://staticcheck.io/docs/configuration/options/#checks
+    checks: ["all"] # https://staticcheck.dev/docs/checks/
+  
+  gosec:
+    # To select a subset of rules to run.
+    # Available rules: https://github.com/securego/gosec#available-rules
+    includes:
+      - G101 # Look for hard coded credentials
+      - G102 # Bind to all interfaces
+      - G103 # Audit the use of unsafe block
+      - G104 # Audit errors not checked
+      - G106 # Audit the use of ssh.InsecureIgnoreHostKey
+      - G107 # Url provided to HTTP request as taint input
+      - G108 # Profiling endpoint automatically exposed on /debug/pprof
+      - G109 # Potential Integer overflow made by strconv.Atoi result conversion to int16/32
+      - G110 # Potential DoS vulnerability via decompression bomb
+      - G111 # Potential directory traversal
+      - G112 # Potential slowloris attack
+      - G113 # Usage of Rat.SetString in math/big with an overflow (CVE-2022-23772)
+      - G114 # Use of net/http serve function that has no support for setting timeouts
+      - G201 # SQL query construction using format string
+      - G202 # SQL query construction using string concatenation
+      - G203 # Use of unescaped data in HTML templates
+      - G204 # Audit use of command execution
+      - G301 # Poor file permissions used when creating a directory
+      - G302 # Poor file permissions used with chmod
+      - G303 # Creating tempfile using a predictable path
+      - G304 # File path provided as taint input
+      - G305 # File traversal when extracting zip/tar archive
+      - G306 # Poor file permissions used when writing to a new file
+      - G307 # Poor file permissions used when creating a file with os.Create
+      - G401 # Detect the usage of DES, RC4, MD5 or SHA1
+      - G402 # Look for bad TLS connection settings
+      - G403 # Ensure minimum RSA key length of 2048 bits
+      - G404 # Insecure random number source (rand)
+      - G501 # Import blocklist: crypto/md5
+      - G502 # Import blocklist: crypto/des
+      - G503 # Import blocklist: crypto/rc4
+      - G504 # Import blocklist: net/http/cgi
+      - G505 # Import blocklist: crypto/sha1
+      - G601 # Implicit memory aliasing of items from a range statement
+      - G602 # Slice access out of bounds
+
+    exclude-generated: false
+    # Filter out the issues with a lower severity than the given value.
+    severity: low # Valid options are: low, medium, high.
+    # # Filter out the issues with a lower confidence than the given value.
+    confidence: low # Valid options are: low, medium, high.
+    
+  govet:
+    enable-all: true # Enable all analyzers.
+    check-shadowing: true # Report about shadowed variables.
+    settings:
+      shadow:
+        strict: true # Whether to be strict about shadowing; can be noisy.
+
+  lll:
+    line-length: 120 # Max line length, lines longer will be reported.
+    tab-width: 1 # Tab width in spaces.
+  
+  misspell:
+    # Correct spellings using locale preferences for US or UK.
+    # Setting locale to US will correct the British spelling of 'colour' to 'color'.
+    # Default is to use a neutral variety of English.
+    locale: US
+    ignore-words:
+      - sekaid
+      - interx
+  
+  predeclared: # Find code that shadows one of Go's predeclared identifiers.
+    ignore: "recover" # Comma-separated list of predeclared identifiers to not report on.
+  
+  staticcheck:
+    go: "1.20.5"
+    # SAxxxx checks in https://staticcheck.io/docs/configuration/options/#checks
+    checks: ["all"] # https://staticcheck.dev/docs/checks/
+    
+  stylecheck:
+    go: "1.20.5"
+    checks: ["all"]
+  
+  usestdlibvars:
+    http-method: false # Suggest the use of http.MethodXX.
+    http-status-code: false # Suggest the use of http.StatusXX.
+    time-weekday: true # Suggest the use of time.Weekday.String().
+    time-month: true # Suggest the use of time.Month.String().
+    time-layout: true # Suggest the use of time.Layout.
+    crypto-hash: true # Suggest the use of crypto.Hash.String().
+    default-rpc-path: true # Suggest the use of rpc.DefaultXXPath.
+    sql-isolation-level: true # Suggest the use of sql.LevelXX.String().
+    tls-signature-scheme: true # Suggest the use of tls.SignatureScheme.String().
+    constant-kind: true # Suggest the use of constant.Kind.String().
+
+  unparam:
+    check-exported: true
