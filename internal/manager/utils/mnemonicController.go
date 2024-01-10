@@ -87,13 +87,13 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 	log := logging.Log
 	sekaidConfigFolder := h.config.SekaidHome + "/config"
 	// err := h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder+"/priv_validator_key.json", h.config.SekaidContainerName)
-	out, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome)})
+	_, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome)})
 	if err != nil {
-		return fmt.Errorf("unable to create h.config.SekaidHome: %s\n%s", out, err)
+		return fmt.Errorf("unable to create h.config.SekaidHome: %s", err)
 	}
-	out, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidConfigFolder)})
+	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidConfigFolder)})
 	if err != nil {
-		return fmt.Errorf("unable to create h.config.SecretsFolder: %s\n%s", out, err)
+		return fmt.Errorf("unable to create h.config.SecretsFolder: %s", err)
 	}
 	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
@@ -120,15 +120,15 @@ func (h *HelperManager) SetEmptyValidatorState(ctx context.Context) error {
 		"step": 0
 	}`
 
-	tmpFile := "/tmp/priv_validator_state.json"
-	osutils.CreateFileWithData(tmpFile, []byte(commandToCreateEmptyState))
+	tmpFilePath := "/tmp/priv_validator_state.json"
+	osutils.CreateFileWithData(tmpFilePath, []byte(commandToCreateEmptyState))
 	out, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome+"/data")})
 	if err != nil {
 		return fmt.Errorf("unable to create h.config.SekaidHome: %s\n%s", out, err)
 	}
-	err = h.containerManager.SendFileToContainer(ctx, tmpFile, h.config.SekaidHome+"/data", h.config.SekaidContainerName)
+	err = h.containerManager.SendFileToContainer(ctx, tmpFilePath, h.config.SekaidHome+"/data", h.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("cannot send %s to container\n", tmpFile)
+		log.Errorf("cannot send %s to container\n", tmpFilePath)
 		return err
 	}
 	return nil
