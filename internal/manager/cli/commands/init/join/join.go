@@ -162,9 +162,7 @@ func mainJoin(cmd *cobra.Command) {
 	errors.HandleFatalErr("Can't get kira config", err)
 
 	sekaiVersion, _ := cmd.Flags().GetString(sekaiVersionFlag)
-	errors.HandleFatalErr(fmt.Sprintf("Cant get %s flag", sekaiVersionFlag), err)
 	interxVersion, _ := cmd.Flags().GetString(interxVersionFlag)
-	errors.HandleFatalErr(fmt.Sprintf("Cant get %s flag", interxVersionFlag), err)
 	if sekaiVersion != cfg.SekaiVersion || interxVersion != cfg.InterxVersion {
 		cfg.SekaiVersion = sekaiVersion
 		cfg.InterxVersion = interxVersion
