@@ -166,7 +166,8 @@ func mainJoin(cmd *cobra.Command) {
 	if sekaiVersion != cfg.SekaiVersion || interxVersion != cfg.InterxVersion {
 		cfg.SekaiVersion = sekaiVersion
 		cfg.InterxVersion = interxVersion
-		configFileController.ChangeConfigFile(cfg)
+		err = configFileController.ChangeConfigFile(cfg)
+		errors.HandleFatalErr("Can't change config file", err)
 	}
 	// TODO method called twice
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
