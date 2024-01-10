@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
+	"github.com/mrlutik/kira2.0/internal/config/configFileController"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
@@ -21,6 +22,10 @@ const (
 	use   = "join"
 	short = "Join to network"
 	long  = "Join to existing network"
+)
+const (
+	sekaiVersionFlag  = "sekai-version"
+	interxVersionFlag = "interx-version"
 )
 
 // Regular expression to match IPv4 and IPv6 addresses.
@@ -56,6 +61,8 @@ func Join() *cobra.Command {
 	joinCmd.Flags().String("p2p-port", "26656", "Sekaid P2P port of the validator")
 	joinCmd.PersistentFlags().Bool("recover", false, "If true recover keys and mnemonic from master mnemonic, otherwise generate random one")
 
+	joinCmd.Flags().String(sekaiVersionFlag, "latest", "Set this flag to choose what sekai version will be initialized")
+	joinCmd.Flags().String(interxVersionFlag, "latest", "Set this flag to choose what interx version will be initialized")
 	return joinCmd
 }
 
@@ -92,6 +99,14 @@ func validateFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("'%s' is not a valid Sekaid P2P port", p2pPort)
 	}
 
+	_, err = cmd.Flags().GetString(sekaiVersionFlag)
+	if err != nil {
+		return fmt.Errorf("error retrieving %s flag: %s", sekaiVersionFlag, err)
+	}
+	_, err = cmd.Flags().GetString(interxVersionFlag)
+	if err != nil {
+		return fmt.Errorf("error retrieving %s flag: %s", interxVersionFlag, err)
+	}
 	return nil
 }
 
@@ -146,6 +161,14 @@ func mainJoin(cmd *cobra.Command) {
 	cfg, err := joinerManager.GenerateKiraConfig(ctx, recover)
 	errors.HandleFatalErr("Can't get kira config", err)
 
+	sekaiVersion, _ := cmd.Flags().GetString(sekaiVersionFlag)
+	interxVersion, _ := cmd.Flags().GetString(interxVersionFlag)
+	if sekaiVersion != cfg.SekaiVersion || interxVersion != cfg.InterxVersion {
+		cfg.SekaiVersion = sekaiVersion
+		cfg.InterxVersion = interxVersion
+		err = configFileController.ChangeConfigFile(cfg)
+		errors.HandleFatalErr("Can't change config file", err)
+	}
 	// TODO method called twice
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
 	errors.HandleFatalErr("Can't get genesis", err)

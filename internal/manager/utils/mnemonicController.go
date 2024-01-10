@@ -87,7 +87,15 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 	log := logging.Log
 	sekaidConfigFolder := h.config.SekaidHome + "/config"
 	// err := h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder+"/priv_validator_key.json", h.config.SekaidContainerName)
-	err := h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
+	_, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome)})
+	if err != nil {
+		return fmt.Errorf("unable to create <%s> folder, err: %s", h.config.SekaidHome, err)
+	}
+	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidConfigFolder)})
+	if err != nil {
+		return fmt.Errorf("unable to create <%s> folder, err: %s", sekaidConfigFolder, err)
+	}
+	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
 		log.Errorf("cannot send priv_validator_key.json to container\n")
 		return err
@@ -104,20 +112,28 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 
 // sets empty state of validator into $sekaidHome/data/priv_validator_state.json
 func (h *HelperManager) SetEmptyValidatorState(ctx context.Context) error {
-	log := logging.Log
-	commandToCreateEmptyState := `
+	emptyState := `
 	{
 		"height": "0",
 		"round": 0,
 		"step": 0
 	}`
-
-	tmpFile := "/tmp/priv_validator_state.json"
-	osutils.CreateFileWithData(tmpFile, []byte(commandToCreateEmptyState))
-	err := h.containerManager.SendFileToContainer(ctx, tmpFile, h.config.SekaidHome+"/data", h.config.SekaidContainerName)
+	// TODO
+	// mount docker volume to the folder on host machine and do file manipulations inside this folder
+	tmpFilePath := "/tmp/priv_validator_state.json"
+	err := osutils.CreateFileWithData(tmpFilePath, []byte(emptyState))
 	if err != nil {
-		log.Errorf("cannot send %s to container\n", tmpFile)
-		return err
+		return fmt.Errorf("unable to create file <%s>, error: %s", tmpFilePath, err)
+
+	}
+	sekaidDataFoder := h.config.SekaidHome + "/data"
+	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidDataFoder)})
+	if err != nil {
+		return fmt.Errorf("unable to create folder <%s>, error: %s", sekaidDataFoder, err)
+	}
+	err = h.containerManager.SendFileToContainer(ctx, tmpFilePath, sekaidDataFoder, h.config.SekaidContainerName)
+	if err != nil {
+		return fmt.Errorf("cannot send %s to container, err: %s", tmpFilePath, err)
 	}
 	return nil
 }
