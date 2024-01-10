@@ -89,11 +89,11 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 	// err := h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder+"/priv_validator_key.json", h.config.SekaidContainerName)
 	_, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome)})
 	if err != nil {
-		return fmt.Errorf("unable to create h.config.SekaidHome: %s", err)
+		return fmt.Errorf("unable to create <%s> folder, err: %s", h.config.SekaidHome, err)
 	}
 	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidConfigFolder)})
 	if err != nil {
-		return fmt.Errorf("unable to create h.config.SecretsFolder: %s", err)
+		return fmt.Errorf("unable to create <%s> folder, err: %s", sekaidConfigFolder, err)
 	}
 	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
