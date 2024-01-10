@@ -84,7 +84,8 @@ func mainNew(cmd *cobra.Command) {
 	if sekaiVersion != cfg.SekaiVersion || interxVersion != cfg.InterxVersion {
 		cfg.SekaiVersion = sekaiVersion
 		cfg.InterxVersion = interxVersion
-		configFileController.ChangeConfigFile(cfg)
+		err = configFileController.ChangeConfigFile(cfg)
+		errors.HandleFatalErr("Can't change config file", err)
 	}
 
 	cfg.Recover = recover
