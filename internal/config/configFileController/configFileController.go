@@ -14,6 +14,7 @@ import (
 var log = logging.Log
 
 func ChangeConfigFile(cfg *config.KiraConfig) error {
+	log.Infof("Changing config file\n")
 	filePath, configPath := configHandler.GetConfigFilePath()
 	okPath, err := osutils.CheckItPathExist(configPath)
 	if err != nil {
@@ -22,7 +23,6 @@ func ChangeConfigFile(cfg *config.KiraConfig) error {
 	if !okPath {
 		return fmt.Errorf("config path does not exist")
 	}
-	log.Debugf("creating <%s>", filePath)
 	configHandler.WriteConfigFile(filePath, cfg)
 	return nil
 }
