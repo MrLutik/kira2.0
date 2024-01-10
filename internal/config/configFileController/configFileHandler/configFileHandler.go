@@ -41,8 +41,7 @@ func ReadConfigFile(filePath string) (cfg *config.KiraConfig, err error) {
 }
 
 func WriteConfigFile(filePath string, cfg *config.KiraConfig) error {
-
-	log.Infof("creating <%s>\n", filePath)
+	log.Debugf("Writing %+v to <%s>\n", cfg, filePath)
 	file, err := os.Create(filePath)
 	if err != nil {
 		return err
