@@ -20,9 +20,9 @@ func ChangeConfigFile(cfg *config.KiraConfig) error {
 		return fmt.Errorf("error while checking if %s exist, error:%s", configPath, err)
 	}
 	if !okPath {
-		return fmt.Errorf("config file does not exist")
+		return fmt.Errorf("config path does not exist")
 	}
-	log.Debugf("changing config to:\n%+v\n", cfg)
+	log.Debugf("creating <%s>", filePath)
 	configHandler.WriteConfigFile(filePath, cfg)
 	return nil
 }
