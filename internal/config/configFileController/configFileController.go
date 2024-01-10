@@ -17,7 +17,7 @@ func ChangeConfigFile(cfg *config.KiraConfig) error {
 	filePath, configPath := configHandler.GetConfigFilePath()
 	okPath, err := osutils.CheckItPathExist(configPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while checking if %s exist, error:%s", configPath, err)
 	}
 	if !okPath {
 		return fmt.Errorf("config file does not exist")
