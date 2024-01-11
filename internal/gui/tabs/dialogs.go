@@ -130,3 +130,10 @@ func showInfoDialog(g *Gui, infoTitle, infoString string) {
 	wizard.Show(g.Window)
 	wizard.Resize(fyne.NewSize(400, 400))
 }
+
+func showInitDialog(g *Gui) {
+	// var wizard *dialogs.Wizard
+	// open new dialogg with choises to init new or join to existing (check piont)
+	// if checkpoint is ture, opens new text entries for ip, ports, etc... and switch main button to start\\join
+	// after main button pressed exec showCmdExecDialogAndRunCmdV4 with constructed cmd from previous step
+}
