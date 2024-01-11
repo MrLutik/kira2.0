@@ -29,6 +29,7 @@ func ChangeConfigFile(cfg *config.KiraConfig) error {
 	}
 	return nil
 }
+const KiraCfgFilePath = "/home/$USER/.config/km2"
 
 func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	filePath, configPath := configHandler.GetConfigFilePath()
@@ -100,7 +101,7 @@ func newDefaultKiraConfig() *config.KiraConfig {
 		SekaiDebFileName:    "sekai-linux-amd64.deb",
 		InterxDebFileName:   "interx-linux-amd64.deb",
 		TimeBetweenBlocks:   time.Second * 10,
-		KiraConfigFilePath:  "/home/$USER/.config/km2",
+		KiraConfigFilePath:  KiraCfgFilePath,
 	}
 
 }
