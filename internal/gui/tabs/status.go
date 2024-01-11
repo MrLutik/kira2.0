@@ -18,7 +18,7 @@ func makeStatusScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 	log.SetLevel(logrus.DebugLevel)
 	ip, err := guiHelper.GetIPFromSshClient(g.sshClient)
 
-	fmt.Println(g.sshClient.SessionID(), "iP::::", ip, err)
+	log.Debugln(g.sshClient.SessionID(), "iP::::", ip, err)
 
 	tabs := container.NewAppTabs(
 		container.NewTabItem("api/status", makeTab1Status(ip.String())),
