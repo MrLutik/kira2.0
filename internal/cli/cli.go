@@ -48,5 +48,4 @@ func Start() {
 		log.Errorf("Failed to execute command %v\n", err)
 		os.Exit(1)
 	}
-
 }

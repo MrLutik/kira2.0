@@ -52,7 +52,6 @@ func Node() *cobra.Command {
 				log.Fatalf("Failed to check OS and hardware: %v", err)
 			}
 			log.Println(osAndHardwareInfo)
-
 		},
 	}
 	for _, node := range nodes {
@@ -64,7 +63,7 @@ func Node() *cobra.Command {
 	return nodeCmd
 }
 
-func createSSHClient(host string, privKeyPath string) (*ssh.Client, error) {
+func createSSHClient(host, privKeyPath string) (*ssh.Client, error) {
 	key, err := ioutil.ReadFile(privKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read private key: %v", err)
@@ -112,6 +111,7 @@ func forbidRootLogin(client *ssh.Client) error {
 
 	return nil
 }
+
 func checkOSAndHardware(client *ssh.Client) (string, error) {
 	// Check the operating system
 	session, err := client.NewSession()

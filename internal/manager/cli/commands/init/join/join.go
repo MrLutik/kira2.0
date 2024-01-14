@@ -23,6 +23,7 @@ const (
 	short = "Join to network"
 	long  = "Join to existing network"
 )
+
 const (
 	sekaiVersionFlag  = "sekai-version"
 	interxVersionFlag = "interx-version"
@@ -34,8 +35,10 @@ const ipRegex = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-
 // Regular expression to match valid port numbers (from 1 to 65535).
 const portRegex = `^([1-9]\d{0,4}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`
 
-var log = logging.Log
-var recover bool
+var (
+	log     = logging.Log
+	recover bool
+)
 
 func Join() *cobra.Command {
 	log.Info("Adding `join` command...")
@@ -173,7 +176,7 @@ func mainJoin(cmd *cobra.Command) {
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
 	errors.HandleFatalErr("Can't get genesis", err)
 
-	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because laucnher is not ready
+	// todo this docker service restart has to be after docker and firewalld instalation, im doin it here because laucnher is not ready
 	// temp remove docker restarting, only need once after firewalld instalation
 	// err = dockerManager.RestartDockerService()
 	errors.HandleFatalErr("Restarting docker service", err)

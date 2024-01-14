@@ -63,7 +63,7 @@ func generateRSA(bits int, outDir string) error {
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	privateKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privateKeyBytes})
-	err = ioutil.WriteFile(filepath.Join(outDir, "private.pem"), privateKeyPEM, 0600)
+	err = ioutil.WriteFile(filepath.Join(outDir, "private.pem"), privateKeyPEM, 0o600)
 	if err != nil {
 		log.Errorf("failed writing RSA private key to file %v\n", filepath.Join(outDir, "private.pem"))
 		return err
@@ -76,7 +76,7 @@ func generateRSA(bits int, outDir string) error {
 	}
 
 	publicKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: publicKeyBytes})
-	return ioutil.WriteFile(filepath.Join(outDir, "public.pem"), publicKeyPEM, 0644)
+	return ioutil.WriteFile(filepath.Join(outDir, "public.pem"), publicKeyPEM, 0o644)
 }
 
 // generateECDSA generates an ECDSA key pair with the given curve size and
@@ -111,7 +111,7 @@ func generateECDSA(curveBits int, outDir string) error {
 	}
 
 	privateKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
-	err = ioutil.WriteFile(filepath.Join(outDir, "private.pem"), privateKeyPEM, 0600)
+	err = ioutil.WriteFile(filepath.Join(outDir, "private.pem"), privateKeyPEM, 0o600)
 	if err != nil {
 		log.Errorf("failed writing ECDSA private key to file %v\n", filepath.Join(outDir, "private.pem"))
 		return err
@@ -124,5 +124,5 @@ func generateECDSA(curveBits int, outDir string) error {
 	}
 
 	publicKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PUBLIC KEY", Bytes: publicKeyBytes})
-	return ioutil.WriteFile(filepath.Join(outDir, "public.pem"), publicKeyPEM, 0644)
+	return ioutil.WriteFile(filepath.Join(outDir, "public.pem"), publicKeyPEM, 0o644)
 }

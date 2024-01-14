@@ -16,14 +16,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logging.Log
-var recover bool
+var (
+	log     = logging.Log
+	recover bool
+)
 
 const (
 	use   = "new"
 	short = "Create new blockchain network"
 	long  = "Create new blockchain network from genesis file"
 )
+
 const (
 	sekaiVersionFlag  = "sekai-version"
 	interxVersionFlag = "interx-version"
@@ -90,7 +93,7 @@ func mainNew(cmd *cobra.Command) {
 
 	cfg.Recover = recover
 	log.Traceln(recover)
-	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
+	// todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
 	// temp remove docker restarting, only need once after firewalld instalation
 	// err = dockerManager.RestartDockerService()
 	errors.HandleFatalErr("Restarting docker service", err)

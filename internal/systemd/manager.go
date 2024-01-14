@@ -155,7 +155,7 @@ func (s *ServiceManager) StopService(ctx context.Context) error {
 }
 
 // EnableService enables the specified service to start on boot.
-func (s *ServiceManager) EnableService(ctx context.Context, runtime bool, force bool) error {
+func (s *ServiceManager) EnableService(ctx context.Context, runtime, force bool) error {
 	_, changes, err := s.connection.EnableUnitFilesContext(ctx, []string{s.serviceName}, runtime, force)
 	if err != nil {
 		return fmt.Errorf("failed to enable service: %s", err.Error())

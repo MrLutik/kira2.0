@@ -46,7 +46,7 @@ type KiraConfig struct {
 	InterxDebFileName   string                 // fileName of interx deb file
 	SecretsFolder       string                 // path where mnemonics.env and node keys located
 	TimeBetweenBlocks   time.Duration          // Awaiting time between blocks
-	KiraConfigFilePath  string                 //string to toml km2 config file //default /home/$USER/.config/kira2/kiraConfig.toml
+	KiraConfigFilePath  string                 // string to toml km2 config file //default /home/$USER/.config/kira2/kiraConfig.toml
 	ConfigTomlValues    []TomlValue            //`toml:"-"` // List of configs for update
 	Recover             bool                   `toml:"-"` // switch for recover mode
 	MasterMnamonicSet   *vlg.MasterMnemonicSet `toml:"-"`

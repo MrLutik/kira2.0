@@ -62,7 +62,7 @@ func (m *MonitoringService) GetValopersInfo(ctx context.Context, interxPort stri
 // GetTopForValidator retrieves the top value for the validator with the specified
 // validatorAddress using the provided context and interxPort. It returns the top
 // value or an error if the validator address is not found.
-func (m *MonitoringService) GetTopForValidator(ctx context.Context, interxPort string, validatorAddress string) (string, error) {
+func (m *MonitoringService) GetTopForValidator(ctx context.Context, interxPort, validatorAddress string) (string, error) {
 	response, err := doGetValopersQuery(ctx, m.httpClient, interxPort, getQueryTimeout)
 	if err != nil {
 		log.Errorf("GET query error: %s", err)

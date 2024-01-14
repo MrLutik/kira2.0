@@ -43,7 +43,7 @@ func CopyFile(src, dst string) error {
 
 func CreateDirPath(dirPath string) error {
 	log.Debugf("CreateDirPath(): Creating dir path: <%s>\n", dirPath)
-	err := os.MkdirAll(dirPath, 0755) // 0755 are the standard permissions for directories.
+	err := os.MkdirAll(dirPath, 0o755) // 0755 are the standard permissions for directories.
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func CheckIfFileExist(filePath string) (bool, error) {
 }
 
 func GetCurrentOSUser() *user.User {
-	//geting curent user home folder even if it runned by sudo
+	// geting curent user home folder even if it runned by sudo
 	sudoUser := os.Getenv("SUDO_USER")
 
 	if sudoUser != "" {

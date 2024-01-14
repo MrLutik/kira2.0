@@ -99,7 +99,7 @@ func (f *FirewalldController) RemoveAllowRuleIp(ip, zoneName string) (string, er
 	return string(out), err
 }
 
-func (f *FirewalldController) AddRichRule(rule string, zoneName string) (string, error) {
+func (f *FirewalldController) AddRichRule(rule, zoneName string) (string, error) {
 	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="%s"`, zoneName, rule))
 	return string(out), err
 }

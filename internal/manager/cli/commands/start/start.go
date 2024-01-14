@@ -50,7 +50,7 @@ func mainStart(cmd *cobra.Command) {
 	cfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
 
-	//todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
+	// todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts

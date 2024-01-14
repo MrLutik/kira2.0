@@ -42,6 +42,7 @@ func OpenPort() *cobra.Command {
 
 	return openPortCmd
 }
+
 func validateFlags(cmd *cobra.Command) error {
 	portToOpen, err := cmd.Flags().GetString("port")
 	if err != nil {

@@ -39,6 +39,7 @@ func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (mastermnemonic
 
 	return mastermnemonic, nil
 }
+
 func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg.MasterMnemonicSet, error) {
 	log := logging.Log
 	log.Debugf("GenerateMnemonicFromMaster: masterMnemonic:\n%s", masterMnemonic)
@@ -124,7 +125,6 @@ func (h *HelperManager) SetEmptyValidatorState(ctx context.Context) error {
 	err := osutils.CreateFileWithData(tmpFilePath, []byte(emptyState))
 	if err != nil {
 		return fmt.Errorf("unable to create file <%s>, error: %s", tmpFilePath, err)
-
 	}
 	sekaidDataFoder := h.config.SekaidHome + "/data"
 	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidDataFoder)})

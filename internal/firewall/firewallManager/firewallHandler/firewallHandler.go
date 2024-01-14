@@ -125,7 +125,7 @@ func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, docker
 }
 
 // blacklisting ip, still thinking if i shoud do realoading in this func or latter seperate, because reloading taking abit time
-func (fh *FirewallHandler) BlackListIP(ip string, zoneName string) error {
+func (fh *FirewallHandler) BlackListIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck != nil {
 		fh.firewalldController.RejectIp(ip, zoneName)
@@ -184,5 +184,3 @@ func (fh *FirewallHandler) RemoveFromWhitelistIP(ip, zoneName string) error {
 	}
 	return nil
 }
-
-

@@ -42,6 +42,7 @@ func ClosePort() *cobra.Command {
 
 	return closePortCmd
 }
+
 func validateFlags(cmd *cobra.Command) error {
 	portToClose, err := cmd.Flags().GetString("port")
 	if err != nil {

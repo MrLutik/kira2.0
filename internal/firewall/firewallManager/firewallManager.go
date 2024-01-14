@@ -46,6 +46,7 @@ func NewFirewallConfig(kiraCfg *config.KiraConfig) *FirewallConfig {
 		},
 	}
 }
+
 func NewFirewallManager(dockerManager *docker.DockerManager, kiraCfg *config.KiraConfig) *FirewallManager {
 	cfg := NewFirewallConfig(kiraCfg)
 	c := firewallController.NewFireWalldController(cfg.ZoneName)
@@ -62,7 +63,7 @@ func (fm *FirewallManager) CheckFirewallSetUp(ctx context.Context) (bool, error)
 		return false, fmt.Errorf("firewalld is not installed on the system")
 	}
 
-	//check if validator zone exist
+	// check if validator zone exist
 	check, err := fm.FirewallHandler.CheckFirewallZone(fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return false, fmt.Errorf("error while checking validator zone %w", err)
@@ -161,7 +162,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("%w", err)
 	}
 
-	//adding interface that has internet acces
+	// adding interface that has internet acces
 	log.Infof("Adding interface that has internet acces\n")
 	internetInterface := osutils.GetInternetInterface()
 	o, err = fm.FirewalldController.AddInterfaceToTheZone(internetInterface, fm.FirewallConfig.ZoneName)
@@ -199,7 +200,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 	// os.Exit(1)
-	//adding docker to the zone and enabling routing
+	// adding docker to the zone and enabling routing
 	log.Infof("Adding docker0 interface to the zone and enabling routing\n")
 	o, err = fm.FirewalldController.AddInterfaceToTheZone("docker0", fm.FirewallConfig.ZoneName)
 	if err != nil {

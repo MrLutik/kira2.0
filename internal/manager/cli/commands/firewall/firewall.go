@@ -58,7 +58,6 @@ func validateFlags(cmd *cobra.Command) error {
 }
 
 func mainFirewall(cmd *cobra.Command) {
-
 	kiraCfg, err := configFileController.ReadOrCreateConfig()
 
 	log.Println("validating flags")
@@ -93,7 +92,6 @@ func mainFirewall(cmd *cobra.Command) {
 		err = fm.SetUpFirewall(ctx)
 		errors.HandleFatalErr("Error while closing ports", err)
 	}
-
 }
 
 // checks if only 1 flag is set to true

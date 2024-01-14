@@ -21,5 +21,4 @@ func (i *InterxManager) MustRunInterx(ctx context.Context) {
 	errors.HandleFatalErr(fmt.Sprintf("Cannot start '%s' container", i.config.InterxContainerName), err)
 	err = i.startInterxBinInContainer(ctx)
 	errors.HandleFatalErr(fmt.Sprintf("Cannot start 'interx' bin in '%s' container", i.config.InterxContainerName), err)
-
 }
