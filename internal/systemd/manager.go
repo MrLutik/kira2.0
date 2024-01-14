@@ -10,13 +10,13 @@ import (
 	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
-var log = logging.Log
-
 type ServiceManager struct {
 	connection  *dbus.Conn
 	serviceName string
 	modeAction  string
 }
+
+var log = logging.Log
 
 func NewServiceManager(ctx context.Context, serviceName, mode string) (*ServiceManager, error) {
 	conn, err := dbus.NewWithContext(ctx)
