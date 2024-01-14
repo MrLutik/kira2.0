@@ -81,7 +81,7 @@ func Join() *cobra.Command {
 func validateFlags(cmd *cobra.Command) error {
 	ip, err := cmd.Flags().GetString("ip")
 	if err != nil {
-		return fmt.Errorf("error retrieving 'ip' flag: %s", err)
+		return fmt.Errorf("error retrieving 'ip' flag: %w", err)
 	}
 	if !isValidIP(ip) {
 		return fmt.Errorf("'%s' is not a valid IP address", ip)
@@ -89,7 +89,7 @@ func validateFlags(cmd *cobra.Command) error {
 
 	interxPort, err := cmd.Flags().GetString("interx-port")
 	if err != nil {
-		return fmt.Errorf("error retrieving 'interx-port' flag: %s", err)
+		return fmt.Errorf("error retrieving 'interx-port' flag: %w", err)
 	}
 	if !isValidPort(interxPort) {
 		return fmt.Errorf("'%s' is not a valid Interx port", interxPort)
@@ -97,7 +97,7 @@ func validateFlags(cmd *cobra.Command) error {
 
 	rpcPort, err := cmd.Flags().GetString("rpc-port")
 	if err != nil {
-		return fmt.Errorf("error retrieving 'rpc-port' flag: %s", err)
+		return fmt.Errorf("error retrieving 'rpc-port' flag: %w", err)
 	}
 	if !isValidPort(rpcPort) {
 		return fmt.Errorf("'%s' is not a valid Sekaid RPC port", rpcPort)
@@ -105,7 +105,7 @@ func validateFlags(cmd *cobra.Command) error {
 
 	p2pPort, err := cmd.Flags().GetString("p2p-port")
 	if err != nil {
-		return fmt.Errorf("error retrieving 'p2p-port' flag: %s", err)
+		return fmt.Errorf("error retrieving 'p2p-port' flag: %w", err)
 	}
 	if !isValidPort(p2pPort) {
 		return fmt.Errorf("'%s' is not a valid Sekaid P2P port", p2pPort)
@@ -113,11 +113,11 @@ func validateFlags(cmd *cobra.Command) error {
 
 	_, err = cmd.Flags().GetString(sekaiVersionFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving %s flag: %s", sekaiVersionFlag, err)
+		return fmt.Errorf("error retrieving %s flag: %w", sekaiVersionFlag, err)
 	}
 	_, err = cmd.Flags().GetString(interxVersionFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving %s flag: %s", interxVersionFlag, err)
+		return fmt.Errorf("error retrieving %s flag: %w", interxVersionFlag, err)
 	}
 	return nil
 }

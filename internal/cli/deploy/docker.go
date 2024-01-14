@@ -11,7 +11,7 @@ func installDocker(client *ssh.Client) error {
 	session, err := client.NewSession()
 	if err != nil {
 		log.Errorln("Failed to create session: ", err)
-		return fmt.Errorf("Failed to create session: %v", err)
+		return fmt.Errorf("failed to create session: %w", err)
 	}
 	defer session.Close()
 
@@ -27,7 +27,7 @@ func installDocker(client *ssh.Client) error {
 	_, err = session.Output(installCmd)
 	if err != nil {
 		log.Errorln("Failed to install Docker: ", err)
-		return fmt.Errorf("Failed to install Docker: %v", err)
+		return fmt.Errorf("failed to install Docker: %w", err)
 	}
 
 	return nil
@@ -37,7 +37,7 @@ func installDocker(client *ssh.Client) error {
 func checkDocker(client *ssh.Client) (string, error) {
 	session, err := client.NewSession()
 	if err != nil {
-		return "", fmt.Errorf("Failed to create SSH session: %v", err)
+		return "", fmt.Errorf("failed to create SSH session: %w", err)
 	}
 	defer session.Close()
 
@@ -45,7 +45,7 @@ func checkDocker(client *ssh.Client) (string, error) {
 	log.Info("Checking if Docker is installed on the remote machine...")
 	dockerVersionBytes, err := session.Output("docker --version")
 	if err != nil {
-		return "", fmt.Errorf("Docker not found on the remote machine: %v", err)
+		return "", fmt.Errorf("docker not found on the remote machine: %w", err)
 	}
 
 	dockerVersion := strings.Trim(string(dockerVersionBytes), "\n")

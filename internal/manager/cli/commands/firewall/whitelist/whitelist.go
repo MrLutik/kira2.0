@@ -60,20 +60,20 @@ func Whitelist() *cobra.Command {
 func validateFlags(cmd *cobra.Command) error {
 	ip, err := cmd.Flags().GetString(ipFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving '%s' flag: %s", ipFlag, err)
+		return fmt.Errorf("error retrieving '%s' flag: %w", ipFlag, err)
 	}
 	check, err := osutils.CheckIfIPIsValid(ip)
 	if err != nil || !check {
-		return fmt.Errorf("cannot parse ip <%v>: %s", ip, err)
+		return fmt.Errorf("cannot parse ip <%v>: %w", ip, err)
 	}
 
 	add, err := cmd.Flags().GetBool(addingFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving '%s' flag: %s", addingFlag, err)
+		return fmt.Errorf("error retrieving '%s' flag: %w", addingFlag, err)
 	}
 	remove, err := cmd.Flags().GetBool(removingFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving '%s' flag: %s", removingFlag, err)
+		return fmt.Errorf("error retrieving '%s' flag: %w", removingFlag, err)
 	}
 
 	if add && remove {

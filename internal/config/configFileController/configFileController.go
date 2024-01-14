@@ -18,14 +18,14 @@ func ChangeConfigFile(cfg *config.KiraConfig) error {
 	filePath, configPath := configHandler.GetConfigFilePath()
 	okPath, err := osutils.CheckItPathExist(configPath)
 	if err != nil {
-		return fmt.Errorf("error while checking if %s exist, error:%s", configPath, err)
+		return fmt.Errorf("error while checking if %s exist, error:%w", configPath, err)
 	}
 	if !okPath {
 		return fmt.Errorf("config path <%s> does not exist", configPath)
 	}
 	err = configHandler.WriteConfigFile(filePath, cfg)
 	if err != nil {
-		return fmt.Errorf("error while writing cfg file: %s", err)
+		return fmt.Errorf("error while writing cfg file: %w", err)
 	}
 	return nil
 }
@@ -64,7 +64,7 @@ func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	}
 	cfg, err = configHandler.ReadConfigFile(filePath)
 	if err != nil {
-		return cfg, fmt.Errorf("cannot read KiraConfig from file: <%s>, %s", filePath, err)
+		return cfg, fmt.Errorf("cannot read KiraConfig from file: <%s>, %w", filePath, err)
 	}
 	if cfg == nil {
 		return cfg, fmt.Errorf("cannot read config from: <%s>, kiraconfig is NIL", filePath)

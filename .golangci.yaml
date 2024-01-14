@@ -48,12 +48,12 @@ linters:
     - decorder
     - dogsled
     - errcheck
-  
+    - errname
+    - errorlint
+
   # enable:
   #   - cyclop
   #   - errchkjson
-  #   - errname
-  #   - errorlint
   #   - exhaustruct
   #   - exportloopref
   #   - forbidigo

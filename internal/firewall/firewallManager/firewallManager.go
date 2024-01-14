@@ -80,7 +80,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	log.Infof("Restarting docker service\n")
 	err := fm.DockerManager.RestartDockerService()
 	if err != nil {
-		return fmt.Errorf("cannot restart docker service: %s", err)
+		return fmt.Errorf("cannot restart docker service: %w", err)
 	}
 	log.Infof("Checking if docker is running\n")
 	err = fm.DockerManager.VerifyDockerInstallation(ctx)
@@ -214,7 +214,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	log.Infof("Restarting docker service\n")
 	err = fm.DockerManager.RestartDockerService()
 	if err != nil {
-		return fmt.Errorf("cannot restart docker service: %s", err)
+		return fmt.Errorf("cannot restart docker service: %w", err)
 	}
 	return nil
 }
@@ -223,7 +223,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 func (fm *FirewallManager) ClostAllOpenedPorts(ctx context.Context) error {
 	_, ports, err := fm.FirewalldController.GetOpenedPorts(fm.FirewallConfig.ZoneName)
 	if err != nil {
-		return fmt.Errorf("cannot get opened ports: %s", err)
+		return fmt.Errorf("cannot get opened ports: %w", err)
 	}
 
 	var portsToClose []types.Port
@@ -231,19 +231,19 @@ func (fm *FirewallManager) ClostAllOpenedPorts(ctx context.Context) error {
 	for _, p := range ports {
 		port, err := fm.FirewallHandler.ConvertFirewalldPortToKM2Port(p)
 		if err != nil {
-			return fmt.Errorf("convert port: %s", err)
+			return fmt.Errorf("convert port: %w", err)
 		}
 		portsToClose = append(portsToClose, port)
 	}
 
 	err = fm.FirewallHandler.CheckPorts(portsToClose)
 	if err != nil {
-		return fmt.Errorf("cannot while checking ports are valid: %s", err)
+		return fmt.Errorf("cannot while checking ports are valid: %w", err)
 	}
 
 	err = fm.FirewallHandler.ClosePorts(portsToClose, fm.FirewallConfig.ZoneName)
 	if err != nil {
-		return fmt.Errorf("cannot close ports: %s", err)
+		return fmt.Errorf("cannot close ports: %w", err)
 	}
 
 	o, err := fm.FirewalldController.ReloadFirewall()
@@ -258,11 +258,11 @@ func (fm *FirewallManager) OpenConfigPorts(ctx context.Context) error {
 	portsToOpen := fm.FirewallConfig.PortsToOpen
 	err := fm.FirewallHandler.CheckPorts(portsToOpen)
 	if err != nil {
-		return fmt.Errorf("cannot while checking ports are valid: %s", err)
+		return fmt.Errorf("cannot while checking ports are valid: %w", err)
 	}
 	err = fm.FirewallHandler.OpenPorts(portsToOpen, fm.FirewallConfig.ZoneName)
 	if err != nil {
-		return fmt.Errorf("cannot open ports: %s", err)
+		return fmt.Errorf("cannot open ports: %w", err)
 	}
 	o, err := fm.FirewalldController.ReloadFirewall()
 	if err != nil {
