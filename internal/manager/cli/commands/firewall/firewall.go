@@ -33,7 +33,9 @@ func Firewall() *cobra.Command {
 		Run: func(cmd *cobra.Command, _ []string) {
 			if err := validateFlags(cmd); err != nil {
 				log.Errorf("Some flag are not valid: %s", err)
-				cmd.Help()
+				if err := cmd.Help(); err != nil {
+					log.Fatalf("Error displaying help: %s", err)
+				}
 				return
 			}
 			mainFirewall(cmd)
@@ -59,6 +61,7 @@ func validateFlags(cmd *cobra.Command) error {
 
 func mainFirewall(cmd *cobra.Command) {
 	kiraCfg, err := configFileController.ReadOrCreateConfig()
+	errors.HandleFatalErr("Error while reading cfg file", err)
 
 	log.Println("validating flags")
 
