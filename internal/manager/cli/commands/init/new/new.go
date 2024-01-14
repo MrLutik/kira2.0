@@ -16,20 +16,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	log     = logging.Log
-	recover bool
-)
-
 const (
+	// Command information
 	use   = "new"
 	short = "Create new blockchain network"
 	long  = "Create new blockchain network from genesis file"
-)
 
-const (
+	// Flags naming
 	sekaiVersionFlag  = "sekai-version"
 	interxVersionFlag = "interx-version"
+)
+
+var (
+	log     = logging.Log
+	recover bool
 )
 
 func New() *cobra.Command {
