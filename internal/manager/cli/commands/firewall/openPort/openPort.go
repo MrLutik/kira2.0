@@ -12,9 +12,14 @@ import (
 )
 
 const (
+	// Command information
 	use   = "open-port"
 	short = "subcommand for port opening"
 	long  = "long description"
+
+	// Flags
+	portFlag     = "port"
+	typeOfIPFlag = "type"
 )
 
 var log = logging.Log
@@ -27,35 +32,41 @@ func OpenPort() *cobra.Command {
 		Run: func(cmd *cobra.Command, _ []string) {
 			if err := validateFlags(cmd); err != nil {
 				log.Errorf("Some flag is not valid: %s", err)
-				cmd.Help()
+				if err := cmd.Help(); err != nil {
+					log.Fatalf("Error displaying help: %s", err)
+				}
 				return
 			}
 			mainOpenPort(cmd)
 		},
 	}
 
-	openPortCmd.Flags().String("port", "", "Port to open (between 0 and 65535)")
-	openPortCmd.Flags().String("type", "", "<tcp> or <udp>")
+	openPortCmd.Flags().String(portFlag, "", "Port to open (between 0 and 65535)")
+	openPortCmd.Flags().String(typeOfIPFlag, "", "<tcp> or <udp>")
 
-	openPortCmd.MarkFlagRequired("port")
-	openPortCmd.MarkFlagRequired("type")
+	if err := openPortCmd.MarkFlagRequired(portFlag); err != nil {
+		log.Fatalf("Failed to mark '%s' flag as required: %s", portFlag, err)
+	}
+	if err := openPortCmd.MarkFlagRequired(typeOfIPFlag); err != nil {
+		log.Fatalf("Failed to mark '%s' flag as required: %s", typeOfIPFlag, err)
+	}
 
 	return openPortCmd
 }
 
 func validateFlags(cmd *cobra.Command) error {
-	portToOpen, err := cmd.Flags().GetString("port")
+	portToOpen, err := cmd.Flags().GetString(portFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving 'port' flag: %s", err)
+		return fmt.Errorf("error retrieving '%s' flag: %s", portFlag, err)
 	}
 	check, err := osutils.CheckIfPortIsValid(portToOpen)
 	if err != nil || !check {
 		return fmt.Errorf("cannot parse port <%v>: %s", portToOpen, err)
 	}
 
-	portType, err := cmd.Flags().GetString("type")
+	portType, err := cmd.Flags().GetString(typeOfIPFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving 'type' flag: %s", err)
+		return fmt.Errorf("error retrieving '%s' flag: %s", typeOfIPFlag, err)
 	}
 	if portType != "tcp" && portType != "udp" {
 		return fmt.Errorf("wrong port type: <%s>, can only be <tcp> or <udp>", portType)
