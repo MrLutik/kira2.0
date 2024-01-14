@@ -16,18 +16,14 @@ import (
 	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
-var log = logging.Log
-
-//	func NewFirewallHandler(dockerManager *docker.DockerManager, firewalldController *firewallController.FirewalldController) *FirewallHandler {
-//		return &FirewallHandler{firewalldController: firewalldController, dockerManager: dockerManager}
-//	}
-func NewFirewallHandler(firewalldController *firewallController.FirewalldController) *FirewallHandler {
-	return &FirewallHandler{firewalldController: firewalldController}
-}
-
 type FirewallHandler struct {
 	firewalldController *firewallController.FirewalldController
-	// dockerManager       *docker.DockerManager
+}
+
+var log = logging.Log
+
+func NewFirewallHandler(firewalldController *firewallController.FirewalldController) *FirewallHandler {
+	return &FirewallHandler{firewalldController: firewalldController}
 }
 
 func (fh *FirewallHandler) OpenPorts(portsToOpen []types.Port, zoneName string) error {
