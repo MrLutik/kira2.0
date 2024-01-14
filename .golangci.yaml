@@ -45,10 +45,10 @@ linters:
     - bodyclose
     - containedctx
     - contextcheck
+    - decorder
   
   # enable:
   #   - cyclop
-  #   - decorder
   #   - dogsled
   #   - errcheck
   #   - errchkjson
