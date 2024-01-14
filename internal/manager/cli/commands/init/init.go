@@ -7,13 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logging.Log
-
 const (
 	use   = "init"
 	short = "init your node"
 	long  = "init your node with creating new network or joining to existing one"
 )
+
+var log = logging.Log
 
 func Init() *cobra.Command {
 	log.Info("Adding `firewall` command...")
