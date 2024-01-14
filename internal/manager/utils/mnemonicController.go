@@ -85,9 +85,9 @@ func (h *HelperManager) GenerateMnemonic() (masterMnemonic bip39.Mnemonic, err e
 }
 
 func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
+	// TODO path set as variables or constants
 	log := logging.Log
 	sekaidConfigFolder := h.config.SekaidHome + "/config"
-	// err := h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder+"/priv_validator_key.json", h.config.SekaidContainerName)
 	_, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome)})
 	if err != nil {
 		return fmt.Errorf("unable to create <%s> folder, err: %s", h.config.SekaidHome, err)
@@ -102,10 +102,15 @@ func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 		return err
 	}
 
-	osutils.CopyFile(h.config.SecretsFolder+"/validator_node_key.json", h.config.SecretsFolder+"/node_key.json")
+	err = osutils.CopyFile(h.config.SecretsFolder+"/validator_node_key.json", h.config.SecretsFolder+"/node_key.json")
+	if err != nil {
+		log.Errorf("copying file error: %s", err)
+		return err
+	}
+
 	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/node_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("cannot send validator_node_key.json to container\n")
+		log.Errorf("cannot send node_key.json to container")
 		return err
 	}
 	return nil

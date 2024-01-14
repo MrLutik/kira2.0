@@ -46,11 +46,11 @@ linters:
     - containedctx
     - contextcheck
     - decorder
+    - dogsled
+    - errcheck
   
   # enable:
   #   - cyclop
-  #   - dogsled
-  #   - errcheck
   #   - errchkjson
   #   - errname
   #   - errorlint
