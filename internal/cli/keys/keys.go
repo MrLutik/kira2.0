@@ -15,6 +15,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	// Flags
+	typeFlag            = "type"
+	lengthFlag          = "length"
+	outputDirectoryFlag = "out"
+)
+
 // log is the logger instance for this package.
 var log = logging.Log
 
@@ -29,9 +36,24 @@ func Generate() *cobra.Command {
 		Short: "Generates RSA or ECDSA keys",
 		Long:  "Generates RSA or ECDSA keys with given length and output directory",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			keyType, _ := cmd.Flags().GetString("type")
-			keyLength, _ := cmd.Flags().GetInt("length")
-			outDir, _ := cmd.Flags().GetString("out")
+			keyType, err := cmd.Flags().GetString(typeFlag)
+			if err != nil {
+				// Handle the error, for example, log it and return or exit
+				log.Errorf("Failed to get key type: %s", err)
+				return err // or os.Exit(1) or any other appropriate action
+			}
+
+			keyLength, err := cmd.Flags().GetInt(lengthFlag)
+			if err != nil {
+				log.Errorf("Failed to get key length: %s", err)
+				return err // or os.Exit(1) or any other appropriate action
+			}
+
+			outDir, err := cmd.Flags().GetString(outputDirectoryFlag)
+			if err != nil {
+				log.Errorf("Failed to get output directory: %s", err)
+				return err // or os.Exit(1) or any other appropriate action
+			}
 
 			switch keyType {
 			case "rsa":
@@ -45,9 +67,9 @@ func Generate() *cobra.Command {
 		},
 	}
 
-	keysCmd.Flags().StringP("type", "t", "rsa", "Type of keys to generate (rsa, ecdsa)")
-	keysCmd.Flags().IntP("length", "l", 2048, "Length of keys to generate")
-	keysCmd.Flags().StringP("out", "o", ".", "Output directory for keys")
+	keysCmd.Flags().StringP(typeFlag, "t", "rsa", "Type of keys to generate (rsa, ecdsa)")
+	keysCmd.Flags().IntP(lengthFlag, "l", 2048, "Length of keys to generate")
+	keysCmd.Flags().StringP(outputDirectoryFlag, "o", ".", "Output directory for keys")
 
 	return keysCmd
 }
