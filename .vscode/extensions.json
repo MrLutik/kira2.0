@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "golang.go", // The official Go extension for language support, debugging, and tool integration
+        "streetsidesoftware.code-spell-checker", // A basic spell checker that works well with camelCase
+        "eamodio.gitlens", // Enhances the built-in Git capabilities
+    ],
+    "unwantedRecommendations": [
+        // List extensions here that you think should not be used in this project
+    ]
+}
