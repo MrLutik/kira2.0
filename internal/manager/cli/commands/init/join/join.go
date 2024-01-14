@@ -27,6 +27,11 @@ const (
 	// Flags naming
 	sekaiVersionFlag  = "sekai-version"
 	interxVersionFlag = "interx-version"
+	interxPortFlag    = "interx-port"
+	recoveringFlag    = "recover"
+	ipFlag            = "ip"
+	rpcPortFlag       = "rpc-port"
+	p2pPortFlag       = "p2p-port"
 
 	// Regular expression to match IPv4 and IPv6 addresses.
 	ipRegex = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}$`
@@ -49,23 +54,27 @@ func Join() *cobra.Command {
 		Run: func(cmd *cobra.Command, _ []string) {
 			if err := validateFlags(cmd); err != nil {
 				log.Errorf("Some flag is not valid: %s", err)
-				cmd.Help()
+				if err := cmd.Help(); err != nil {
+					log.Fatalf("Error displaying help: %s", err)
+				}
 				return
 			}
 			mainJoin(cmd)
 		},
 	}
 
-	joinCmd.Flags().String("ip", "", "IP address of the validator to join")
-	joinCmd.MarkFlagRequired("ip")
+	joinCmd.Flags().String(ipFlag, "", "IP address of the validator to join")
+	if err := joinCmd.MarkFlagRequired(ipFlag); err != nil {
+		log.Fatalf("Failed to mark '%s' flag as required: %s", ipFlag, err)
+	}
 
-	joinCmd.Flags().String("interx-port", "11000", "Interx port of the validator")
-	joinCmd.Flags().String("rpc-port", "26657", "Sekaid RPC port of the validator")
-	joinCmd.Flags().String("p2p-port", "26656", "Sekaid P2P port of the validator")
-	joinCmd.PersistentFlags().Bool("recover", false, "If true recover keys and mnemonic from master mnemonic, otherwise generate random one")
-
+	joinCmd.Flags().String(interxPortFlag, "11000", "Interx port of the validator")
+	joinCmd.Flags().String(rpcPortFlag, "26657", "Sekaid RPC port of the validator")
+	joinCmd.Flags().String(p2pPortFlag, "26656", "Sekaid P2P port of the validator")
+	joinCmd.PersistentFlags().Bool(recoveringFlag, false, "If true recover keys and mnemonic from master mnemonic, otherwise generate random one")
 	joinCmd.Flags().String(sekaiVersionFlag, "latest", "Set this flag to choose what sekai version will be initialized")
 	joinCmd.Flags().String(interxVersionFlag, "latest", "Set this flag to choose what interx version will be initialized")
+
 	return joinCmd
 }
 
@@ -148,11 +157,22 @@ func mainJoin(cmd *cobra.Command) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute*5)
 	defer cancelFunc()
 
-	// Skip errors here due to validateFlags method
-	ip, _ := cmd.Flags().GetString("ip")
-	interxPort, _ := cmd.Flags().GetString("interx-port")
-	sekaidRPCPort, _ := cmd.Flags().GetString("rpc-port")
-	sekaidP2PPort, _ := cmd.Flags().GetString("p2p-port")
+	ip, err := cmd.Flags().GetString(ipFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", ipFlag), err)
+	}
+	interxPort, err := cmd.Flags().GetString(interxPortFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", interxPortFlag), err)
+	}
+	sekaidRPCPort, err := cmd.Flags().GetString(rpcPortFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", rpcPortFlag), err)
+	}
+	sekaidP2PPort, err := cmd.Flags().GetString(p2pPortFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", p2pPortFlag), err)
+	}
 
 	// Information about validator we need to join
 	joinerCfg := &manager.TargetSeedKiraConfig{
@@ -162,12 +182,24 @@ func mainJoin(cmd *cobra.Command) {
 		SekaidP2PPort: sekaidP2PPort,
 	}
 	joinerManager := manager.NewJoinerManager(joinerCfg)
-	recover, _ = cmd.Flags().GetBool("recover")
+	recover, err = cmd.Flags().GetBool(recoveringFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", recoveringFlag), err)
+	}
+
 	cfg, err := joinerManager.GenerateKiraConfig(ctx, recover)
 	errors.HandleFatalErr("Can't get kira config", err)
 
-	sekaiVersion, _ := cmd.Flags().GetString(sekaiVersionFlag)
-	interxVersion, _ := cmd.Flags().GetString(interxVersionFlag)
+	sekaiVersion, err := cmd.Flags().GetString(sekaiVersionFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", sekaiVersionFlag), err)
+	}
+
+	interxVersion, err := cmd.Flags().GetString(interxVersionFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", interxVersionFlag), err)
+	}
+
 	if sekaiVersion != cfg.SekaiVersion || interxVersion != cfg.InterxVersion {
 		cfg.SekaiVersion = sekaiVersion
 		cfg.InterxVersion = interxVersion
