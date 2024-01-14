@@ -57,16 +57,16 @@ func ClosePort() *cobra.Command {
 func validateFlags(cmd *cobra.Command) error {
 	portToClose, err := cmd.Flags().GetString(portFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving '%s' flag: %s", portFlag, err)
+		return fmt.Errorf("error retrieving '%s' flag: %w", portFlag, err)
 	}
 	check, err := osutils.CheckIfPortIsValid(portToClose)
 	if err != nil || !check {
-		return fmt.Errorf("cannot parse port <%v>: %s", portToClose, err)
+		return fmt.Errorf("cannot parse port <%v>: %w", portToClose, err)
 	}
 
 	portType, err := cmd.Flags().GetString(typeOfIPFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving '%s' flag: %s", typeOfIPFlag, err)
+		return fmt.Errorf("error retrieving '%s' flag: %w", typeOfIPFlag, err)
 	}
 	if portType != "tcp" && portType != "udp" {
 		return fmt.Errorf("wrong port type: <%s>, can only be <tcp> or <udp>", portType)

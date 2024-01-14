@@ -11,7 +11,7 @@ import (
 func checkPkg(client *ssh.Client, packageName string) (string, error) {
 	session, err := client.NewSession()
 	if err != nil {
-		return "", fmt.Errorf("Failed to create SSH session: %v", err)
+		return "", fmt.Errorf("failed to create SSH session: %w", err)
 	}
 	defer session.Close()
 
@@ -21,7 +21,7 @@ func checkPkg(client *ssh.Client, packageName string) (string, error) {
 	log.Infof("Checking if package %s is installed on the remote machine...", packageName)
 	pkgVersionBytes, err := session.Output(cmdString)
 	if err != nil {
-		return "", fmt.Errorf("Package %s not found on the remote machine: %v", packageName, err)
+		return "", fmt.Errorf("package %s not found on the remote machine: %w", packageName, err)
 	}
 
 	pkgVersion := strings.Trim(string(pkgVersionBytes), "\n")
@@ -33,7 +33,7 @@ func installPkg(path string) error {
 	installCmd := exec.Command("dpkg", "-i", path)
 	output, err := installCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("Failed to install package: %v", err)
+		return fmt.Errorf("failed to install package: %w", err)
 	}
 
 	log.Println(string(output))
@@ -43,7 +43,7 @@ func installPkg(path string) error {
 func downloadPkg(client *ssh.Client, url, path string) error {
 	session, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("Failed to create SSH session: %v", err)
+		return fmt.Errorf("failed to create SSH session: %w", err)
 	}
 	defer session.Close()
 
@@ -52,7 +52,7 @@ func downloadPkg(client *ssh.Client, url, path string) error {
 
 	log.Infof("Downloading package from URL: %s", url)
 	if err := session.Run(cmdString); err != nil {
-		return fmt.Errorf("Failed to download package: %v", err)
+		return fmt.Errorf("failed to download package: %w", err)
 	}
 
 	return nil

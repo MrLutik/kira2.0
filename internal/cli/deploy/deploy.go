@@ -77,12 +77,12 @@ func Node() *cobra.Command {
 func createSSHClient(host, privKeyPath string) (*ssh.Client, error) {
 	key, err := ioutil.ReadFile(privKeyPath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read private key: %v", err)
+		return nil, fmt.Errorf("unable to read private key: %w", err)
 	}
 
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse private key: %v", err)
+		return nil, fmt.Errorf("unable to parse private key: %w", err)
 	}
 
 	config := &ssh.ClientConfig{
@@ -95,7 +95,7 @@ func createSSHClient(host, privKeyPath string) (*ssh.Client, error) {
 
 	client, err := ssh.Dial("tcp", host+":22", config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial: %v", err)
+		return nil, fmt.Errorf("failed to dial: %w", err)
 	}
 
 	return client, nil
@@ -104,20 +104,20 @@ func createSSHClient(host, privKeyPath string) (*ssh.Client, error) {
 func forbidRootLogin(client *ssh.Client) error {
 	session, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed to create session: %v", err)
+		return fmt.Errorf("failed to create session: %w", err)
 	}
 	defer session.Close()
 
 	// Disable root login in sshd_config
 	_, err = session.Output("sed -i 's/^PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config")
 	if err != nil {
-		return fmt.Errorf("failed to disable root login: %v", err)
+		return fmt.Errorf("failed to disable root login: %w", err)
 	}
 
 	// Restart SSH service to apply changes
 	_, err = session.Output("service ssh restart")
 	if err != nil {
-		return fmt.Errorf("failed to restart SSH service: %v", err)
+		return fmt.Errorf("failed to restart SSH service: %w", err)
 	}
 
 	return nil
@@ -127,7 +127,7 @@ func checkOSAndHardware(client *ssh.Client) (string, error) {
 	// Check the operating system
 	session, err := client.NewSession()
 	if err != nil {
-		return "", fmt.Errorf("failed to create session: %v", err)
+		return "", fmt.Errorf("failed to create session: %w", err)
 	}
 	defer session.Close()
 
@@ -137,7 +137,7 @@ func checkOSAndHardware(client *ssh.Client) (string, error) {
 	} else if output, err := session.Output("cmd /c ver"); err == nil {
 		os = string(output)
 	} else {
-		return "", fmt.Errorf("failed to determine operating system: %v", err)
+		return "", fmt.Errorf("failed to determine operating system: %w", err)
 	}
 
 	// Check hardware resources

@@ -177,13 +177,13 @@ func hasInternetAccess(ifaceName string) bool {
 func CreateFileWithData(filePath string, data []byte) error {
 	file, err := os.Create(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
+		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer file.Close()
 
 	_, err = file.Write(data)
 	if err != nil {
-		return fmt.Errorf("failed to write data to file: %v", err)
+		return fmt.Errorf("failed to write data to file: %w", err)
 	}
 
 	return nil

@@ -567,7 +567,7 @@ func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, proc
 	log.Printf("Checking if %s is running inside container", processName)
 	check, _, err := dm.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
 	if err != nil {
-		return fmt.Errorf("cant check if procces is running inside container, %s", err)
+		return fmt.Errorf("cant check if procces is running inside container, %w", err)
 	}
 	if !check {
 		log.Warnf("process <%s> is not running inside <%s> container\n", processName, containerName)
@@ -577,12 +577,12 @@ func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, proc
 	out, err := dm.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeToStopWith), processName})
 	if err != nil {
 		log.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %v\n", processName, containerName, string(out), err)
-		return fmt.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %s", processName, containerName, string(out), err)
+		return fmt.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %w", processName, containerName, string(out), err)
 	}
 
 	check, _, err = dm.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
 	if err != nil {
-		return fmt.Errorf("cant check if procces is running inside container, %s", err)
+		return fmt.Errorf("cant check if procces is running inside container, %w", err)
 	}
 	if check {
 		log.Errorf("Process <%s> is still running inside <%s> container\n", processName, containerName)

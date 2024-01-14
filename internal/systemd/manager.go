@@ -39,7 +39,7 @@ func (s *ServiceManager) Close() {
 func (s *ServiceManager) CheckServiceExists(ctx context.Context) (bool, error) {
 	units, err := s.connection.ListUnitsByNamesContext(ctx, []string{s.serviceName})
 	if err != nil {
-		return false, fmt.Errorf("failed to get list of services: %s", err)
+		return false, fmt.Errorf("failed to get list of services: %w", err)
 	}
 
 	for _, unit := range units {
@@ -57,7 +57,7 @@ func (s *ServiceManager) CheckServiceExists(ctx context.Context) (bool, error) {
 func (s *ServiceManager) GetServiceStatus(ctx context.Context) (string, error) {
 	unitStates, err := s.connection.ListUnitsByNamesContext(ctx, []string{s.serviceName})
 	if err != nil {
-		return "", fmt.Errorf("failed to get list of units: %s", err)
+		return "", fmt.Errorf("failed to get list of units: %w", err)
 	}
 
 	unitStatus, err := s.connection.GetUnitPropertiesContext(ctx, s.serviceName)
@@ -67,7 +67,7 @@ func (s *ServiceManager) GetServiceStatus(ctx context.Context) (string, error) {
 
 	active, ok := unitStatus["ActiveState"].(string)
 	if !ok {
-		return "", fmt.Errorf("failed to determine unit file state: %s", err)
+		return "", fmt.Errorf("failed to determine unit file state: %w", err)
 	}
 
 	if active != unitStates[0].ActiveState {

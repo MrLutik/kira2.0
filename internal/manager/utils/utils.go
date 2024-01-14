@@ -109,7 +109,7 @@ func (h *HelperManager) getBlockHeight(ctx context.Context) (string, error) {
 	cmd := "sekaid status"
 	statusOutput, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", cmd})
 	if err != nil {
-		return "", fmt.Errorf("getting '%s' error: %s", cmd, err)
+		return "", fmt.Errorf("getting '%s' error: %w", cmd, err)
 	}
 
 	var status struct { // anon structure which represents the partial response from `sekaid status`
@@ -154,7 +154,7 @@ func (h *HelperManager) GivePermissionToAddress(ctx context.Context, permissionT
 	err = h.AwaitNextBlock(ctx, h.config.TimeBetweenBlocks)
 	if err != nil {
 		log.Errorf("Awaiting error: %s", err)
-		return fmt.Errorf("awaiting error: %s", err)
+		return fmt.Errorf("awaiting error: %w", err)
 	}
 
 	txData, err := h.GetTxQuery(ctx, data.Txhash)
@@ -324,7 +324,7 @@ func (h *HelperManager) UpsertIdentityRecord(ctx context.Context, address, accou
 	err = h.AwaitNextBlock(ctx, h.config.TimeBetweenBlocks)
 	if err != nil {
 		log.Errorf("Awaiting error: %s", err)
-		return fmt.Errorf("awaiting error: %s", err)
+		return fmt.Errorf("awaiting error: %w", err)
 	}
 
 	txData, err := h.GetTxQuery(ctx, data.Txhash)

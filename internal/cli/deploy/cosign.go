@@ -28,14 +28,14 @@ func installCosign(session *ssh.Session) error {
 func verifyCosignSignature(client *ssh.Client, pkgPath, sigPath string) error {
 	session, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("Failed to create SSH session: %v", err)
+		return fmt.Errorf("failed to create SSH session: %w", err)
 	}
 	defer session.Close()
 
 	// Check if cosign is installed
 	if err := checkCosignInstalled(session); err != nil {
 		if installErr := installCosign(session); installErr != nil {
-			return fmt.Errorf("Failed to install Cosign: %v", installErr)
+			return fmt.Errorf("failed to install Cosign: %w", installErr)
 		}
 	}
 
@@ -45,7 +45,7 @@ func verifyCosignSignature(client *ssh.Client, pkgPath, sigPath string) error {
 	// Run the command on the remote host
 	log.Info("Verifying Cosign signature...")
 	if err := session.Run(cmdString); err != nil {
-		return fmt.Errorf("Failed to verify Cosign signature: %v", err)
+		return fmt.Errorf("failed to verify Cosign signature: %w", err)
 	}
 
 	return nil

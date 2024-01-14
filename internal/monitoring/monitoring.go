@@ -60,7 +60,7 @@ func doHTTPGetQuery(ctx context.Context, httpClient *http.Client, interxPort str
 
 	if resp.StatusCode != http.StatusOK {
 		log.Errorf("HTTP request failed with status: %d", resp.StatusCode)
-		return fmt.Errorf("HTTP request failed with status: %d", resp.StatusCode)
+		return fmt.Errorf("http request failed with status: %d", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)

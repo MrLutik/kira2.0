@@ -80,13 +80,13 @@ func mainMaitenance(cmd *cobra.Command) error {
 	log.Debugln(pause, unpause, activate, status)
 	kiraCfg, err := configFileController.ReadOrCreateConfig()
 	if err != nil {
-		return fmt.Errorf("error while geting kira manager config: %s", err)
+		return fmt.Errorf("error while geting kira manager config: %w", err)
 	}
 	log.Debugf("kira manager cfg: %+v", kiraCfg)
 	ctx := context.Background()
 	cm, err := docker.NewTestContainerManager()
 	if err != nil {
-		return fmt.Errorf("error while geting containerManager: %s", err)
+		return fmt.Errorf("error while geting containerManager: %w", err)
 	}
 
 	switch {
