@@ -28,18 +28,20 @@ func Maintenance() *cobra.Command {
 		Run: func(cmd *cobra.Command, _ []string) {
 			if err := validateFlags(cmd); err != nil {
 				log.Errorf("Some flag are not valid: %s", err)
-				cmd.Help()
+				if err := cmd.Help(); err != nil {
+					log.Fatalf("Error displaying help: %s", err)
+				}
 				return
 			}
 			if err := mainMaitenance(cmd); err != nil {
 				log.Errorf("Error while executing maintenance command: %s", err)
-				cmd.Help()
+				if err := cmd.Help(); err != nil {
+					log.Fatalf("Error displaying help: %s", err)
+				}
 				return
 			}
 		},
 	}
-
-	// maintenanceCmd.AddCommand(openport.OpenPort())
 
 	maintenanceCmd.Flags().Bool("pause", false, "Set this flag to pause block validation by node")
 	maintenanceCmd.Flags().Bool("unpause", false, "Set this flag to unpause block validation by node")
