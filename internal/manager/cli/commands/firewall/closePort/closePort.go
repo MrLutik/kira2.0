@@ -12,9 +12,14 @@ import (
 )
 
 const (
+	// Command information
 	use   = "close-port"
 	short = "subcommand for port closing"
 	long  = "long description"
+
+	// Flags
+	portFlag     = "port"
+	typeOfIPFlag = "type"
 )
 
 var log = logging.Log
@@ -27,35 +32,41 @@ func ClosePort() *cobra.Command {
 		Run: func(cmd *cobra.Command, _ []string) {
 			if err := validateFlags(cmd); err != nil {
 				log.Errorf("Some flag is not valid: %s", err)
-				cmd.Help()
+				if err := cmd.Help(); err != nil {
+					log.Fatalf("Error displaying help: %s", err)
+				}
 				return
 			}
 			mainClosePort(cmd)
 		},
 	}
 
-	closePortCmd.Flags().String("port", "", "Port to close (between 0 and 65535)")
-	closePortCmd.Flags().String("type", "", "<tcp> or <udp>")
+	closePortCmd.Flags().String(portFlag, "", "Port to close (between 0 and 65535)")
+	closePortCmd.Flags().String(typeOfIPFlag, "", "<tcp> or <udp>")
 
-	closePortCmd.MarkFlagRequired("port")
-	closePortCmd.MarkFlagRequired("type")
+	if err := closePortCmd.MarkFlagRequired(portFlag); err != nil {
+		log.Fatalf("Failed to mark '%s' flag as required: %s", portFlag, err)
+	}
+	if err := closePortCmd.MarkFlagRequired(typeOfIPFlag); err != nil {
+		log.Fatalf("Failed to mark '%s' flag as required: %s", typeOfIPFlag, err)
+	}
 
 	return closePortCmd
 }
 
 func validateFlags(cmd *cobra.Command) error {
-	portToClose, err := cmd.Flags().GetString("port")
+	portToClose, err := cmd.Flags().GetString(portFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving 'port' flag: %s", err)
+		return fmt.Errorf("error retrieving '%s' flag: %s", portFlag, err)
 	}
 	check, err := osutils.CheckIfPortIsValid(portToClose)
 	if err != nil || !check {
 		return fmt.Errorf("cannot parse port <%v>: %s", portToClose, err)
 	}
 
-	portType, err := cmd.Flags().GetString("type")
+	portType, err := cmd.Flags().GetString(typeOfIPFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving 'type' flag: %s", err)
+		return fmt.Errorf("error retrieving '%s' flag: %s", typeOfIPFlag, err)
 	}
 	if portType != "tcp" && portType != "udp" {
 		return fmt.Errorf("wrong port type: <%s>, can only be <tcp> or <udp>", portType)
@@ -68,10 +79,10 @@ func mainClosePort(cmd *cobra.Command) {
 	var port types.Port
 	var err error
 
-	port.Port, err = cmd.Flags().GetString("port")
-	errors.HandleFatalErr("cannot get port flag", err)
-	port.Type, err = cmd.Flags().GetString("type")
-	errors.HandleFatalErr("cannot get type flag", err)
+	port.Port, err = cmd.Flags().GetString(portFlag)
+	errors.HandleFatalErr(fmt.Sprintf("cannot get '%s' flag", portFlag), err)
+	port.Type, err = cmd.Flags().GetString(typeOfIPFlag)
+	errors.HandleFatalErr(fmt.Sprintf("cannot get '%s' flag", typeOfIPFlag), err)
 
 	fc := firewallController.NewFireWalldController("validator")
 	log.Printf("Adding %s port with %s type\n", port.Port, port.Type)
