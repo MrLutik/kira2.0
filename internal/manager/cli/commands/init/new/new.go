@@ -41,7 +41,9 @@ func New() *cobra.Command {
 		Run: func(cmd *cobra.Command, _ []string) {
 			if err := validateFlags(cmd); err != nil {
 				log.Errorf("Some flag is not valid: %s", err)
-				cmd.Help()
+				if err := cmd.Help(); err != nil {
+					log.Fatalf("Error displaying help: %s", err)
+				}
 				return
 			}
 			mainNew(cmd)
@@ -84,8 +86,16 @@ func mainNew(cmd *cobra.Command) {
 	cfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
 
-	sekaiVersion, _ := cmd.Flags().GetString(sekaiVersionFlag)
-	interxVersion, _ := cmd.Flags().GetString(interxVersionFlag)
+	sekaiVersion, err := cmd.Flags().GetString(sekaiVersionFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", sekaiVersionFlag), err)
+	}
+
+	interxVersion, err := cmd.Flags().GetString(interxVersionFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", interxVersionFlag), err)
+	}
+
 	if sekaiVersion != cfg.SekaiVersion || interxVersion != cfg.InterxVersion {
 		cfg.SekaiVersion = sekaiVersion
 		cfg.InterxVersion = interxVersion
