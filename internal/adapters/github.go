@@ -35,9 +35,9 @@ func MustDownloadBinaries(ctx context.Context, cfg *config.KiraConfig) {
 		log.Fatalf("'%s' variable is not set", envGithubTokenVariableName)
 	}
 
-	repositories = fetch(repositories, token)
+	gitHubAdapter := newGitHubAdapter(ctx, token)
 
-	gitHubAdapter := newGitHubAdapter(token)
+	repositories = fetch(ctx, gitHubAdapter, repositories)
 
 	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, sekaiRepo, cfg.SekaiDebFileName, cfg.SekaiVersion)
 	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, interxRepo, cfg.InterxDebFileName, cfg.InterxVersion)
@@ -67,9 +67,7 @@ func (r *repositories) Get() []repository {
 	return r.repos
 }
 
-func fetch(r repositories, accessToken string) repositories {
-	adapter := newGitHubAdapter(accessToken)
-
+func fetch(ctx context.Context, adapter *gitHubAdapter, r repositories) repositories {
 	var wg sync.WaitGroup
 	results := make(chan repository)
 
@@ -78,7 +76,7 @@ func fetch(r repositories, accessToken string) repositories {
 		go func(owner, repo string) {
 			defer wg.Done()
 
-			latestRelease, err := adapter.getLatestRelease(owner, repo)
+			latestRelease, err := adapter.getLatestRelease(ctx, owner, repo)
 			if err != nil {
 				log.Errorf("Error fetching latest release for %s/%s: %s\n", owner, repo, err)
 				return
@@ -102,11 +100,11 @@ func fetch(r repositories, accessToken string) repositories {
 }
 
 // newGitHubAdapter initializes a new GitHubAdapter instance
-func newGitHubAdapter(accessToken string) *gitHubAdapter {
+func newGitHubAdapter(ctx context.Context, accessToken string) *gitHubAdapter {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: accessToken},
 	)
-	tc := oauth2.NewClient(context.Background(), ts)
+	tc := oauth2.NewClient(ctx, ts)
 
 	return &gitHubAdapter{
 		client: github.NewClient(tc),
@@ -114,8 +112,8 @@ func newGitHubAdapter(accessToken string) *gitHubAdapter {
 }
 
 // getLatestRelease fetches the latest release from the specified repository
-func (gh *gitHubAdapter) getLatestRelease(owner, repo string) (*github.RepositoryRelease, error) {
-	release, _, err := gh.client.Repositories.GetLatestRelease(context.Background(), owner, repo)
+func (gh *gitHubAdapter) getLatestRelease(ctx context.Context, owner, repo string) (*github.RepositoryRelease, error) {
+	release, _, err := gh.client.Repositories.GetLatestRelease(ctx, owner, repo)
 	if err != nil {
 		return nil, err
 	}

@@ -144,7 +144,9 @@ func mainJoin(cmd *cobra.Command) {
 	errors.HandleFatalErr("Can't create instance of container docker manager", err)
 	defer containerManager.Cli.Close()
 
-	ctx := context.Background()
+	// TODO make flexible setting timeout
+	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute*5)
+	defer cancelFunc()
 
 	// Skip errors here due to validateFlags method
 	ip, _ := cmd.Flags().GetString("ip")

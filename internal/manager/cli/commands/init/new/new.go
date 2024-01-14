@@ -77,7 +77,9 @@ func mainNew(cmd *cobra.Command) {
 	errors.HandleFatalErr("Can't create instance of container docker manager", err)
 	defer containerManager.Cli.Close()
 
-	ctx := context.Background()
+	// TODO make flexible setting timeout
+	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute*5)
+	defer cancelFunc()
 
 	cfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
