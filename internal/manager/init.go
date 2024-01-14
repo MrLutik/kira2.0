@@ -32,7 +32,8 @@ func (s *SekaidManager) mustInitializeContainer(ctx context.Context, genesis []b
 	check, err := osutils.CheckItPathExist(s.config.SecretsFolder)
 	errors.HandleFatalErr("Error checking secrets folder path", err)
 	if !check {
-		os.Mkdir(s.config.SecretsFolder, os.ModePerm)
+		err = os.Mkdir(s.config.SecretsFolder, os.ModePerm)
+		errors.HandleFatalErr("Creating folder", err)
 	}
 	err = s.ReadOrGenerateMasterMnemonic()
 	errors.HandleFatalErr("Reading or generating master mnemonic", err)

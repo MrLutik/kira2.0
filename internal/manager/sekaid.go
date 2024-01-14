@@ -298,7 +298,12 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 		log.Errorf("Can't set sekaid keys: %s", err)
 		return fmt.Errorf("can't set sekaid keys %w", err)
 	}
-	s.helper.SetEmptyValidatorState(ctx)
+
+	err = s.helper.SetEmptyValidatorState(ctx)
+	if err != nil {
+		log.Errorf("Setting empty validator state error: %s", err)
+		return err
+	}
 
 	commands := []string{
 		fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`,

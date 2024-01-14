@@ -16,9 +16,13 @@ import (
 )
 
 const (
+	// Command info
 	use   = "kira2"
 	short = "kira2 manager for Kira network"
 	long  = "kira2 manager for Kira network"
+
+	// Flags
+	loggingLevelFlag = "log-level"
 )
 
 var log = logging.Log
@@ -30,7 +34,11 @@ func NewKiraCLI(commands []*cobra.Command) *cobra.Command {
 		Short: short,
 		Long:  long,
 		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
-			logLevel, _ := cmd.Flags().GetString("log-level")
+			logLevel, err := cmd.Flags().GetString(loggingLevelFlag)
+			if err != nil {
+				log.Fatalf("Retrieving '%s' flag error: %s", loggingLevelFlag, err)
+			}
+
 			if logLevel != "" {
 				logging.SetLevel(logLevel)
 			}
@@ -41,7 +49,7 @@ func NewKiraCLI(commands []*cobra.Command) *cobra.Command {
 		rootCmd.AddCommand(cmd)
 	}
 
-	rootCmd.PersistentFlags().String("log-level", "panic", fmt.Sprintf("Messages with this level and above will be logged. Valid levels are: %s", strings.Join(logging.ValidLogLevels, ", ")))
+	rootCmd.PersistentFlags().String(loggingLevelFlag, "panic", fmt.Sprintf("Messages with this level and above will be logged. Valid levels are: %s", strings.Join(logging.ValidLogLevels, ", ")))
 	return rootCmd
 }
 

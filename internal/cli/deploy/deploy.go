@@ -11,9 +11,14 @@ import (
 )
 
 const (
+	// Command information
 	use   = "deploy [ip address]"
 	short = "Short description of deploy command"
 	long  = "Long description of deploy command"
+
+	// Flags
+	privateKeyFlag = "priv-key"
+	publicKeyFlag  = "pub-key"
 )
 
 var (
@@ -30,8 +35,14 @@ func Node() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		Example: "deploy 127.0.0.1 --priv-key=path/to/priv-key --pub-key=path/to/pub-key --interx=v0.3.16 --sekai=v0.3.46",
 		Run: func(cmd *cobra.Command, args []string) {
-			privKey, _ := cmd.Flags().GetString("priv-key")
-			pubKey, _ := cmd.Flags().GetString("pub-key")
+			privKey, err := cmd.Flags().GetString(privateKeyFlag)
+			if err != nil {
+				log.Fatalf("Failed to get private key: %s", err)
+			}
+			pubKey, err := cmd.Flags().GetString(publicKeyFlag)
+			if err != nil {
+				log.Fatalf("Failed to get public key: %s", err)
+			}
 
 			client, err := createSSHClient(args[0], privKey)
 			if err != nil {
@@ -39,11 +50,11 @@ func Node() *cobra.Command {
 			}
 			defer client.Close()
 
-			if err := installKeys(client, privKey, pubKey); err != nil {
+			if err = installKeys(client, privKey, pubKey); err != nil {
 				log.Fatalf("Failed to install keys: %v", err)
 			}
 
-			if err := forbidRootLogin(client); err != nil {
+			if err = forbidRootLogin(client); err != nil {
 				log.Fatalf("Failed to forbid root login: %v", err)
 			}
 
@@ -57,8 +68,8 @@ func Node() *cobra.Command {
 	for _, node := range nodes {
 		nodeCmd.PersistentFlags().String(node, "", "Provide version to deploy")
 	}
-	nodeCmd.PersistentFlags().String("priv-key", "", "Path to private key")
-	nodeCmd.PersistentFlags().String("pub-key", "", "Path to pub key") // !Can be generated from private
+	nodeCmd.PersistentFlags().String(privateKeyFlag, "", "Path to private key")
+	nodeCmd.PersistentFlags().String(publicKeyFlag, "", "Path to pub key") // !Can be generated from private
 
 	return nodeCmd
 }
@@ -93,20 +104,20 @@ func createSSHClient(host, privKeyPath string) (*ssh.Client, error) {
 func forbidRootLogin(client *ssh.Client) error {
 	session, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("Failed to create session: %v", err)
+		return fmt.Errorf("failed to create session: %v", err)
 	}
 	defer session.Close()
 
 	// Disable root login in sshd_config
 	_, err = session.Output("sed -i 's/^PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config")
 	if err != nil {
-		return fmt.Errorf("Failed to disable root login: %v", err)
+		return fmt.Errorf("failed to disable root login: %v", err)
 	}
 
 	// Restart SSH service to apply changes
 	_, err = session.Output("service ssh restart")
 	if err != nil {
-		return fmt.Errorf("Failed to restart SSH service: %v", err)
+		return fmt.Errorf("failed to restart SSH service: %v", err)
 	}
 
 	return nil
@@ -116,7 +127,7 @@ func checkOSAndHardware(client *ssh.Client) (string, error) {
 	// Check the operating system
 	session, err := client.NewSession()
 	if err != nil {
-		return "", fmt.Errorf("Failed to create session: %v", err)
+		return "", fmt.Errorf("failed to create session: %v", err)
 	}
 	defer session.Close()
 
@@ -126,7 +137,7 @@ func checkOSAndHardware(client *ssh.Client) (string, error) {
 	} else if output, err := session.Output("cmd /c ver"); err == nil {
 		os = string(output)
 	} else {
-		return "", fmt.Errorf("Failed to determine operating system: %v", err)
+		return "", fmt.Errorf("failed to determine operating system: %v", err)
 	}
 
 	// Check hardware resources

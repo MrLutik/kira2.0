@@ -279,19 +279,23 @@ func (dm *ContainerManager) InitAndCreateContainer(
 	return err
 }
 
-func (dm *ContainerManager) StartContainer(
-	ctx context.Context,
-	containerName string,
-) error {
-	dm.Cli.ContainerStart(ctx, containerName, types.ContainerStartOptions{})
+func (dm *ContainerManager) StartContainer(ctx context.Context, containerName string) error {
+	err := dm.Cli.ContainerStart(ctx, containerName, types.ContainerStartOptions{})
+	if err != nil {
+		log.Errorf("Starting container error: %s", err)
+		return err
+	}
+
 	return nil
 }
 
-func (dm *ContainerManager) StopContainer(
-	ctx context.Context,
-	containerName string,
-) error {
-	dm.Cli.ContainerStop(ctx, containerName, container.StopOptions{})
+func (dm *ContainerManager) StopContainer(ctx context.Context, containerName string) error {
+	err := dm.Cli.ContainerStop(ctx, containerName, container.StopOptions{})
+	if err != nil {
+		log.Errorf("Stopping container error: %s", err)
+		return err
+	}
+
 	return nil
 }
 

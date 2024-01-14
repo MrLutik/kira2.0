@@ -123,11 +123,16 @@ func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, docker
 // blacklisting ip, still thinking if i shoud do realoading in this func or latter seperate, because reloading taking abit time
 func (fh *FirewallHandler) BlackListIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
-	if ipCheck != nil {
-		fh.firewalldController.RejectIp(ip, zoneName)
-	} else {
+	if ipCheck == nil {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
+
+	output, err := fh.firewalldController.RejectIp(ip, zoneName)
+	if err != nil {
+		return fmt.Errorf("rejecting IP error: %w", err)
+	}
+	log.Infof("Output: %s", output)
+
 	out, err := fh.firewalldController.ReloadFirewall()
 	log.Debugf("%s", out)
 	if err != nil {
@@ -138,11 +143,16 @@ func (fh *FirewallHandler) BlackListIP(ip, zoneName string) error {
 
 func (fh *FirewallHandler) RemoveFromBlackListIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
-	if ipCheck != nil {
-		fh.firewalldController.RemoveRejectRuleIp(ip, zoneName)
-	} else {
+	if ipCheck == nil {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
+
+	output, err := fh.firewalldController.RemoveRejectRuleIp(ip, zoneName)
+	if err != nil {
+		return fmt.Errorf("removing rejecting rule error: %w", err)
+	}
+	log.Infof("Output: %s", output)
+
 	out, err := fh.firewalldController.ReloadFirewall()
 	log.Debugf("%s", out)
 	if err != nil {
@@ -153,11 +163,16 @@ func (fh *FirewallHandler) RemoveFromBlackListIP(ip, zoneName string) error {
 
 func (fh *FirewallHandler) WhiteListIp(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
-	if ipCheck != nil {
-		fh.firewalldController.AcceptIp(ip, zoneName)
-	} else {
+	if ipCheck == nil {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
+
+	output, err := fh.firewalldController.AcceptIp(ip, zoneName)
+	if err != nil {
+		return fmt.Errorf("accepting IP error: %w", err)
+	}
+	log.Infof("Output: %s", output)
+
 	out, err := fh.firewalldController.ReloadFirewall()
 	log.Debugf("%s", out)
 	if err != nil {
@@ -168,11 +183,16 @@ func (fh *FirewallHandler) WhiteListIp(ip, zoneName string) error {
 
 func (fh *FirewallHandler) RemoveFromWhitelistIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
-	if ipCheck != nil {
-		fh.firewalldController.RemoveAllowRuleIp(ip, zoneName)
-	} else {
+	if ipCheck == nil {
 		return fmt.Errorf("%s is not a valid ip", ip)
 	}
+
+	output, err := fh.firewalldController.RemoveAllowRuleIp(ip, zoneName)
+	if err != nil {
+		return fmt.Errorf("removing allowing rule error: %w", err)
+	}
+	log.Infof("Output: %s", output)
+
 	out, err := fh.firewalldController.ReloadFirewall()
 	log.Debugf("%s", out)
 	if err != nil {

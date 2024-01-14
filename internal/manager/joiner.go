@@ -83,12 +83,21 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context, recover bool) (*
 	}
 
 	cfg, err := configFileController.ReadOrCreateConfig()
+	if err != nil {
+		log.Errorf("Reading/Creating config error: %s", err)
+		return nil, err
+	}
 
 	cfg.NetworkName = networkInfo.NetworkName
 	cfg.ConfigTomlValues = configs
 	cfg.Recover = recover
 	filePath, _ := configFileHandler.GetConfigFilePath()
-	configFileHandler.WriteConfigFile(filePath, cfg)
+
+	err = configFileHandler.WriteConfigFile(filePath, cfg)
+	if err != nil {
+		log.Errorf("writting config file error: %s", err)
+		return nil, err
+	}
 
 	return cfg, nil
 }
