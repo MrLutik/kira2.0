@@ -171,7 +171,6 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("%w", err)
 	}
 
-	fm.DockerManager.GetNetworksInfo(ctx)
 	log.Infof("Adding %s interface to the zone and enabling routing\n", interfaceName)
 	o, err = fm.FirewalldController.AddInterfaceToTheZone(interfaceName, fm.FirewallConfig.ZoneName)
 	if err != nil {
