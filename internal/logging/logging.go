@@ -5,15 +5,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func init() {
-	Log = InitLogger(Hooks, "panic")
-}
-
 var (
 	Log            *logrus.Logger
 	Hooks          = []logrus.Hook{&hooks.ColorHook{}}
 	ValidLogLevels = []string{"trace", "debug", "info", "warn", "error", "fatal", "panic"}
 )
+
+func init() {
+	Log = InitLogger(Hooks, "panic")
+}
 
 func InitLogger(h []logrus.Hook, logLevelStr string) *logrus.Logger {
 	log := logrus.New()
