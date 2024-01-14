@@ -14,7 +14,22 @@ import (
 	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
-var log = logging.Log
+type (
+	// gitHubAdapter is a struct to hold the GitHub client
+	gitHubAdapter struct {
+		client *github.Client
+	}
+
+	repository struct {
+		Owner   string
+		Repo    string
+		Version string
+	}
+
+	repositories struct {
+		repos []repository
+	}
+)
 
 const (
 	envGithubTokenVariableName = "GITHUB_TOKEN"
@@ -22,6 +37,8 @@ const (
 	sekaiRepo                  = "sekai"
 	interxRepo                 = "interx"
 )
+
+var log = logging.Log
 
 func MustDownloadBinaries(ctx context.Context, cfg *config.KiraConfig) {
 	repositories := repositories{}
@@ -41,20 +58,6 @@ func MustDownloadBinaries(ctx context.Context, cfg *config.KiraConfig) {
 
 	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, sekaiRepo, cfg.SekaiDebFileName, cfg.SekaiVersion)
 	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, interxRepo, cfg.InterxDebFileName, cfg.InterxVersion)
-}
-
-// gitHubAdapter is a struct to hold the GitHub client
-type gitHubAdapter struct {
-	client *github.Client
-}
-type repository struct {
-	Owner   string
-	Repo    string
-	Version string
-}
-
-type repositories struct {
-	repos []repository
 }
 
 // Add a new Repository to Repositories, version can be = ""

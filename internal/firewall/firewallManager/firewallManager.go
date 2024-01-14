@@ -9,25 +9,27 @@ import (
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallController"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager/firewallHandler"
-	"github.com/mrlutik/kira2.0/internal/types"
-
-	// D:\Coding\Go\KIRA\kira2.0\kira2.0\internal\firewall\firewallManager\firewallHandlers\firewallHandlers.go
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/osutils"
+	"github.com/mrlutik/kira2.0/internal/types"
 )
 
-type FirewallManager struct {
-	FirewalldController *firewallController.FirewalldController
-	DockerManager       *docker.DockerManager
-	FirewallHandler     *firewallHandler.FirewallHandler
-	FirewallConfig      *FirewallConfig
-	KiraConfig          *config.KiraConfig
-}
+type (
+	FirewallManager struct {
+		FirewalldController *firewallController.FirewalldController
+		DockerManager       *docker.DockerManager
+		FirewallHandler     *firewallHandler.FirewallHandler
+		FirewallConfig      *FirewallConfig
+		KiraConfig          *config.KiraConfig
+	}
 
-type FirewallConfig struct {
-	ZoneName    string
-	PortsToOpen []types.Port
-}
+	FirewallConfig struct {
+		ZoneName    string
+		PortsToOpen []types.Port
+	}
+)
+
+var log = logging.Log
 
 // port range 0-65535
 // type udp or tcp
@@ -54,8 +56,6 @@ func NewFirewallManager(dockerManager *docker.DockerManager, kiraCfg *config.Kir
 
 	return &FirewallManager{FirewalldController: c, DockerManager: dockerManager, FirewallHandler: h, FirewallConfig: cfg, KiraConfig: kiraCfg}
 }
-
-var log = logging.Log
 
 func (fm *FirewallManager) CheckFirewallSetUp(ctx context.Context) (bool, error) {
 	_, err := exec.LookPath("firewall-cmd")
@@ -134,11 +134,6 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
-	// log.Infof("Closing all ports\n")
-	// o, err = fm.FirewalldController.DropAllPorts()
-	// if err != nil {
-	// 	return fmt.Errorf("%s\n%w", o, err)
-	// }
 
 	log.Infof("Checking ports %+v \n", fm.FirewallConfig.PortsToOpen)
 	err = fm.FirewallHandler.CheckPorts(fm.FirewallConfig.PortsToOpen)
@@ -199,7 +194,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
-	// os.Exit(1)
+
 	// adding docker to the zone and enabling routing
 	log.Infof("Adding docker0 interface to the zone and enabling routing\n")
 	o, err = fm.FirewalldController.AddInterfaceToTheZone("docker0", fm.FirewallConfig.ZoneName)
@@ -210,10 +205,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
-	// o, err = fm.FirewalldController.EnableDockerRouting("docker0")
-	// if err != nil {
-	// 	return fmt.Errorf("%s\n%w", o, err)
-	// }
+
 	log.Infof("Reloading firewall\n")
 	o, err = fm.FirewalldController.ReloadFirewall()
 	if err != nil {

@@ -19,21 +19,21 @@ import (
 )
 
 const (
+	// Command information
 	use   = "join"
 	short = "Join to network"
 	long  = "Join to existing network"
-)
 
-const (
+	// Flags naming
 	sekaiVersionFlag  = "sekai-version"
 	interxVersionFlag = "interx-version"
+
+	// Regular expression to match IPv4 and IPv6 addresses.
+	ipRegex = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}$`
+
+	// Regular expression to match valid port numbers (from 1 to 65535).
+	portRegex = `^([1-9]\d{0,4}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`
 )
-
-// Regular expression to match IPv4 and IPv6 addresses.
-const ipRegex = `^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}$`
-
-// Regular expression to match valid port numbers (from 1 to 65535).
-const portRegex = `^([1-9]\d{0,4}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`
 
 var (
 	log     = logging.Log

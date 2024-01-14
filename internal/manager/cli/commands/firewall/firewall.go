@@ -16,13 +16,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logging.Log
-
 const (
 	use   = "firewall"
 	short = "Seting up firewalld"
 	long  = "Seting up firewalld"
 )
+
+var log = logging.Log
 
 func Firewall() *cobra.Command {
 	log.Info("Adding `firewall` command...")

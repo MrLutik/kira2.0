@@ -12,17 +12,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logging.Log
-
 const (
 	use   = "blacklist"
 	short = "subcommand for blacklisting ips"
 	long  = `subcommand for adding to blacklist or removing from blacklist specific ips
-example: 
+	example: 
 	km2 firewall blacklist --ip 8.8.8.8 --add --log-level debug
 	
 	km2 firewall blacklist --ip 8.8.8.8 --remove --log-level debug`
 )
+
+var log = logging.Log
 
 func Blacklist() *cobra.Command {
 	closePortCmd := &cobra.Command{

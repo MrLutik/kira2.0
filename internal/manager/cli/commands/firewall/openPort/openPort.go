@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logging.Log
-
 const (
 	use   = "open-port"
 	short = "subcommand for port opening"
 	long  = "long description"
 )
+
+var log = logging.Log
 
 func OpenPort() *cobra.Command {
 	openPortCmd := &cobra.Command{

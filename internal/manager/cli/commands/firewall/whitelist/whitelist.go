@@ -12,17 +12,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logging.Log
-
 const (
 	use   = "whitelist"
 	short = "subcommand for whitelisting ips"
 	long  = `subcommand for adding to whitelist or removing from whitelist specific ips
-example: 
+	example: 
 	km2 firewall whitelist --ip 8.8.8.8 --add --log-level debug
 	
 	km2 firewall whitelist --ip 8.8.8.8 --remove --log-level debug`
 )
+
+var log = logging.Log
 
 func Whitelist() *cobra.Command {
 	closePortCmd := &cobra.Command{

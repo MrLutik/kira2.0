@@ -11,15 +11,31 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
+type (
+	// RamUsageInfo represents information about RAM usage.
+	RamUsageInfo struct {
+		TotalGB float64
+		FreeGB  float64
+		UsedGB  float64
+	}
+
+	// DiskUsageInfo represents information about disk usage.
+	DiskUsageInfo struct {
+		TotalGB uint64
+		FreeGB  uint64
+		UsedGB  uint64
+	}
+)
+
 func (m *MonitoringService) GetCPULoadPercentage() (float64, error) {
 	return getCPULoadPercentage()
 }
 
-func (m *MonitoringService) GetRAMUsage() (*ramUsageInfo, error) {
+func (m *MonitoringService) GetRAMUsage() (*RamUsageInfo, error) {
 	return getRAMUsage()
 }
 
-func (m *MonitoringService) GetDiskUsage() (*diskUsageInfo, error) {
+func (m *MonitoringService) GetDiskUsage() (*DiskUsageInfo, error) {
 	return getDiskUsage()
 }
 
@@ -44,15 +60,8 @@ func getCPULoadPercentage() (float64, error) {
 	return percent[0], nil
 }
 
-// ramUsageInfo represents information about RAM usage.
-type ramUsageInfo struct {
-	TotalGB float64
-	FreeGB  float64
-	UsedGB  float64
-}
-
 // getRAMUsage returns the RAM usage information.
-func getRAMUsage() (*ramUsageInfo, error) {
+func getRAMUsage() (*RamUsageInfo, error) {
 	log.Infoln("Getting RAM usage info")
 
 	virtualMemory, err := mem.VirtualMemory()
@@ -61,22 +70,15 @@ func getRAMUsage() (*ramUsageInfo, error) {
 		return nil, err
 	}
 
-	return &ramUsageInfo{
+	return &RamUsageInfo{
 		TotalGB: float64(virtualMemory.Total) / gigabyte,
 		FreeGB:  float64(virtualMemory.Free) / gigabyte,
 		UsedGB:  float64(virtualMemory.Used) / gigabyte,
 	}, nil
 }
 
-// diskUsageInfo represents information about disk usage.
-type diskUsageInfo struct {
-	TotalGB uint64
-	FreeGB  uint64
-	UsedGB  uint64
-}
-
 // getDiskUsage returns the disk usage information.
-func getDiskUsage() (*diskUsageInfo, error) {
+func getDiskUsage() (*DiskUsageInfo, error) {
 	log.Infoln("Getting disk usage info")
 
 	var stat syscall.Statfs_t
@@ -89,7 +91,7 @@ func getDiskUsage() (*diskUsageInfo, error) {
 	total := stat.Blocks * uint64(stat.Bsize)
 	available := stat.Bavail * uint64(stat.Bsize)
 
-	return &diskUsageInfo{
+	return &DiskUsageInfo{
 		TotalGB: total / gigabyte,
 		FreeGB:  available / gigabyte,
 		UsedGB:  (total - available) / gigabyte,

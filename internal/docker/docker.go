@@ -14,22 +14,23 @@ import (
 	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
-var log = logging.Log
+type (
+	DockerConfig struct {
+		Host       string `json:"Host"`
+		APIVersion string `json:"APIVersion,omitempty"`
+		CertPath   string `json:"CertPath"`
+		CacertPath string `json:"CacertPath"`
+		KeyPath    string `json:"KeyPath"`
+	}
+	DockerManager struct {
+		Cli *client.Client
+	}
+)
 
-type DockerConfig struct {
-	Host       string `json:"Host"`
-	APIVersion string `json:"APIVersion,omitempty"`
-	CertPath   string `json:"CertPath"`
-	CacertPath string `json:"CacertPath"`
-	KeyPath    string `json:"KeyPath"`
-}
+var log = logging.Log
 
 func (dm *DockerConfig) SetVersion(version string) {
 	dm.APIVersion = version
-}
-
-type DockerManager struct {
-	Cli *client.Client
 }
 
 // NewDockerManager creates a new DockerManager instance based on the provided configuration.

@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logging.Log
-
 const (
 	use   = "close-port"
 	short = "subcommand for port closing"
 	long  = "long description"
 )
+
+var log = logging.Log
 
 func ClosePort() *cobra.Command {
 	closePortCmd := &cobra.Command{

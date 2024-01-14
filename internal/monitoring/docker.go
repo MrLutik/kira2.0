@@ -6,12 +6,34 @@ import (
 	"time"
 )
 
-// DockerNetworkInfo contains needed information about a Docker network.
-type DockerNetwrokInfo struct {
-	Name      string
-	IpAddress string
-	Subnet    string
-}
+type (
+	// DockerNetworkInfo contains needed information about a Docker network.
+	DockerNetwrokInfo struct {
+		Name      string
+		IpAddress string
+		Subnet    string
+	}
+
+	// PortBinding contains the port binding information for a Docker container.
+	PortBinding struct {
+		HostPort      string
+		ContainerPort string
+	}
+
+	// ContainerInfo contains information about a Docker container.
+	ContainerInfo struct {
+		ID          string
+		State       string
+		Health      string
+		Paused      bool
+		Restarting  bool
+		StartingAt  time.Time
+		FinishedAt  time.Time
+		Hostname    string
+		IP          string
+		PortBinding []PortBinding
+	}
+)
 
 // GetDockerNetwork retrieves information about a Docker network.
 // It queries the Docker daemon to obtain a list of network resources and searches for the specified network by name.
@@ -34,26 +56,6 @@ func (m *MonitoringService) GetDockerNetwork(ctx context.Context, networkName st
 		}
 	}
 	return nil, fmt.Errorf("the network '%s' is not available", networkName)
-}
-
-// PortBinding contains the port binding information for a Docker container.
-type PortBinding struct {
-	HostPort      string
-	ContainerPort string
-}
-
-// ContainerInfo contains information about a Docker container.
-type ContainerInfo struct {
-	ID          string
-	State       string
-	Health      string
-	Paused      bool
-	Restarting  bool
-	StartingAt  time.Time
-	FinishedAt  time.Time
-	Hostname    string
-	IP          string
-	PortBinding []PortBinding
 }
 
 // GetContainerInfo retrieves information about a Docker container and its network bindings.

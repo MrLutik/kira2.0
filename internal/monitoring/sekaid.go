@@ -13,32 +13,6 @@ import (
 	"github.com/mrlutik/kira2.0/internal/types"
 )
 
-// GetValidatorAddress retrieves the address of the validator using the specified
-// sekaid container name, keyring backend, and home directory.
-func (m *MonitoringService) GetValidatorAddress(ctx context.Context, sekaidContainerName, keyringBackend, homeDir string) (string, error) {
-	cmd := fmt.Sprintf("sekaid keys show validator -a --keyring-backend=%s --home=%s", keyringBackend, homeDir)
-	output, err := m.containerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{"bash", "-c", cmd})
-	if err != nil {
-		log.Errorf("Can't execute command '%s', error: '%s'", cmd, err)
-		return "", err
-	}
-
-	result := strings.ReplaceAll(string(output), "\n", "")
-	return result, nil
-}
-
-// doGetSekaidStatusQuery performs the Sekaid status query using the provided HTTP client,
-// sekaid port, and timeout duration, and returns the parsed response or an error.
-func doGetSekaidStatusQuery(ctx context.Context, httpClient *http.Client, sekaidPort string, timeout time.Duration) (*types.ResponseSekaidStatus, error) {
-	var response *types.ResponseSekaidStatus
-	err := doHTTPGetQuery(ctx, httpClient, sekaidPort, timeout, "status", &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return response, nil
-}
-
 // SekaidInfo represents the needed information about Sekaid.
 type SekaidInfo struct {
 	NodeID            string
@@ -69,4 +43,30 @@ func (m *MonitoringService) GetSekaidInfo(ctx context.Context, sekaidPort string
 		LatestBlockTime:   response.Result.SyncInfo.LatestBlockTime,
 		CatchingUp:        response.Result.SyncInfo.CatchingUp,
 	}, nil
+}
+
+// GetValidatorAddress retrieves the address of the validator using the specified
+// sekaid container name, keyring backend, and home directory.
+func (m *MonitoringService) GetValidatorAddress(ctx context.Context, sekaidContainerName, keyringBackend, homeDir string) (string, error) {
+	cmd := fmt.Sprintf("sekaid keys show validator -a --keyring-backend=%s --home=%s", keyringBackend, homeDir)
+	output, err := m.containerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{"bash", "-c", cmd})
+	if err != nil {
+		log.Errorf("Can't execute command '%s', error: '%s'", cmd, err)
+		return "", err
+	}
+
+	result := strings.ReplaceAll(string(output), "\n", "")
+	return result, nil
+}
+
+// doGetSekaidStatusQuery performs the Sekaid status query using the provided HTTP client,
+// sekaid port, and timeout duration, and returns the parsed response or an error.
+func doGetSekaidStatusQuery(ctx context.Context, httpClient *http.Client, sekaidPort string, timeout time.Duration) (*types.ResponseSekaidStatus, error) {
+	var response *types.ResponseSekaidStatus
+	err := doHTTPGetQuery(ctx, httpClient, sekaidPort, timeout, "status", &response)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }

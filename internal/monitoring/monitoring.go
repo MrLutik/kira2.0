@@ -14,19 +14,19 @@ import (
 	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
-const (
-	gigabyte        = 1024 * 1024 * 1024
-	getQueryTimeout = time.Second
-)
-
-var log = logging.Log
-
 // MonitoringService represents a monitoring service that interacts with the Docker and HTTP clients.
 type MonitoringService struct {
 	dockerManager    *docker.DockerManager
 	containerManager *docker.ContainerManager
 	httpClient       *http.Client
 }
+
+const (
+	gigabyte        = 1024 * 1024 * 1024
+	getQueryTimeout = time.Second
+)
+
+var log = logging.Log
 
 func NewMonitoringService(dm *docker.DockerManager, cm *docker.ContainerManager) *MonitoringService {
 	return &MonitoringService{
