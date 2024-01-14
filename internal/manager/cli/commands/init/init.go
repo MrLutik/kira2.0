@@ -33,5 +33,7 @@ func Init() *cobra.Command {
 }
 
 func mainInit(cmd *cobra.Command) {
-	cmd.Help()
+	if err := cmd.Help(); err != nil {
+		log.Fatalf("Error displaying help: %s", err)
+	}
 }
