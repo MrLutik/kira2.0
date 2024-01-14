@@ -13,9 +13,13 @@ import (
 )
 
 const (
+	// Command information
 	use   = "kira2_launcher"
 	short = "short descritpion"
 	long  = "long description"
+
+	// Flags
+	loggingLevelFlag = "log-level"
 )
 
 var log = logging.Log
@@ -27,7 +31,11 @@ func NewCLI(cmds []*cobra.Command) *cobra.Command {
 		Short: short,
 		Long:  long,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			logLevel, _ := cmd.Flags().GetString("log-level")
+			logLevel, err := cmd.Flags().GetString(loggingLevelFlag)
+			if err != nil {
+				log.Fatalf("Retrieving '%s' flag error: %s", loggingLevelFlag, err)
+			}
+
 			if logLevel != "" {
 				logging.SetLevel(logLevel)
 			}
