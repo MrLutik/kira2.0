@@ -115,6 +115,11 @@ issues:
   # We have to do it by hands to memorize it
   fix: false
 
+  exclude-rules:
+    # monitoring.go is not going to be used
+    - path: internal/manager/cli/commands/monitoring/monitoring.go
+      text: "Error return value of `.*` is not checked"
+
 
 
 
