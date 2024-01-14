@@ -19,8 +19,6 @@ import (
 	"github.com/mrlutik/kira2.0/internal/types"
 )
 
-const interxProcessName = "interx"
-
 // InterxManager represents a manager for Interx container and its associated configurations.
 type InterxManager struct {
 	ContainerConfig     *container.Config
@@ -29,6 +27,8 @@ type InterxManager struct {
 	containerManager    *docker.ContainerManager
 	config              *config.KiraConfig
 }
+
+const interxProcessName = "interx"
 
 // NewInterxManager returns configured InterxManager.
 func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*InterxManager, error) {
