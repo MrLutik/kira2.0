@@ -98,13 +98,6 @@ func (h *HelperManager) AwaitNextBlock(ctx context.Context, timeout time.Duratio
 	}
 }
 
-// nodeStatus is a structure which represents the partial response from `sekaid status`
-type nodeStatus struct {
-	SyncInfo struct {
-		LatestBlockHeight string `json:"latest_block_height"`
-	} `json:"SyncInfo"`
-}
-
 // getBlockHeight retrieves the latest block height from the sekaid node.
 // It executes the "sekaid status" command in the specified container
 // and parses the JSON output to extract the block height.
@@ -119,7 +112,11 @@ func (h *HelperManager) getBlockHeight(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("getting '%s' error: %s", cmd, err)
 	}
 
-	var status nodeStatus
+	var status struct { // anon structure which represents the partial response from `sekaid status`
+		SyncInfo struct {
+			LatestBlockHeight string `json:"latest_block_height"`
+		} `json:"SyncInfo"`
+	}
 	err = json.Unmarshal(statusOutput, &status)
 	if err != nil {
 		log.Errorf("Parsing JSON output of '%s' error: %s", cmd, err)
