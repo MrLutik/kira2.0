@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var log = logging.Log
-
 const (
 	use   = "maintenance"
 	short = "command for maintenance mode"
 	long  = "command for maintenance mode: pause for maintenance, unpause, and activate if validator was deactivated"
 )
+
+var log = logging.Log
 
 func Maintenance() *cobra.Command {
 	log.Info("Adding `maintenance` command...")
