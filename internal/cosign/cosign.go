@@ -65,8 +65,20 @@ func VerifyImageSignature(ctx context.Context, imageRef, pubKey string) (bool, e
 		return false, fmt.Errorf("failed verifying signatures: %w", err)
 	}
 	for _, sig := range signatures {
-		fmt.Fprintf(os.Stdout, "Signature: %s\n", func() string { sig, _ := sig.Base64Signature(); return sig }())
-		fmt.Fprintf(os.Stdout, "Payload: %s\n", func() string { payload, _ := sig.Payload(); return string(payload) }())
+		base64Sig, err := sig.Base64Signature()
+		if err != nil {
+			log.Errorf("Failed to get Base64 Signature: %s", err)
+			continue // Skip this signature and move to the next one
+		}
+		fmt.Fprintf(os.Stdout, "Signature: %s\n", base64Sig)
+
+		payload, err := sig.Payload()
+		if err != nil {
+			log.Errorf("Failed to get Payload: %s", err)
+			continue // Skip this signature and move to the next one
+		}
+		fmt.Fprintf(os.Stdout, "Payload: %s\n", string(payload))
+
 		fmt.Fprintln(os.Stdout, "====")
 	} // Maybe I will use it in future
 
