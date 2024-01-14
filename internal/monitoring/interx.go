@@ -10,19 +10,48 @@ import (
 	"github.com/mrlutik/kira2.0/internal/types"
 )
 
-// ValopersInfo represents the information about Valopers returned by the Valopers API.
-type ResponseValopers struct {
-	Status struct {
-		ActiveValidators  int `json:"active_validators"`
-		TotalValidators   int `json:"total_validators"`
-		WaitingValidators int `json:"waiting_validators"`
-	} `json:"status"`
+type (
+	// ResponseValopers represents the information about Valopers returned by the Valopers API.
+	ResponseValopers struct {
+		Status struct {
+			ActiveValidators  int `json:"active_validators"`
+			TotalValidators   int `json:"total_validators"`
+			WaitingValidators int `json:"waiting_validators"`
+		} `json:"status"`
 
-	Validators []struct {
-		Top     string `json:"top"`
-		Address string `json:"address"`
-	} `json:"validators"`
-}
+		Validators []struct {
+			Top     string `json:"top"`
+			Address string `json:"address"`
+		} `json:"validators"`
+	}
+
+	// InterxInfo represents the information about Interx.
+	InterxInfo struct {
+		NodeID            string
+		LatestBlockHeight int
+		LatestBlockTime   time.Time
+		CatchingUp        bool
+	}
+
+	// ValopersInfo represents the information about Valopers.
+	ValopersInfo struct {
+		ActiveValidators  int
+		TotalValidators   int
+		WaitingValidators int
+	}
+
+	// ResponseBlockStats represents the JSON needed response structure for the BlockStats API.
+	ResponseBlockStats struct {
+		AverageBlockTime float64 `json:"average_block_time"`
+		ConsensusStopped bool    `json:"consensus_stopped"`
+	}
+
+	// ConsensusInfo represents the most needed consensus information.
+	ConsensusInfo struct {
+		BlockTime        float64
+		ConsensusStopped bool
+	}
+)
 
 // doGetValopersQuery performs the Valopers query using the provided HTTP client,
 // interxPort, and timeout duration, and returns the parsed response or an error.
@@ -34,13 +63,6 @@ func doGetValopersQuery(ctx context.Context, httpClient *http.Client, interxPort
 	}
 
 	return &response, nil
-}
-
-// ValopersInfo represents the information about Valopers.
-type ValopersInfo struct {
-	ActiveValidators  int
-	TotalValidators   int
-	WaitingValidators int
 }
 
 // GetValopersInfo retrieves the information about Valopers using the provided
@@ -78,12 +100,6 @@ func (m *MonitoringService) GetTopForValidator(ctx context.Context, interxPort, 
 	return "", fmt.Errorf("can't find validator address '%s'", validatorAddress)
 }
 
-// ResponseBlockStats represents the JSON needed response structure for the BlockStats API.
-type ResponseBlockStats struct {
-	AverageBlockTime float64 `json:"average_block_time"`
-	ConsensusStopped bool    `json:"consensus_stopped"`
-}
-
 // doGetConsensusQuery performs the Consensus query using the provided HTTP client,
 // interxPort, and timeout duration, and returns the parsed response or an error.
 func doGetConsensusQuery(ctx context.Context, httpClient *http.Client, interxPort string, timeout time.Duration) (*ResponseBlockStats, error) {
@@ -94,12 +110,6 @@ func doGetConsensusQuery(ctx context.Context, httpClient *http.Client, interxPor
 	}
 
 	return &response, nil
-}
-
-// ConsensusInfo represents the needed consensus information.
-type ConsensusInfo struct {
-	BlockTime        float64
-	ConsensusStopped bool
 }
 
 // GetConsensusInfo retrieves the consensus information using the provided context
@@ -127,14 +137,6 @@ func doGetInterxStatusQuery(ctx context.Context, httpClient *http.Client, interx
 	}
 
 	return response, nil
-}
-
-// InterxInfo represents the information about Interx.
-type InterxInfo struct {
-	NodeID            string
-	LatestBlockHeight int
-	LatestBlockTime   time.Time
-	CatchingUp        bool
 }
 
 // GetInterxInfo retrieves the information about Interx using the provided context
