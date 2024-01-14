@@ -20,27 +20,45 @@ import (
 	"github.com/mrlutik/kira2.0/internal/types"
 )
 
+type (
+	TargetSeedKiraConfig struct {
+		IpAddress     string
+		InterxPort    string
+		SekaidRPCPort string
+		SekaidP2PPort string
+	}
+	JoinerManager struct {
+		client       *httpKiraClient
+		targetConfig *TargetSeedKiraConfig
+	}
+
+	// httpKiraClient is a struct for making HTTP calls to the nodes for retrieving information about network
+	httpKiraClient struct {
+		client *http.Client
+	}
+
+	// networkInfo is a struct which represents the general information
+	// about network which will be used for future connection
+	networkInfo struct {
+		NetworkName string
+		NodeID      string
+		BlockHeight string
+		Seeds       []string
+	}
+
+	// syncInfo is a struct which represents synchronization info from target network
+	// This struct is used for generating config values for starting sekaid instance
+	syncInfo struct {
+		rpcServers       []string
+		trustHeightBlock string
+		trustHashBlock   string
+	}
+)
+
 const (
 	endpointStatus     = "status"
 	endpointPubP2PList = "api/pub_p2p_list?peers_only=true"
 )
-
-type TargetSeedKiraConfig struct {
-	IpAddress     string
-	InterxPort    string
-	SekaidRPCPort string
-	SekaidP2PPort string
-}
-
-type JoinerManager struct {
-	client       *httpKiraClient
-	targetConfig *TargetSeedKiraConfig
-}
-
-// httpKiraClient is a struct for making HTTP calls to the nodes for retrieving information about network
-type httpKiraClient struct {
-	client *http.Client
-}
 
 func NewJoinerManager(config *TargetSeedKiraConfig) *JoinerManager {
 	return &JoinerManager{
@@ -63,33 +81,6 @@ func (j *JoinerManager) GenerateKiraConfig(ctx context.Context, recover bool) (*
 		log.Errorf("Can't get calculated config values: %s", err)
 		return nil, err
 	}
-
-	// cfg := &config.KiraConfig{
-	// 	NetworkName:         networkInfo.NetworkName,
-	// 	SekaidHome:          "/data/.sekai",
-	// 	InterxHome:          "/data/.interx",
-	// 	KeyringBackend:      "test",
-	// 	DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
-	// 	DockerImageVersion:  "v0.13.11",
-	// 	DockerNetworkName:   "kira_network",
-	// 	SekaiVersion:        "latest", // or v0.3.16
-	// 	InterxVersion:       "latest", // or v0.4.33
-	// 	SekaidContainerName: "sekaid",
-	// 	InterxContainerName: "interx",
-	// 	VolumeName:          "kira_volume:/data",
-	// 	MnemonicDir:         "~/mnemonics",
-	// 	RpcPort:             "26657",
-	// 	P2PPort:             "26656",
-	// 	GrpcPort:            "9090",
-	// 	InterxPort:          "11000",
-	// 	PrometheusPort:       "26660",
-	// 	Moniker:             "VALIDATOR",
-	// 	SekaiDebFileName:    "sekai-linux-amd64.deb",
-	// 	InterxDebFileName:   "interx-linux-amd64.deb",
-	// 	TimeBetweenBlocks:   time.Second * 10,
-	// 	ConfigTomlValues:    configs,
-	// 	Recover:             recover,
-	// }
 
 	cfg, err := configFileController.ReadOrCreateConfig()
 
@@ -160,15 +151,6 @@ func (j *JoinerManager) getConfigsBasedOnSeed(ctx context.Context, netInfo *netw
 	return configValues, nil
 }
 
-// networkInfo is a struct which represents the general information
-// about network which will be used for future connection
-type networkInfo struct {
-	NetworkName string
-	NodeID      string
-	BlockHeight string
-	Seeds       []string
-}
-
 // retrieveNetworkInformation fetches network-related information from the Sekaid node.
 // It queries the node's status and public P2P list to construct a networkInfo struct containing essential network details.
 func (j *JoinerManager) retrieveNetworkInformation(ctx context.Context) (*networkInfo, error) {
@@ -220,14 +202,6 @@ func (j *JoinerManager) parsePubP2PListResponse(ctx context.Context, seedsRespon
 	}
 
 	return listOfSeeds, nil
-}
-
-// syncInfo is a struct which represents synchronization info from target network
-// This struct is used for generating config values for starting sekaid instance
-type syncInfo struct {
-	rpcServers       []string
-	trustHeightBlock string
-	trustHashBlock   string
 }
 
 // getSyncInfo retrieves synchronization information based on a list of RPC servers and a minimum block height.
