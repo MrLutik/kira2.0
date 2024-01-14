@@ -28,5 +28,4 @@ func VerifyingDockerEnvironment(ctx context.Context, dockerManager *DockerManage
 
 	err = dockerManager.CheckOrCreateNetwork(ctx, cfg.DockerNetworkName)
 	errors.HandleFatalErr("Docker networking", err)
-
 }

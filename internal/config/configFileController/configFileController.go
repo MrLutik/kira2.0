@@ -102,5 +102,4 @@ func newDefaultKiraConfig() *config.KiraConfig {
 		TimeBetweenBlocks:   time.Second * 10,
 		KiraConfigFilePath:  "/home/$USER/.config/km2",
 	}
-
 }

@@ -97,7 +97,6 @@ func (m *MonitoringService) GetContainerInfo(ctx context.Context, containerName,
 		return nil, fmt.Errorf("network '%s' does not exist", dockerNetworkName)
 	}
 
-	
 	r := &ContainerInfo{
 		ID:    resultInspect.ID,
 		State: resultInspect.State.Status,

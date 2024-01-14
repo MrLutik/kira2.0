@@ -38,7 +38,7 @@ func NewMonitoringService(dm *docker.DockerManager, cm *docker.ContainerManager)
 
 // doHTTPGetQuery performs an HTTP GET request to the specified URL using the provided HTTP client,
 // and populates the response object with the JSON response.
-func doHTTPGetQuery(ctx context.Context, httpClient *http.Client, interxPort string, timeout time.Duration, url string, response interface{}) error {
+func doHTTPGetQuery(ctx context.Context, httpClient *http.Client, interxPort string, timeout time.Duration, url string, response any) error {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 

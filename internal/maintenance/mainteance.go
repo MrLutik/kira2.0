@@ -51,8 +51,8 @@ func PauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Cont
 		return fmt.Errorf("cannot pause validator, node status is not <%s>, curent status <%s>", types.Active, nodeStatus.Status)
 	}
 	// os.Exit(1)
-	//sekaid tx customslashing unpause --from validator --chain-id testnet-1 --keyring-backend=test --home  /data/.sekai --fees 100ukex --gas=1000000 --broadcast-mode=async --yes
-	//from kira tools
+	// sekaid tx customslashing unpause --from validator --chain-id testnet-1 --keyring-backend=test --home  /data/.sekai --fees 100ukex --gas=1000000 --broadcast-mode=async --yes
+	// from kira tools
 	//    sekaid tx customslashing pause --from "$ACCOUNT" --chain-id=$NETWORK_NAME --keyring-backend=test --home=$SEKAID_HOME --fees 100ukex --yes --broadcast-mode=async --log_format=json --output=json | txAwait $TIMEOUT
 	command := fmt.Sprintf("sekaid tx customslashing pause --from %s --chain-id %s --keyring-backend=test --home  %s --fees 100ukex --broadcast-mode=async --yes --output json", types.ValidatorAccountName, cfg.NetworkName, cfg.SekaidHome)
 	log.Debugf("Running command\n %s\n", command)
@@ -106,7 +106,7 @@ func UnpauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Co
 		log.Errorf("Validator status is:  %s\n ", strings.ToLower(nodeStatus.Status))
 		return fmt.Errorf("cannot unpause validator, node status is not <%s>, curent status <%s>", types.Active, nodeStatus.Status)
 	}
-	//sekaid tx customslashing unpause --from validator --chain-id testnet-1 --keyring-backend=test --home  /data/.sekai --fees 100ukex --gas=1000000 --broadcast-mode=async --yes
+	// sekaid tx customslashing unpause --from validator --chain-id testnet-1 --keyring-backend=test --home  /data/.sekai --fees 100ukex --gas=1000000 --broadcast-mode=async --yes
 	// from kira tools
 	//     sekaid tx customslashing unpause --from "$ACCOUNT" --chain-id=$NETWORK_NAME --keyring-backend=test --home=$SEKAID_HOME --fees 100ukex --yes --broadcast-mode=async --log_format=json --output=json | txAwait $TIMEOUT
 	command := fmt.Sprintf("sekaid tx customslashing unpause --from %s --chain-id %s --keyring-backend=test --home  %s --fees 100ukex --broadcast-mode=async --yes --log_format=json --output json", types.ValidatorAccountName, cfg.NetworkName, cfg.SekaidHome)

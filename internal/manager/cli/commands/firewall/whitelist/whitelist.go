@@ -47,6 +47,7 @@ func Whitelist() *cobra.Command {
 
 	return closePortCmd
 }
+
 func validateFlags(cmd *cobra.Command) error {
 	ip, err := cmd.Flags().GetString("ip")
 	if err != nil {
@@ -118,5 +119,4 @@ func mainWhitelist(cmd *cobra.Command) {
 			}
 		}
 	}
-
 }

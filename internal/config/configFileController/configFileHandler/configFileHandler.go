@@ -18,11 +18,9 @@ func GetConfigFilePath() (filePath, folderPath string) {
 	folderPath = fmt.Sprintf("%s/.config/km2", usr.HomeDir)
 	filePath = folderPath + "/" + fileName
 	return filePath, folderPath
-
 }
 
 func ReadConfigFile(filePath string) (cfg *config.KiraConfig, err error) {
-
 	ok, err := osutils.CheckIfFileExist(filePath)
 	if err != nil {
 		return cfg, err

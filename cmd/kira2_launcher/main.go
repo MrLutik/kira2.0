@@ -9,5 +9,4 @@ func main() {
 	log := logging.Log
 	log.Infoln("Starting kira2launcher...")
 	cli.Start()
-
 }

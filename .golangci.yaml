@@ -39,69 +39,68 @@ linters:
 
   disable-all: true
 
-  # enable:
-  #   - noctx
-  
   enable:
-    - bodyclose
-    - containedctx
-    - contextcheck
-    - cyclop
-    - decorder
-    - dogsled
-    - errcheck
-    - errchkjson
-    - errname
-    - errorlint
-    - exhaustruct
-    - exportloopref
-    - forbidigo
-    - forcetypeassert
-    - funlen
-    - gochecknoglobals
-    - gochecknoinits
-    - goconst
-    - gocognit
-    - gocritic
-    - gocyclo
-    - godot
-    - goerr113
     - gofmt
     - gofumpt
-    - goimports
-    - golint
-    - gomnd
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
-    - ireturn
-    - lll
-    - misspell
-    - musttag
-    - nakedret
-    - nestif
-    - nilerr
-    - nilnil
-    - nlreturn
-    - noctx
-    - nolintlint
-    - nonamedreturns
-    - nosprintfhostport
-    - prealloc
-    - predeclared
-    - reassign
-    - revive
-    - staticcheck
-    - stylecheck
-    - unconvert
-    - unparam
-    - usestdlibvars
-    - varnamelen
-    - wastedassign
-    - whitespace
-    - wrapcheck
-    - wsl
+  
+  # enable:
+  #   - bodyclose
+  #   - containedctx
+  #   - contextcheck
+  #   - cyclop
+  #   - decorder
+  #   - dogsled
+  #   - errcheck
+  #   - errchkjson
+  #   - errname
+  #   - errorlint
+  #   - exhaustruct
+  #   - exportloopref
+  #   - forbidigo
+  #   - forcetypeassert
+  #   - funlen
+  #   - gochecknoglobals
+  #   - gochecknoinits
+  #   - goconst
+  #   - gocognit
+  #   - gocritic
+  #   - gocyclo
+  #   - godot
+  #   - goerr113
+  #   - goimports
+  #   - golint
+  #   - gomnd
+  #   - gosec
+  #   - gosimple
+  #   - govet
+  #   - ineffassign
+  #   - ireturn
+  #   - lll
+  #   - misspell
+  #   - musttag
+  #   - nakedret
+  #   - nestif
+  #   - nilerr
+  #   - nilnil
+  #   - nlreturn
+  #   - noctx
+  #   - nolintlint
+  #   - nonamedreturns
+  #   - nosprintfhostport
+  #   - prealloc
+  #   - predeclared
+  #   - reassign
+  #   - revive
+  #   - staticcheck
+  #   - stylecheck
+  #   - unconvert
+  #   - unparam
+  #   - usestdlibvars
+  #   - varnamelen
+  #   - wastedassign
+  #   - whitespace
+  #   - wrapcheck
+  #   - wsl
   
 issues:
 
