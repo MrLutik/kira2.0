@@ -132,7 +132,7 @@ func (gh *gitHubAdapter) getLatestRelease(ctx context.Context, owner, repo strin
 func (gh *gitHubAdapter) downloadBinaryFromRepo(ctx context.Context, owner, repo, binaryName, tag string) {
 	var release *github.RepositoryRelease
 	var err error
-	log.Printf("downloading %s from %s/%s, tag:%s\n", binaryName, owner, repo, tag)
+	log.Infof("Downloading '%s' from '%s/%s', tag: %s", binaryName, owner, repo, tag)
 	switch tag {
 	case "latest":
 		release, _, err = gh.client.Repositories.GetLatestRelease(ctx, owner, repo)
