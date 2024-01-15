@@ -16,16 +16,16 @@ import (
 
 func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (mastermnemonic string, err error) {
 	log := logging.Log
-	log.Println("checking if path exist: ", pathToFile)
+	log.Infof("Checking if path exist: %s", pathToFile)
 	check, err := osutils.CheckItPathExist(pathToFile)
 	if err != nil {
-		log.Printf("error while checkin path to %s, error: %s", pathToFile, err)
+		log.Errorf("Checking path to '%s', error: %s", pathToFile, err)
 	}
 	if check {
-		log.Println("path exist, trying to read mnemonic from mnemonics.env file")
+		log.Infof("Path exist, trying to read mnemonic from mnemonics.env file")
 		if err := godotenv.Load(pathToFile); err != nil {
 			err = fmt.Errorf("error loading .env file: %w", err)
-			return mastermnemonic, err
+			return "", err
 		}
 		// Retrieve the MASTER_MNEMONIC value
 		const masterMnemonicEnv = "MASTER_MNEMONIC"
@@ -54,19 +54,21 @@ func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg
 		return &vlg.MasterMnemonicSet{}, err
 	}
 	str := fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n", mnemonicSet.SignerAddrMnemonic, mnemonicSet.ValidatorNodeMnemonic, mnemonicSet.ValidatorNodeId, mnemonicSet.ValidatorAddrMnemonic, mnemonicSet.ValidatorValMnemonic)
-	fmt.Println((str))
+	log.Infof("Master mnemonic:\n%s", str)
 	return &mnemonicSet, nil
 }
 
 func (h *HelperManager) MnemonicReader() (masterMnemonic string) {
 	log := logging.Log
-	fmt.Printf("\nENTER YOUR MASTER MNEMONIC:\n")
+	log.Infoln("ENTER YOUR MASTER MNEMONIC:")
 	// var input string
 	reader := bufio.NewReader(os.Stdin)
-	log.Println("Enter mnemonic: ")
+	//nolint:forbidigo // reading user input
+	fmt.Println("Enter mnemonic: ")
+
 	text, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("An error occurred:", err)
+		log.Errorf("An error occurred: %s", err)
 		return
 	}
 	mnemonicBytes := []byte(text)
