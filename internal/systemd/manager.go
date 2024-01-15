@@ -21,7 +21,7 @@ var log = logging.Log
 func NewServiceManager(ctx context.Context, serviceName, mode string) (*ServiceManager, error) {
 	conn, err := dbus.NewWithContext(ctx)
 	if err != nil {
-		log.Printf("Failed to connect to D-Bus: %s", err)
+		log.Errorf("Failed to connect to D-Bus: %s", err)
 		return nil, err
 	}
 

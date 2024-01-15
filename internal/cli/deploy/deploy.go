@@ -62,7 +62,7 @@ func Node() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Failed to check OS and hardware: %v", err)
 			}
-			log.Println(osAndHardwareInfo)
+			log.Infof("OS and Hardware info: %s", osAndHardwareInfo)
 		},
 	}
 	for _, node := range nodes {
@@ -165,7 +165,7 @@ func checkOSAndHardware(client *ssh.Client) (string, error) {
 			defer wg.Done()
 			session, err := client.NewSession()
 			if err != nil {
-				log.Printf("Failed to create session: %v", err)
+				log.Errorf("Failed to create session: %s", err)
 				return
 			}
 			defer session.Close()
@@ -174,7 +174,7 @@ func checkOSAndHardware(client *ssh.Client) (string, error) {
 				hardwareInfo += string(output) + "\n"
 				mutex.Unlock()
 			} else {
-				log.Printf("Failed to execute command %s: %v", command, err)
+				log.Errorf("Failed to execute command %s: %s", command, err)
 			}
 		}(cmd)
 	}

@@ -170,7 +170,7 @@ func getInterfacesIP() (map[string]string, error) {
 	for _, iface := range interfaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
-			log.Println("Getting unicast interface addresses for a specific interface error:", err)
+			log.Errorf("Getting unicast interface addresses for a specific interface error: %s", err)
 			return nil, err
 		}
 

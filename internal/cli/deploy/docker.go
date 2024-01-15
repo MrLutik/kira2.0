@@ -18,7 +18,7 @@ func installDocker(client *ssh.Client) error {
 	// Check if Docker is already installed
 	_, err = session.Output("docker -v")
 	if err == nil {
-		log.Println("Docker is already installed")
+		log.Info("Docker is already installed")
 		return nil
 	}
 

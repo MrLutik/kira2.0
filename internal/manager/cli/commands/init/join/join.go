@@ -233,8 +233,10 @@ func mainJoin(cmd *cobra.Command) {
 	errors.HandleFatalErr("Can't create new 'sekai' manager instance", err)
 	sekaiManager.MustInitJoiner(ctx, genesis)
 	sekaiManager.MustRunSekaid(ctx)
-	log.Printf("Waiting for %v\n", cfg.TimeBetweenBlocks)
+
+	log.Infof("Waiting for %v\n", cfg.TimeBetweenBlocks)
 	time.Sleep(cfg.TimeBetweenBlocks + time.Second)
+
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Can't create new 'interx' manager instance", err)
 	interxManager.MustInitInterx(ctx)

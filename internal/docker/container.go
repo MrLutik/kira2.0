@@ -95,7 +95,8 @@ func (dm *ContainerManager) CheckIfProcessIsRunningInContainer(ctx context.Conte
 
 	output := stdout.String()
 	if errOutput := stderr.String(); errOutput != "" {
-		fmt.Println("Stderr:", errOutput)
+		log.Infof("Stderr: %s", errOutput)
+		return false, "", fmt.Errorf("stderr: %s", errOutput)
 	}
 
 	if strings.TrimSpace(output) != "" {
@@ -137,7 +138,7 @@ func (dm *ContainerManager) ExecCommandInContainerInDetachMode(ctx context.Conte
 	var outBuf, errBuf bytes.Buffer
 	_, err = stdcopy.StdCopy(&outBuf, &errBuf, resp.Reader)
 	if err != nil {
-		log.Printf("Reading response error: %s", err)
+		log.Errorf("Reading response error: %s", err)
 		return nil, err
 	}
 
@@ -211,11 +212,11 @@ func readTarArchive(tr *tar.Reader, fileName string) ([]byte, error) {
 // It copies the TAR archive with file from the specified folder path in the container,
 // read file from TAR archive and returns the file content as a byte slice.
 func (dm *ContainerManager) GetFileFromContainer(ctx context.Context, folderPathOnContainer, fileName, containerID string) ([]byte, error) {
-	log.Printf("Getting file from container '%s/%s'", folderPathOnContainer, fileName)
+	log.Infof("Getting file '%s' from container '%s'", fileName, folderPathOnContainer)
 
 	rc, _, err := dm.Cli.CopyFromContainer(ctx, containerID, folderPathOnContainer+"/"+fileName)
 	if err != nil {
-		log.Println(err)
+		log.Errorf("Copying from container error: %s", err)
 		return nil, err
 	}
 	defer rc.Close()
@@ -223,7 +224,7 @@ func (dm *ContainerManager) GetFileFromContainer(ctx context.Context, folderPath
 	tr := tar.NewReader(rc)
 	b, err := readTarArchive(tr, fileName)
 	if err != nil {
-		log.Println(err)
+		log.Errorf("Reading Tar archive error: %s", err)
 		return nil, err
 	}
 
@@ -492,7 +493,7 @@ func (dm *ContainerManager) StopAndDeleteContainer(ctx context.Context, containe
 	log.Infof("Deleting %s container...", containerNameToStop)
 	err = dm.Cli.ContainerRemove(ctx, containerNameToStop, types.ContainerRemoveOptions{})
 	if err != nil {
-		log.Println(err)
+		log.Errorf("Removing container '%s' error: %s", containerNameToStop, err)
 		return err
 	}
 
@@ -502,7 +503,7 @@ func (dm *ContainerManager) StopAndDeleteContainer(ctx context.Context, containe
 
 // CheckForVolumeName is checking if docker volume with volumeName exist, if do - returns true
 func (dm *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName string) (bool, error) {
-	log.Println("Geting volumes list")
+	log.Info("Getting volumes list")
 	volumes, err := dm.Cli.VolumeList(ctx, volume.ListOptions{})
 	if err != nil {
 		log.Errorf("cannot get list of volumes: %s", err)
@@ -549,7 +550,7 @@ func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kir
 		return err
 	}
 	if check {
-		log.Printf("Removing <%s> volume\n", kiraCfg.VolumeName)
+		log.Infof("Removing '%s' volume\n", kiraCfg.VolumeName)
 		err = dm.Cli.VolumeRemove(ctx, kiraCfg.VolumeName, true)
 		if err != nil {
 			return err
@@ -564,7 +565,7 @@ func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kir
 // codeToStopWith - signal code to stop with,
 // containerName - container name in which pkill will be executed
 func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, processName string, codeToStopWith int, containerName string) error {
-	log.Printf("Checking if %s is running inside container", processName)
+	log.Infof("Checking if '%s' is running inside container", processName)
 	check, _, err := dm.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
 	if err != nil {
 		return fmt.Errorf("cant check if procces is running inside container, %w", err)
@@ -573,7 +574,7 @@ func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, proc
 		log.Warnf("process <%s> is not running inside <%s> container\n", processName, containerName)
 		return nil
 	}
-	log.Printf("Stoping <%s> proccess\n", processName)
+	log.Infof("Stopping <%s> process\n", processName)
 	out, err := dm.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeToStopWith), processName})
 	if err != nil {
 		log.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %v\n", processName, containerName, string(out), err)
@@ -588,6 +589,6 @@ func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, proc
 		log.Errorf("Process <%s> is still running inside <%s> container\n", processName, containerName)
 		return err
 	}
-	log.Printf("<%s> proccess was successfully stoped\n", processName)
+	log.Infof("<%s> process was successfully stopped\n", processName)
 	return nil
 }

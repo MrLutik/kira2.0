@@ -40,7 +40,7 @@ func GetValidatorStatus(ctx context.Context, cfg *config.KiraConfig, cm *docker.
 // PauseValidator is geting validator status, if status IS ACTIVE running `sekaid tx customslashing pause` inside sekaid container.
 // Then checking if transaction of validator pausing was executed inside blockchain, if does -  again checking for validator status
 func PauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.ContainerManager) error {
-	log.Printf("Pausing validator\n")
+	log.Info("Pausing validator")
 	nodeStatus, err := GetValidatorStatus(ctx, cfg, cm)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func PauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Cont
 // UnpauseValidator is geting validator status, if status IS PAUSED running `sekaid tx customslashing unpause` inside sekaid container.
 // Then checking if transaction of validator unpausing was executed inside blockchain, if does -  again checking for validator status
 func UnpauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.ContainerManager) error {
-	log.Printf("Unpausing validator\n")
+	log.Info("Unpausing validator")
 	nodeStatus, err := GetValidatorStatus(ctx, cfg, cm)
 	if err != nil {
 		return err
@@ -145,7 +145,7 @@ func UnpauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Co
 // ActivateValidator is geting validator status, if status IS INACTIVE running `sekaid tx customslashing activate` inside sekaid container.
 // Then checking if transaction of validator activating was executed inside blockchain
 func ActivateValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.ContainerManager) error {
-	log.Printf("Activating validator\n")
+	log.Info("Activating validator")
 	nodeStatus, err := GetValidatorStatus(ctx, cfg, cm)
 	if err != nil {
 		return err

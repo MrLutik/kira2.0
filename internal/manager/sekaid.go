@@ -204,7 +204,7 @@ func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config
 			continue
 		}
 
-		log.Printf("Value ([%s] %s = %s) updated successfully\n", update.Tag, update.Name, update.Value)
+		log.Infof("Value ([%s] %s = %s) updated successfully\n", update.Tag, update.Name, update.Value)
 
 		config = newConfig
 	}
@@ -265,17 +265,17 @@ func (s *SekaidManager) ReadOrGenerateMasterMnemonic() error {
 		masterMnemonic, err = s.helper.ReadMnemonicsFromFile(s.config.SecretsFolder + "/mnemonics.env")
 
 		if masterMnemonic == "" || err != nil {
-			log.Printf("Coud not read master mnemonic from file, trying to generete new one \n%s\n", err)
+			log.Warningf("Could not read master mnemonic from file, trying to generate new one \n%s\n", err)
 			bip39mn, err := s.helper.GenerateMnemonic()
 			if err != nil {
 				return err
 			}
 			masterMnemonic = bip39mn.String()
 		} else {
-			log.Println("MASTER MNEMONIC WAS FOUND AND RESTORED")
+			log.Info("Master mnemonic was found and restored")
 		}
 	}
-	log.Debugf("MASTER MNEMONIC IS:\n%s\n", masterMnemonic)
+	log.Debugf("Master mnemonic is:\n%s\n", masterMnemonic)
 	s.config.MasterMnamonicSet, err = s.helper.GenerateMnemonicsFromMaster(string(masterMnemonic))
 	if err != nil {
 		return err
@@ -451,14 +451,14 @@ func (s *SekaidManager) postGenesisProposals(ctx context.Context) error {
 		types.PermVoteUpsertTokenAliasProposal,
 		types.PermVoteSoftwareUpgradeProposal,
 	}
-	log.Printf("Permissions to add: '%d' for: '%s'", permissions, address)
+	log.Infof("Permissions to add: '%d' for: '%s'", permissions, address)
 
 	// waiting 10 sec to first block to be propagated
 	log.Infof("Waiting for %0.0f seconds before first block be propagated", time.Duration.Seconds(s.config.TimeBetweenBlocks))
 	time.Sleep(s.config.TimeBetweenBlocks)
 
 	for _, perm := range permissions {
-		log.Printf("Adding permission: '%d'", perm)
+		log.Infof("Adding permission: '%d'", perm)
 
 		err = s.helper.GivePermissionToAddress(ctx, perm, address)
 		if err != nil {
@@ -466,7 +466,7 @@ func (s *SekaidManager) postGenesisProposals(ctx context.Context) error {
 			return fmt.Errorf("giving permission '%d' error: %w", perm, err)
 		}
 
-		log.Printf("Checking if '%s' address has '%d' permission", address, perm)
+		log.Infof("Checking if '%s' address has '%d' permission", address, perm)
 		check, err := s.helper.CheckAccountPermission(ctx, perm, address)
 		if err != nil {
 			log.Errorf("Checking account permission error: %s", err)

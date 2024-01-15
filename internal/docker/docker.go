@@ -131,7 +131,7 @@ func (dm *DockerManager) CheckOrCreateNetwork(ctx context.Context, networkName s
 
 	for _, network := range networkList {
 		if network.Name == networkName {
-			log.Printf("Network '%s' already exists", networkName)
+			log.Infof("Network '%s' already exists", networkName)
 			return nil
 		}
 	}

@@ -87,7 +87,6 @@ func validateFlags(cmd *cobra.Command) error {
 }
 
 func mainWhitelist(cmd *cobra.Command) {
-	log.Println("mainWhitelist")
 	ip, err := cmd.Flags().GetString(ipFlag)
 	errors.HandleFatalErr("cannot Get whitelist-ip", err)
 	ok, err := osutils.CheckIfIPIsValid(ip)

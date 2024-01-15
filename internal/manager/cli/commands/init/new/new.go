@@ -129,8 +129,10 @@ func mainNew(cmd *cobra.Command) {
 	errors.HandleFatalErr("Error creating new 'sekai' manager instance", err)
 	sekaiManager.MustInitNew(ctx)
 	sekaiManager.MustRunSekaid(ctx)
-	log.Printf("Waiting for %v\n", cfg.TimeBetweenBlocks)
+
+	log.Infof("Waiting for %v\n", cfg.TimeBetweenBlocks)
 	time.Sleep(cfg.TimeBetweenBlocks + time.Second)
+
 	interxManager, err := manager.NewInterxManager(containerManager, cfg)
 	errors.HandleFatalErr("Error creating new 'interx' manager instance:", err)
 	interxManager.MustInitInterx(ctx)

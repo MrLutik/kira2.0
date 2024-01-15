@@ -63,7 +63,7 @@ func mainFirewall(cmd *cobra.Command) {
 	kiraCfg, err := configFileController.ReadOrCreateConfig()
 	errors.HandleFatalErr("Error while reading cfg file", err)
 
-	log.Println("validating flags")
+	log.Info("Validating flags")
 
 	openPorts, err := cmd.Flags().GetBool("open-ports")
 	errors.HandleFatalErr("cannot parse flag", err)

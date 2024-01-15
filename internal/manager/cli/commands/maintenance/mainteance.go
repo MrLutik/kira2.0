@@ -111,7 +111,7 @@ func mainMaitenance(cmd *cobra.Command) error {
 			return err
 		}
 		// log.Infof("Validator Status:\nStatus: %s\nStreak: %s\nRank: %s\n", valStatus.Status, valStatus.Streak, valStatus.Rank)
-		fmt.Printf("***Validator Status***\nStatus: %s\nStreak: %s\nRank: %s\n", valStatus.Status, valStatus.Streak, valStatus.Rank)
+		log.Infof("***Validator Status***\nStatus: %s\nStreak: %s\nRank: %s\n", valStatus.Status, valStatus.Streak, valStatus.Rank)
 		log.Debugf("valStatus: %+v\n", valStatus)
 	}
 	return nil

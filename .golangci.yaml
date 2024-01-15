@@ -52,11 +52,11 @@ linters:
     - errorlint
     - errchkjson
     - exportloopref
+    - forbidigo
 
   # enable:
   #   - cyclop
   #   - exhaustruct
-  #   - forbidigo
   #   - forcetypeassert
   #   - funlen
   #   - gochecknoglobals
@@ -171,6 +171,15 @@ linters-settings:
     # Check for plain error comparisons.
     comparison: true
   
+  forbidigo:
+    forbid:
+      - p: "^fmt\\.Print(|f|ln)$"
+        msg: "Using fmt for logging is forbidden"
+      - p: "^log\\.Print(|f|ln)$"
+        msg: "Using log.Print statements is forbidden - specify log level directly!"
+      - p: "^(print|println)$"
+        msg: "Do NOT use built-in methods for output"
+
   funlen:
     # Checks the number of lines in a function.
     lines: 40
