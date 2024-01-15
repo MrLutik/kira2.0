@@ -20,7 +20,7 @@ func makeNodeControllScreen(_ fyne.Window, g *Gui) fyne.CanvasObject {
 				stopKM2(g)
 			}),
 			widget.NewButton("init node", func() {
-				stopKM2(g)
+				initKM2(g)
 			}),
 			widget.NewButton("show curent config", func() {
 				showKiraConfig(g)
@@ -63,7 +63,7 @@ func showKiraConfig(g *Gui) {
 }
 
 func stopKM2(g *Gui) {
-	cmd := fmt.Sprintf(`echo 'd' | sudo -S -E sh -c 'export GITHUB_TOKEN=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 && %s stop --log-level debug'`, guiHelper.KM2BinaryPath)
+	cmd := fmt.Sprintf(`echo '%s'  | sudo -S -E sh -c 'export GITHUB_TOKEN=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 && %s stop --log-level debug'`, guiHelper.SudoPassword, guiHelper.KM2BinaryPath)
 	go showCmdExecDialogAndRunCmdV4(g, "stoping node", cmd)
 }
 
@@ -73,7 +73,7 @@ func initKM2(g *Gui) {
 
 func startKM2(g *Gui) {
 	// need to make km2 non dependet from sudo user
-	cmd := fmt.Sprintf(`echo 'd' | sudo -S -E sh -c 'export GITHUB_TOKEN=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 && %s start --log-level debug'`, guiHelper.KM2BinaryPath)
+	cmd := fmt.Sprintf(`echo '%s' | sudo -S -E sh -c 'export GITHUB_TOKEN=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 && %s start --log-level debug'`, guiHelper.SudoPassword, guiHelper.KM2BinaryPath)
 	// resultChan := make(chan guiHelper.Result)
 	// go func() {
 	// 	output, err := guiHelper.ExecuteSSHCommand(g.sshClient, cmd)
