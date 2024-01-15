@@ -72,29 +72,26 @@ func (f *FirewalldController) DeleteFirewallZone(zonename string) (string, error
 	return string(out), err
 }
 
-// adding rule for rejecting ip
+// RejectIp adds rule for rejecting ip
 func (f *FirewalldController) RejectIp(ip, zoneName string) (string, error) {
-	// out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+zoneName, "--add-rich-rule="+fmt.Sprintf(`"rule family='ipv4' source address='%s' reject"`, ip))
 	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="rule family='ipv4' source address='%s' reject"`, zoneName, ip))
 	return string(out), err
 }
 
-// removing rule for rejecting ip
+// RemoveRejectRuleIp removes rule for rejecting ip
 func (f *FirewalldController) RemoveRejectRuleIp(ip, zoneName string) (string, error) {
-	// out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+zoneName, "--add-rich-rule="+fmt.Sprintf(`"rule family='ipv4' source address='%s' reject"`, ip))
 	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' reject"`, zoneName, ip))
 	return string(out), err
 }
 
-// adding rule for accepting ip
+// AcceptIp adds rule for accepting ip
 func (f *FirewalldController) AcceptIp(ip, zoneName string) (string, error) {
 	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="rule family='ipv4' source address='%s' accept"`, zoneName, ip))
 	return string(out), err
 }
 
-// removing rule for accepting ip
+// RemoveAllowRuleIp removes rule for accepting ip
 func (f *FirewalldController) RemoveAllowRuleIp(ip, zoneName string) (string, error) {
-	// out, err := osutils.RunCommand("sudo", "firewall-cmd", "--permanent", "--zone="+zoneName, "--add-rich-rule="+fmt.Sprintf(`"rule family='ipv4' source address='%s' reject"`, ip))
 	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' accept"`, zoneName, ip))
 	return string(out), err
 }
