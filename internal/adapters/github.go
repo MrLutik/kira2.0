@@ -149,7 +149,8 @@ func (gh *gitHubAdapter) downloadBinaryFromRepo(ctx context.Context, owner, repo
 	var asset *github.ReleaseAsset
 	for _, a := range release.Assets {
 		if *a.Name == binaryName {
-			asset = &a
+			assetCopy := a     // Create a copy of 'a'
+			asset = &assetCopy // Assign the address of the copy
 			break
 		}
 	}
