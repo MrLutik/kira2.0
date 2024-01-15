@@ -87,7 +87,6 @@ func validateFlags(cmd *cobra.Command) error {
 }
 
 func mainBlacklist(cmd *cobra.Command) {
-	log.Println("mainBlacklist")
 	ip, err := cmd.Flags().GetString("ip")
 	errors.HandleFatalErr("cannot Get blacklist-ip", err)
 	ok, err := osutils.CheckIfIPIsValid(ip)
