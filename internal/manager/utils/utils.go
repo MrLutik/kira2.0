@@ -141,7 +141,7 @@ func (h *HelperManager) GivePermissionToAddress(ctx context.Context, permissionT
 		log.Errorf("Giving '%d' permission error. Command: '%s'. Error: %s", permissionToAdd, command, err)
 		return err
 	}
-	log.Printf("Permission '%d' is pushed to network for address '%s'", permissionToAdd, address)
+	log.Infof("Permission '%d' is pushed to network for address '%s'", permissionToAdd, address)
 
 	var data types.TxData
 	err = json.Unmarshal(out, &data)
@@ -201,7 +201,7 @@ func (h *HelperManager) CheckAccountPermission(ctx context.Context, permissionTo
 	log.Debugf("Checking account permission: %+v", perms)
 	for _, perm := range perms.WhiteList {
 		if permissionToCheck == perm {
-			log.Printf("Permission '%d' was found with '%s' address", permissionToCheck, address)
+			log.Infof("Permission '%d' was found with '%s' address", permissionToCheck, address)
 
 			return true, nil
 		}
@@ -233,7 +233,7 @@ func (h *HelperManager) GetAddressByName(ctx context.Context, addressName string
 		return "", err
 	}
 
-	log.Printf("Validator address: '%s'", key[0].Address)
+	log.Infof("Validator address: '%s'", key[0].Address)
 	return key[0].Address, nil
 }
 
@@ -347,7 +347,7 @@ func (h *HelperManager) getSekaidStatus() (*types.Status, error) {
 	log := logging.Log
 
 	url := fmt.Sprintf("http://localhost:%s/status", h.config.RpcPort)
-	log.Println(url)
+	log.Infof("URL: %s", url)
 	response, err := http.Get(url)
 	if err != nil {
 		log.Errorf("Failed to send GET request: %s", err)
