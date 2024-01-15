@@ -98,12 +98,12 @@ func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) (err error) {
 
 func (fh *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
 	out, zones, err := fh.firewalldController.GetAllFirewallZones()
-	log.Debugf("%s\n%+v\n%s\n", string(out), zones, err)
+	log.Debugf("Output:%s\nZones: %+v\nError: %s\n", string(out), zones, err)
 	if err != nil {
 		return false, fmt.Errorf("%s\n%w", out, err)
 	}
 	for _, zone := range zones {
-		// log.Debugf("%s %s", zone, zoneName)
+		log.Debugf("Current zone: %s, expected zone: %s", zone, zoneName)
 		if zone == zoneName {
 			return true, nil
 		}
@@ -111,7 +111,7 @@ func (fh *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
 	return false, nil
 }
 
-// geting docker's custom interface name
+// GetDockerNetworkInterface gets docker's custom interface name
 func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string, dockerManager *docker.DockerManager) (dockerInterface dockerTypes.NetworkResource, err error) {
 	network, err := dockerManager.Cli.NetworkInspect(ctx, dockerNetworkName, dockerTypes.NetworkInspectOptions{})
 	if err != nil {
@@ -120,7 +120,8 @@ func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, docker
 	return network, nil
 }
 
-// blacklisting ip, still thinking if i shoud do realoading in this func or latter seperate, because reloading taking abit time
+// BlackListIP makes ip blacklisted
+// TODO: still thinking if I should do reloading in this func or latter separately, because reloading taking a bit time
 func (fh *FirewallHandler) BlackListIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
