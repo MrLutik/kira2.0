@@ -210,7 +210,7 @@ func mainJoin(cmd *cobra.Command) {
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
 	errors.HandleFatalErr("Can't get genesis", err)
 
-	// todo this docker service restart has to be after docker and firewalld instalation, im doin it here because laucnher is not ready
+	// TODO this docker service restart has to be after docker and firewalld instalation, im doin it here because laucnher is not ready
 	// temp remove docker restarting, only need once after firewalld instalation
 	// err = dockerManager.RestartDockerService()
 	errors.HandleFatalErr("Restarting docker service", err)
