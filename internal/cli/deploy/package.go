@@ -31,12 +31,13 @@ func checkPkg(client *ssh.Client, packageName string) (string, error) {
 
 func installPkg(path string) error {
 	installCmd := exec.Command("dpkg", "-i", path)
+	log.Infof("Executing command: %s", installCmd)
 	output, err := installCmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to install package: %w", err)
 	}
 
-	log.Println(string(output))
+	log.Infof("Output of command: %s", string(output))
 	return nil
 }
 
