@@ -128,7 +128,7 @@ func (i *InterxManager) applyNewConfigs(ctx context.Context, updates []config.Js
 			continue
 		}
 
-		log.Printf("(%s = %v) updated successfully\n", update.Key, update.Value)
+		log.Infof("(%s = %v) updated successfully\n", update.Key, update.Value)
 
 		configFileContent = newFileContent
 	}
