@@ -85,7 +85,7 @@ func mainClosePort(cmd *cobra.Command) {
 	errors.HandleFatalErr(fmt.Sprintf("cannot get '%s' flag", typeOfIPFlag), err)
 
 	fc := firewallController.NewFireWalldController("validator")
-	log.Printf("Adding %s port with %s type\n", port.Port, port.Type)
+	log.Infof("Adding %s port with %s type\n", port.Port, port.Type)
 	_, err = fc.ClosePort(port, fc.ZoneName)
 	errors.HandleFatalErr(fmt.Sprintf("error while closing port %v", port), err)
 
