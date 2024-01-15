@@ -47,7 +47,7 @@ func setNested(m map[string]any, keys []string, value any) error {
 	}
 
 	log.Debugf("Found key: %s\n", keys[len(keys)-1])
-	log.Printf("Update old value '%v' -> new value '%v'\n", m[keys[len(keys)-1]], value)
+	log.Infof("Update old value '%v' -> new value '%v'\n", m[keys[len(keys)-1]], value)
 	m[keys[len(keys)-1]] = value
 	return nil
 }
