@@ -24,7 +24,7 @@ func (g *Gui) showConnect() {
 	submitFunc := func() {
 		var err error
 		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
-		// g.sshClient, err = sshC.MakeSHH_Client("192.168.1.101:22", "d", "d")
+		// g.sshClient, err = sshC.MakeSHH_Client("192.168.1.103:22", "d", "d")
 		if err != nil {
 
 			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
@@ -136,4 +136,78 @@ func showInitDialog(g *Gui) {
 	// open new dialogg with choises to init new or join to existing (check piont)
 	// if checkpoint is ture, opens new text entries for ip, ports, etc... and switch main button to start\\join
 	// after main button pressed exec showCmdExecDialogAndRunCmdV4 with constructed cmd from previous step
+	joinExistingNetworkCheck := binding.NewBool()
+	newOrJoinCHeckButton := widget.NewCheckWithData("Join to existing network", joinExistingNetworkCheck)
+
+	var wizard *dialogs.Wizard
+	mainScreen := container.NewStack()
+
+	IPBinding := binding.NewString()
+	interxPortBinding := binding.NewString()
+	sekaidRPCPortBinding := binding.NewString()
+	sekaidP2PPortBinding := binding.NewString()
+	const defaultInterxPort, defaultSekaidRpcPort, defaultSekaiP2PPort int = 11000, 26657, 26656
+	ipEntry := widget.NewEntryWithData(IPBinding)
+	ipEntry.SetPlaceHolder("ip of the node to connect to")
+	interxPortEntry := widget.NewEntryWithData(interxPortBinding)
+	interxPortEntry.SetPlaceHolder(fmt.Sprintf("interx port (default %v)", defaultInterxPort))
+	sekaidRPCPortentry := widget.NewEntryWithData(sekaidRPCPortBinding)
+	sekaidRPCPortentry.SetPlaceHolder(fmt.Sprintf("sekaid rpc port (default %v)", defaultSekaidRpcPort))
+	sekaidP2PPortEntry := widget.NewEntryWithData(sekaidP2PPortBinding)
+	sekaidP2PPortEntry.SetPlaceHolder(fmt.Sprintf("sekaid p2p port (default %v)", defaultSekaiP2PPort))
+
+	// ip, _ := cmd.Flags().GetString("ip")
+	// interxPort, _ := cmd.Flags().GetString("interx-port")
+	// sekaidRPCPort, _ := cmd.Flags().GetString("rpc-port")
+	// sekaidP2PPort, _ := cmd.Flags().GetString("p2p-port")
+	joinScreen := container.NewVBox(
+		ipEntry,
+		interxPortEntry,
+		sekaidP2PPortEntry,
+		sekaidRPCPortentry,
+	)
+	// mainScreen := joinScreen
+	closeButton := widget.NewButton("Close", func() { wizard.Hide() })
+	joinOrCreateButton := widget.NewButton("Create",
+		func() {
+			b, err := joinExistingNetworkCheck.Get()
+			if err != nil {
+				log.Fatalln(err)
+			}
+			switch b {
+			case true:
+				fmt.Println("joining")
+				func() {
+					//verifying ip and ports
+
+				}()
+			default:
+				fmt.Println("creating new")
+			}
+		},
+	)
+	switchFunc := func() {
+		b, err := joinExistingNetworkCheck.Get()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if b {
+			mainScreen.Objects = []fyne.CanvasObject{joinScreen}
+			mainScreen.Refresh()
+			joinOrCreateButton.SetText("Join to existing network")
+
+		} else {
+			mainScreen.Objects = []fyne.CanvasObject{}
+			mainScreen.Refresh()
+			joinOrCreateButton.SetText("Initialize new network")
+		}
+
+	}
+
+	switchFunc()
+	joinExistingNetworkCheck.AddListener(binding.NewDataListener(switchFunc))
+	content := container.NewBorder(newOrJoinCHeckButton, container.NewVBox(joinOrCreateButton, closeButton), nil, nil, mainScreen)
+	wizard = dialogs.NewWizard("Node initilasing", content)
+	wizard.Show(g.Window)
+	wizard.Resize(fyne.NewSize(400, 400))
 }
