@@ -53,7 +53,7 @@ func (h *HelperManager) GetTxQuery(ctx context.Context, transactionHash string) 
 // and returns an error if the timeout is exceeded.
 // If the next block is reached within the timeout, the method returns nil.
 func (h *HelperManager) AwaitNextBlock(ctx context.Context, timeout time.Duration) error {
-	// adding 1 more second because in real case scenario block propagation takes a few seconds\miliseconds longer
+	// Adding 1 more second because in real case scenario block propagation takes a few seconds\milliseconds longer
 	timeout += time.Second * 5
 	log := logging.Log
 
@@ -88,7 +88,7 @@ func (h *HelperManager) AwaitNextBlock(ctx context.Context, timeout time.Duratio
 				continue
 			}
 
-			// exit awaiting block
+			// Exit awaiting block
 			log.Infof("Next block '%s' reached...", blockHeight)
 			return nil
 
@@ -112,7 +112,7 @@ func (h *HelperManager) getBlockHeight(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("getting '%s' error: %w", cmd, err)
 	}
 
-	var status struct { // anon structure which represents the partial response from `sekaid status`
+	var status struct { // Anonymous structure which represents the partial response from `sekaid status`
 		SyncInfo struct {
 			LatestBlockHeight string `json:"latest_block_height"`
 		} `json:"SyncInfo"`
@@ -213,8 +213,7 @@ func (h *HelperManager) CheckAccountPermission(ctx context.Context, permissionTo
 }
 
 // Getting address from keyring.
-//
-// sekaid keys show validator --keyring-backend=test --home=test
+// Command: sekaid keys show validator --keyring-backend=test --home=test
 func (h *HelperManager) GetAddressByName(ctx context.Context, addressName string) (string, error) {
 	log := logging.Log
 	command := fmt.Sprintf("sekaid keys show %s --keyring-backend=%s --home=%s", addressName, h.config.KeyringBackend, h.config.SekaidHome)
