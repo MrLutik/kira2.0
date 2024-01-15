@@ -6,8 +6,8 @@ const (
 	ValidatorAccountName = "validator"
 	GenesisFileName      = "genesis.json"
 
-	// constants of validatorStatus
-	// warning validator status from sekaid comes in upper case format
+	// Constants of validatorStatus
+	// Warning validator status from sekaid comes in upper case format
 	Active   = "active"
 	Paused   = "paused"
 	Inactive = "inactive"
