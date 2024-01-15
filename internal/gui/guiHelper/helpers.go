@@ -18,7 +18,8 @@ import (
 
 var log = logging.Log
 
-const KM2BinaryPath = "~/main"
+const KM2BinaryPath string = "~/main"
+const SudoPassword string = "d"
 
 type Result struct {
 	Output string
