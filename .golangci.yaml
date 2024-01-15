@@ -50,12 +50,12 @@ linters:
     - errcheck
     - errname
     - errorlint
+    - errchkjson
+    - exportloopref
 
   # enable:
   #   - cyclop
-  #   - errchkjson
   #   - exhaustruct
-  #   - exportloopref
   #   - forbidigo
   #   - forcetypeassert
   #   - funlen
