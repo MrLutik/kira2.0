@@ -21,7 +21,6 @@
     "go.vetOnSave": "package",
     "go.useLanguageServer": true,
     "gopls": {
-        "ui.semanticTokens": true,
         "ui.diagnostic.analyses": {
             "nilness": true,
             "shadow": true,
