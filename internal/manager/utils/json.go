@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 
 	"github.com/mrlutik/kira2.0/internal/config"
@@ -30,12 +29,12 @@ func setNested(m map[string]any, keys []string, value any) error {
 	var exists bool
 	for i := 0; i < len(keys)-1; i++ {
 		if _, exists = m[keys[i]]; !exists {
-			return errors.New("key does not exist: " + keys[i])
+			return &TargetKeyNotFoundError{Key: keys[i]}
 		}
 
 		nestedMap, ok := m[keys[i]].(map[string]any)
 		if !ok {
-			return errors.New("expected map for key: " + keys[i])
+			return &ExpectedMapError{Key: keys[i]}
 		}
 
 		log.Debugf("Found section: %s", keys[i])
@@ -43,7 +42,7 @@ func setNested(m map[string]any, keys []string, value any) error {
 	}
 
 	if _, exists = m[keys[len(keys)-1]]; !exists {
-		return errors.New("final key does not exist: " + keys[len(keys)-1])
+		return &TargetKeyNotFoundError{Key: keys[len(keys)-1]}
 	}
 
 	log.Debugf("Found key: %s\n", keys[len(keys)-1])

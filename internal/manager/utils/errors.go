@@ -23,6 +23,12 @@ type (
 	EnvVariableNotFoundError struct {
 		VariableName string
 	}
+	TargetKeyNotFoundError struct {
+		Key string
+	}
+	ExpectedMapError struct {
+		Key string
+	}
 )
 
 func (e *TransactionExecutionError) Error() string {
@@ -43,4 +49,12 @@ func (e *ConfigurationVariableNotFoundError) Error() string {
 
 func (e *EnvVariableNotFoundError) Error() string {
 	return fmt.Sprintf("env variable '%s' not found", e.VariableName)
+}
+
+func (e *TargetKeyNotFoundError) Error() string {
+	return fmt.Sprintf("target key does not exist: %s", e.Key)
+}
+
+func (e *ExpectedMapError) Error() string {
+	return fmt.Sprintf("expected map for key: %s", e.Key)
 }
