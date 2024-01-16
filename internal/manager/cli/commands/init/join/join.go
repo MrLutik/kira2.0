@@ -84,7 +84,7 @@ func validateFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("error retrieving 'ip' flag: %w", err)
 	}
 	if !isValidIP(ip) {
-		return fmt.Errorf("'%s' is not a valid IP address", ip)
+		return fmt.Errorf("%w: '%s' is not valid", ErrInvalidIPAddress, ip)
 	}
 
 	interxPort, err := cmd.Flags().GetString("interx-port")
@@ -92,7 +92,7 @@ func validateFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("error retrieving 'interx-port' flag: %w", err)
 	}
 	if !isValidPort(interxPort) {
-		return fmt.Errorf("'%s' is not a valid Interx port", interxPort)
+		return fmt.Errorf("%w: '%s' is not valid", ErrInvalidInterxPort, interxPort)
 	}
 
 	rpcPort, err := cmd.Flags().GetString("rpc-port")
@@ -100,7 +100,7 @@ func validateFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("error retrieving 'rpc-port' flag: %w", err)
 	}
 	if !isValidPort(rpcPort) {
-		return fmt.Errorf("'%s' is not a valid Sekaid RPC port", rpcPort)
+		return fmt.Errorf("%w: '%s' is not valid", ErrInvalidSekaidRPCPort, rpcPort)
 	}
 
 	p2pPort, err := cmd.Flags().GetString("p2p-port")
@@ -108,7 +108,7 @@ func validateFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("error retrieving 'p2p-port' flag: %w", err)
 	}
 	if !isValidPort(p2pPort) {
-		return fmt.Errorf("'%s' is not a valid Sekaid P2P port", p2pPort)
+		return fmt.Errorf("%w: '%s' is not valid", ErrInvalidSekaidP2PPort, p2pPort)
 	}
 
 	_, err = cmd.Flags().GetString(sekaiVersionFlag)
