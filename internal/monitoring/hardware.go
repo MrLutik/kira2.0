@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"fmt"
 	"net"
 	"syscall"
 	"time"
@@ -126,7 +125,7 @@ func GetPublicIP() (string, error) {
 				return ans.Txt[0], nil
 			}
 		}
-		return "", fmt.Errorf("unable to extract public IP address")
+		return "", ErrExtractingPublicIP
 	}
 
 	queryDNS := func(qname string, qtype uint16, server string) (string, error) {
@@ -152,7 +151,7 @@ func GetPublicIP() (string, error) {
 		return ip, nil
 	}
 
-	return "", fmt.Errorf("can't get the public IP address")
+	return "", ErrGettingPublicIPAddress
 }
 
 // getInterfacesIP returns a map of interface names and their corresponding IP addresses.

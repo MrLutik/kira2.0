@@ -1,6 +1,9 @@
 package monitoring
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type (
 	HTTPRequestFailedError struct {
@@ -10,6 +13,11 @@ type (
 	ValidatorAddressNotFoundError struct {
 		Address string
 	}
+)
+
+var (
+	ErrExtractingPublicIP     = errors.New("unable to extract public IP address")
+	ErrGettingPublicIPAddress = errors.New("can't get the public IP address")
 )
 
 func (e *HTTPRequestFailedError) Error() string {
