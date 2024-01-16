@@ -8,7 +8,7 @@ import (
 
 type (
 	// DockerNetworkInfo contains needed information about a Docker network.
-	DockerNetwrokInfo struct {
+	DockerNetworkInfo struct {
 		Name      string
 		IpAddress string
 		Subnet    string
@@ -37,7 +37,7 @@ type (
 
 // GetDockerNetwork retrieves information about a Docker network.
 // It queries the Docker daemon to obtain a list of network resources and searches for the specified network by name.
-func (m *MonitoringService) GetDockerNetwork(ctx context.Context, networkName string) (*DockerNetwrokInfo, error) {
+func (m *MonitoringService) GetDockerNetwork(ctx context.Context, networkName string) (*DockerNetworkInfo, error) {
 	log.Infof("Getting network '%s' resource information", networkName)
 
 	resources, err := m.dockerManager.GetNetworksInfo(ctx)
@@ -48,14 +48,14 @@ func (m *MonitoringService) GetDockerNetwork(ctx context.Context, networkName st
 
 	for _, network := range resources {
 		if network.Name == networkName {
-			return &DockerNetwrokInfo{
+			return &DockerNetworkInfo{
 				Name:      network.Name,
 				IpAddress: network.IPAM.Config[0].Gateway,
 				Subnet:    network.IPAM.Config[0].Subnet,
 			}, nil
 		}
 	}
-	return nil, fmt.Errorf("the network '%s' is not available", networkName)
+	return nil, &NetworkNotAvailableError{NetworkName: networkName}
 }
 
 // GetContainerInfo retrieves information about a Docker container and its network bindings.
@@ -96,7 +96,7 @@ func (m *MonitoringService) GetContainerInfo(ctx context.Context, containerName,
 
 	network, exists := resultInspect.NetworkSettings.Networks[dockerNetworkName]
 	if !exists {
-		return nil, fmt.Errorf("network '%s' does not exist", dockerNetworkName)
+		return nil, ErrNetworkDoesNotExist
 	}
 
 	r := &ContainerInfo{
