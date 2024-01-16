@@ -57,9 +57,9 @@ func (dm *ContainerManager) CheckForContainersName(ctx context.Context, containe
 }
 
 // CheckIfProcessIsRunningInContainer checks if a process with the specified name is running inside a container.
-// ctx: The context for the operation.
-// processName: The name of the process to check.
-// containerName: The name of the container.
+// - ctx: The context for the operation.
+// - processName: The name of the process to check.
+// - containerName: The name of the container.
 // Returns a boolean indicating if the process is running, the output of the process, and an error if any issue occurs.
 func (dm *ContainerManager) CheckIfProcessIsRunningInContainer(ctx context.Context, processName, containerName string) (bool, string, error) {
 	log.Infof("Checking if sekaid is running inside a '%s' container", containerName)
@@ -249,11 +249,11 @@ func (dm *ContainerManager) GetInspectOfContainer(ctx context.Context, container
 }
 
 // InitAndCreateContainer initializes and creates a new container.
-// ctx: The context for the operation.
-// containerConfig: The container configuration.
-// networkConfig: The network configuration.
-// hostConfig: The host configuration.
-// containerName: The name of the container.
+// - ctx: The context for the operation.
+// - containerConfig: The container configuration.
+// - networkConfig: The network configuration.
+// - hostConfig: The host configuration.
+// - containerName: The name of the container.
 // Returns an error if any issue occurs during the container initialization and creation process.
 func (dm *ContainerManager) InitAndCreateContainer(
 	ctx context.Context,
@@ -301,9 +301,9 @@ func (dm *ContainerManager) StopContainer(ctx context.Context, containerName str
 }
 
 // InstallDebPackage installs a Debian package (.deb) inside a specified container.
-// ctx: The context for the operation.
-// containerID: The ID or name of the container where the package will be installed.
-// debDestPath: The destination path of the .deb package inside the container.
+// - ctx: The context for the operation.
+// - containerID: The ID or name of the container where the package will be installed.
+// - debDestPath: The destination path of the .deb package inside the container.
 // Returns an error if any issue occurs during the package installation process.
 func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, debDestPath string) error {
 	log.Infof("Installing '%s'", debDestPath)
@@ -399,10 +399,10 @@ func (dm *ContainerManager) WriteFileDataToContainer(ctx context.Context, fileDa
 }
 
 // SendFileToContainer sends a file from the host machine to a specified directory inside a Docker container.
-// ctx: The context for the operation.
-// filePathOnHostMachine: The path of the file on the host machine.
-// directoryPathOnContainer: The path of the directory inside the container where the file will be copied.
-// containerID: The ID or name of the Docker container.
+// - ctx: The context for the operation.
+// - filePathOnHostMachine: The path of the file on the host machine.
+// - directoryPathOnContainer: The path of the directory inside the container where the file will be copied.
+// - containerID: The ID or name of the Docker container.
 // Returns an error if any issue occurs during the file sending process.
 func (dm *ContainerManager) SendFileToContainer(ctx context.Context, filePathOnHostMachine, directoryPathOnContainer, containerID string) error {
 	log.Infof("Sending file '%s' to container '%s' to '%s'", filePathOnHostMachine, containerID, directoryPathOnContainer)
@@ -451,9 +451,9 @@ func (dm *ContainerManager) SendFileToContainer(ctx context.Context, filePathOnH
 }
 
 // addFileToTar adds a file to a tar archive.
-// fileInfo: The file information.
-// file: The reader for the file data.
-// tarWriter: The tar writer.
+// - fileInfo: The file information.
+// - file: The reader for the file data.
+// - tarWriter: The tar writer.
 // Returns an error if any issue occurs during the file writing process.
 func addFileToTar(fileInfo os.FileInfo, file io.Reader, tarWriter *tar.Writer) error {
 	log.Infof("Writing file '%s' to tar archive", fileInfo.Name())

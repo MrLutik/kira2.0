@@ -21,11 +21,6 @@ func VerifyingDockerEnvironment(ctx context.Context, dockerManager *DockerManage
 	err = dockerManager.PullImage(ctx, dockerImage)
 	errors.HandleFatalErr("Pulling image", err)
 
-	// checkBool, err := cosign.VerifyImageSignature(ctx, dockerImage, DockerImagePubKey)
-	// errors.HandleFatalErr("Verifying image signature", err)
-
-	// log.Infoln("Verified:", checkBool)
-
 	err = dockerManager.CheckOrCreateNetwork(ctx, cfg.DockerNetworkName)
 	errors.HandleFatalErr("Docker networking", err)
 }

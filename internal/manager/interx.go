@@ -153,7 +153,7 @@ func (i *InterxManager) getConfigPacks(ctx context.Context) ([]config.JsonValue,
 	}
 
 	configs = append(configs,
-		// node type: validator
+		// Node type: validator
 		config.JsonValue{Key: "node.validator_node_id", Value: node_id},
 		config.JsonValue{Key: "node.node_type", Value: "validator"},
 

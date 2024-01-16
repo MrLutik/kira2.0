@@ -31,10 +31,10 @@ type (
 
 var log = logging.Log
 
-// port range 0-65535
-// type udp or tcp
+// Port range: 0 - 65535
+// Type: udp or tcp
 //
-// for example 39090 tcp or 53 udp
+// Example: 39090 tcp or 53 udp
 
 func NewFirewallConfig(kiraCfg *config.KiraConfig) *FirewallConfig {
 	return &FirewallConfig{
@@ -63,7 +63,7 @@ func (fm *FirewallManager) CheckFirewallSetUp(ctx context.Context) (bool, error)
 		return false, fmt.Errorf("firewalld is not installed on the system")
 	}
 
-	// check if validator zone exist
+	// Checking if validator zone exist
 	check, err := fm.FirewallHandler.CheckFirewallZone(fm.FirewallConfig.ZoneName)
 	if err != nil {
 		return false, fmt.Errorf("error while checking validator zone %w", err)
@@ -157,7 +157,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("%w", err)
 	}
 
-	// adding interface that has internet acces
+	// Adding interface that has internet acces
 	log.Infof("Adding interface that has internet acces\n")
 	internetInterface := osutils.GetInternetInterface()
 	o, err = fm.FirewalldController.AddInterfaceToTheZone(internetInterface, fm.FirewallConfig.ZoneName)
@@ -194,7 +194,7 @@ func (fm *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 
-	// adding docker to the zone and enabling routing
+	// Adding docker to the zone and enabling routing
 	log.Infof("Adding docker0 interface to the zone and enabling routing\n")
 	o, err = fm.FirewalldController.AddInterfaceToTheZone("docker0", fm.FirewallConfig.ZoneName)
 	if err != nil {

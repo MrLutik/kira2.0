@@ -15,7 +15,7 @@ import (
 )
 
 type (
-	// gitHubAdapter is a struct to hold the GitHub client
+	// Structure gitHubAdapter is a struct to hold the GitHub client
 	gitHubAdapter struct {
 		client *github.Client
 	}

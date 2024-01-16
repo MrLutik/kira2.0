@@ -32,7 +32,6 @@ func ChangeConfigFile(cfg *config.KiraConfig) error {
 
 func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	filePath, configPath := configHandler.GetConfigFilePath()
-	// filePath := configPath + "/" + fileName
 	log.Infof("Reading config from <%s>\n", filePath)
 	okPath, err := osutils.CheckItPathExist(configPath)
 	if err != nil {
@@ -75,17 +74,15 @@ func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 
 func newDefaultKiraConfig() *config.KiraConfig {
 	return &config.KiraConfig{
-		NetworkName:    "testnet-1",
-		SekaidHome:     "/data/.sekai",
-		InterxHome:     "/data/.interx",
-		KeyringBackend: "test",
-		// DockerImageName:     "ghcr.io/kiracore/docker/kira-base",
-		// DockerImageVersion:  "v0.13.11",
+		NetworkName:         "testnet-1",
+		SekaidHome:          "/data/.sekai",
+		InterxHome:          "/data/.interx",
+		KeyringBackend:      "test",
 		DockerImageName:     "ubuntu",
 		DockerImageVersion:  "latest",
 		DockerNetworkName:   "kira_network",
-		SekaiVersion:        "latest", // or v0.3.32 or latest
-		InterxVersion:       "latest", // or v0.4.33 or latest
+		SekaiVersion:        "latest",
+		InterxVersion:       "latest",
 		SekaidContainerName: "sekaid",
 		InterxContainerName: "interx",
 		VolumeName:          "kira_volume",

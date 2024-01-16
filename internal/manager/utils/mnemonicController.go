@@ -47,8 +47,6 @@ func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg
 	defaultprefix := "kira"
 	defaultPath := "44'/118'/0'/0/0"
 
-	// masterMnemonic = "want vanish frown filter resemble purchase trial baby equal never cinnamon claim wrap cash snake cable head tray few daring shine clip loyal series"
-
 	mnemonicSet, err := vlg.MasterKeysGen([]byte(masterMnemonic), defaultprefix, defaultPath, h.config.SecretsFolder)
 	if err != nil {
 		return &vlg.MasterMnemonicSet{}, err
@@ -61,7 +59,7 @@ func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg
 func (h *HelperManager) MnemonicReader() (masterMnemonic string) {
 	log := logging.Log
 	log.Infoln("ENTER YOUR MASTER MNEMONIC:")
-	// var input string
+
 	reader := bufio.NewReader(os.Stdin)
 	//nolint:forbidigo // reading user input
 	fmt.Println("Enter mnemonic: ")
@@ -77,9 +75,8 @@ func (h *HelperManager) MnemonicReader() (masterMnemonic string) {
 	return masterMnemonic
 }
 
-// generates random bip 24 word mnemonic
+// GenerateMnemonic generates random bip 24 word mnemonic
 func (h *HelperManager) GenerateMnemonic() (masterMnemonic bip39.Mnemonic, err error) {
-	// bip39.Mnemonic
 	masterMnemonic = kiraMnemonicGen.NewMnemonic()
 	masterMnemonic.SetRandomEntropy(24)
 	masterMnemonic.Generate()

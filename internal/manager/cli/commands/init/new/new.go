@@ -104,10 +104,12 @@ func mainNew(cmd *cobra.Command) {
 	}
 
 	cfg.Recover = recover
-	log.Traceln(recover)
-	// todo this docker service restart has to be after docker and firewalld instalation, im doin it here because im laucnher is not ready
-	// temp remove docker restarting, only need once after firewalld instalation
+	log.Tracef("Recover flag is: %t", recover)
+	// TODO this docker service restart has to be after docker and firewalld installation, I'm doing it here because the launcher is not ready
+
+	// Temporary remove docker restarting, only need once after firewalld installation
 	// err = dockerManager.RestartDockerService()
+
 	errors.HandleFatalErr("Restarting docker service", err)
 	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
 	err = containerManager.CleanupContainersAndVolumes(ctx, cfg)

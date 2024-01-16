@@ -288,7 +288,7 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 	log := logging.Log
 	log.Infof("Setting up '%s' (sekaid) genesis container", s.config.SekaidContainerName)
 
-	// have to do this because need to initialize sekaid folder
+	// Have to do this because need to initialize sekaid folder
 	initcmd := fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`, s.config.NetworkName, s.config.SekaidHome, s.config.Moniker)
 	log.Tracef("running %s\n", initcmd)
 	out, err := s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", initcmd})
@@ -453,7 +453,7 @@ func (s *SekaidManager) postGenesisProposals(ctx context.Context) error {
 	}
 	log.Infof("Permissions to add: '%d' for: '%s'", permissions, address)
 
-	// waiting 10 sec to first block to be propagated
+	// Waiting for first block when it's going to be propagated
 	log.Infof("Waiting for %0.0f seconds before first block be propagated", time.Duration.Seconds(s.config.TimeBetweenBlocks))
 	time.Sleep(s.config.TimeBetweenBlocks)
 

@@ -17,21 +17,6 @@ const (
 	long  = "Monitoring sekaid network"
 )
 
-// const (
-// 	// SEKAID_HOME           = `/root/.sekai`
-// 	// DOCKER_NETWORK_NAME   = "kiranet"
-// 	// SEKAID_CONTAINER_NAME = "validator"
-// 	// RPC_PORT              = 36657
-
-// 	SEKAID_HOME           = `/data/.sekai`
-// 	DOCKER_NETWORK_NAME   = "kira_network"
-// 	SEKAID_CONTAINER_NAME = "sekaid"
-// 	RPC_PORT              = 26657
-// 	KEYRING_BACKEND       = "test"
-// 	INTERX_CONTAINER_NAME = "interx"
-// 	INTERX_PORT           = 11000
-// )
-
 var log = logging.Log
 
 func Monitoring() *cobra.Command {

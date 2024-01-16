@@ -42,7 +42,7 @@ func CopyFile(src, dst string) error {
 }
 
 func CreateDirPath(dirPath string) error {
-	log.Debugf("CreateDirPath(): Creating dir path: <%s>\n", dirPath)
+	log.Debugf("Creating dir path: %s", dirPath)
 	err := os.MkdirAll(dirPath, 0o755) // 0755 are the standard permissions for directories.
 	if err != nil {
 		return err
@@ -55,12 +55,12 @@ func CheckIfFileExist(filePath string) (bool, error) {
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	log.Debugf("CheckIfFileExist(): Checking if <%s> exist: %v\n", filePath, !info.IsDir())
+	log.Debugf("Checking if '%s' exist: %t", filePath, !info.IsDir())
 	return !info.IsDir(), nil
 }
 
 func GetCurrentOSUser() *user.User {
-	// geting curent user home folder even if it runned by sudo
+	// Getting current user home folder even if it run by sudo
 	sudoUser := os.Getenv("SUDO_USER")
 
 	if sudoUser != "" {
@@ -68,7 +68,7 @@ func GetCurrentOSUser() *user.User {
 		if err != nil {
 			panic(err)
 		}
-		log.Debugf("GetCurrentOSUser(): Geting current user: <%+v>\n", usr)
+		log.Debugf("Getting current user: %+v\n", usr)
 		return usr
 	} else {
 		// Fallback to the current user if not running via sudo
@@ -76,7 +76,7 @@ func GetCurrentOSUser() *user.User {
 		if err != nil {
 			panic(err)
 		}
-		log.Debugf("GetCurrentOSUser(): Geting current user: <%+v>\n", usr)
+		log.Debugf("Getting current user: %+v\n", usr)
 		return usr
 	}
 }

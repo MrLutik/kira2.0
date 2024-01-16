@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// ResponseSekaidStatus represents the JSON response structure for the Sekaid `/status` query.
 type (
+	// ResponseSekaidStatus represents the JSON response structure for the Sekaid `/status` query.
 	ResponseSekaidStatus struct {
 		Result struct {
 			NodeInfo struct {
@@ -44,6 +44,7 @@ type (
 		} `json:"result"`
 	}
 
+	// ValidatorStatus represents output of json structure from command:
 	// sekaid query customstaking validator --addr=kira19p8h9kwvrwgeu80c89ctvhwx7w3fc7r7rh32an --output json
 	ValidatorStatus struct {
 		ValKey string                `json:"val_key"`
@@ -52,6 +53,7 @@ type (
 		Rank   string                `json:"rank"`
 		Streak string                `json:"streak"`
 	}
+
 	validatorStatusPubKey struct {
 		Type string `json:"@type"`
 		Key  string `json:"key"`

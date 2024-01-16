@@ -32,12 +32,12 @@ type (
 		targetConfig *TargetSeedKiraConfig
 	}
 
-	// httpKiraClient is a struct for making HTTP calls to the nodes for retrieving information about network
+	// Structure httpKiraClient is a struct for making HTTP calls to the nodes for retrieving information about network
 	httpKiraClient struct {
 		client *http.Client
 	}
 
-	// networkInfo is a struct which represents the general information
+	// Structure networkInfo is a struct which represents the general information
 	// about network which will be used for future connection
 	networkInfo struct {
 		NetworkName string
@@ -46,7 +46,7 @@ type (
 		Seeds       []string
 	}
 
-	// syncInfo is a struct which represents synchronization info from target network
+	// Structure syncInfo is a struct which represents synchronization info from target network
 	// This struct is used for generating config values for starting sekaid instance
 	syncInfo struct {
 		rpcServers       []string
