@@ -75,7 +75,7 @@ func (h *HelperManager) AwaitNextBlock(ctx context.Context, timeout time.Duratio
 			elapsed := time.Since(startTime)
 			if elapsed > timeout-1 {
 				log.Errorf("Awaiting next block reached timeout: %0.0f seconds", timeout.Seconds())
-				return fmt.Errorf("timeout, failed to await next block within %0.2f s limit", timeout.Seconds())
+				return &TimeoutError{TimeoutSeconds: timeout.Seconds()}
 			}
 
 			blockHeight, err := h.getBlockHeight(ctx)
@@ -165,7 +165,12 @@ func (h *HelperManager) GivePermissionToAddress(ctx context.Context, permissionT
 
 	if txData.Code != 0 {
 		log.Errorf("Propagating transaction '%s' error. Transaction status: %d", data.Txhash, txData.Code)
-		return fmt.Errorf("adding '%d' permission to '%s' address error.\nTransaction hash: '%s'.\nCode: '%d'", permissionToAdd, address, data.Txhash, txData.Code)
+		return &PermissionAddingError{
+			PermissionToAdd: permissionToAdd,
+			Address:         address,
+			TxHash:          data.Txhash,
+			Code:            txData.Code,
+		}
 	}
 
 	return nil
@@ -334,7 +339,10 @@ func (h *HelperManager) UpsertIdentityRecord(ctx context.Context, address, accou
 
 	if txData.Code != 0 {
 		log.Errorf("The '%s' transaction was executed with error. Code: %d", data.Txhash, txData.Code)
-		return fmt.Errorf("the '%s' transaction was executed with error. Code: %d", data.Txhash, txData.Code)
+		return &TransactionExecutionError{
+			TxHash: data.Txhash,
+			Code:   txData.Code,
+		}
 	}
 
 	return nil
