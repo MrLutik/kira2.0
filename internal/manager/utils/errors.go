@@ -16,6 +16,10 @@ type (
 	TimeoutError struct {
 		TimeoutSeconds float64
 	}
+	ConfigurationVariableNotFoundError struct {
+		VariableName string
+		Tag          string
+	}
 )
 
 func (e *TransactionExecutionError) Error() string {
@@ -28,4 +32,8 @@ func (e *PermissionAddingError) Error() string {
 
 func (e *TimeoutError) Error() string {
 	return fmt.Sprintf("timeout, failed to await next block within %0.2f s limit", e.TimeoutSeconds)
+}
+
+func (e *ConfigurationVariableNotFoundError) Error() string {
+	return fmt.Sprintf("the configuration does NOT contain a variable name '%s' occurring after the tag '%s'", e.VariableName, e.Tag)
 }

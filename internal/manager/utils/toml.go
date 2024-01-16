@@ -91,7 +91,10 @@ func SetTomlVar(config *config.TomlValue, configStr string) (string, error) {
 	}
 
 	if nameLine == -1 || (nextTagLine != -1 && nameLine > nextTagLine) {
-		return "", fmt.Errorf("the configuration does NOT contain a variable name '%s' occurring after the tag '%s'", name, tag)
+		return "", &ConfigurationVariableNotFoundError{
+			VariableName: name,
+			Tag:          tag,
+		}
 	}
 
 	if IsNullOrWhitespace(value) {
