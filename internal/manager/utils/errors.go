@@ -20,6 +20,9 @@ type (
 		VariableName string
 		Tag          string
 	}
+	EnvVariableNotFoundError struct {
+		VariableName string
+	}
 )
 
 func (e *TransactionExecutionError) Error() string {
@@ -36,4 +39,8 @@ func (e *TimeoutError) Error() string {
 
 func (e *ConfigurationVariableNotFoundError) Error() string {
 	return fmt.Sprintf("the configuration does NOT contain a variable name '%s' occurring after the tag '%s'", e.VariableName, e.Tag)
+}
+
+func (e *EnvVariableNotFoundError) Error() string {
+	return fmt.Sprintf("env variable '%s' not found", e.VariableName)
 }
