@@ -11,7 +11,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/blacklist"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/closePort"
-	openport "github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/openPort"
+	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/openPort"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/whitelist"
 	"github.com/spf13/cobra"
 )
@@ -42,7 +42,7 @@ func Firewall() *cobra.Command {
 		},
 	}
 
-	firewallCmd.AddCommand(openport.OpenPort())
+	firewallCmd.AddCommand(openPort.OpenPort())
 	firewallCmd.AddCommand(closePort.ClosePort())
 	firewallCmd.AddCommand(blacklist.Blacklist())
 	firewallCmd.AddCommand(whitelist.Whitelist())
