@@ -62,7 +62,7 @@ func (s *ServiceManager) GetServiceStatus(ctx context.Context) (string, error) {
 
 	unitStatus, err := s.connection.GetUnitPropertiesContext(ctx, s.serviceName)
 	if err != nil {
-		return "", fmt.Errorf("failed to get service status: %s", err.Error())
+		return "", fmt.Errorf("failed to get service status: %w", err)
 	}
 
 	active, ok := unitStatus["ActiveState"].(string)
@@ -71,7 +71,11 @@ func (s *ServiceManager) GetServiceStatus(ctx context.Context) (string, error) {
 	}
 
 	if active != unitStates[0].ActiveState {
-		return "", fmt.Errorf("different values for the same property: '%s' and '%s'", unitStates[0].ActiveState, active)
+		return "", &DifferentPropertyValuesError{
+			PropertyName:  "yourPropertyName",
+			ExpectedValue: unitStates[0].ActiveState,
+			ActualValue:   active,
+		}
 	}
 
 	log.Infof("'%s' service status is '%s'", s.serviceName, active)
@@ -84,7 +88,7 @@ func (s *ServiceManager) RestartService(ctx context.Context) error {
 
 	job, err := s.connection.RestartUnitContext(ctx, s.serviceName, s.modeAction, ch)
 	if err != nil {
-		return fmt.Errorf("failed to restart service: %s", err.Error())
+		return fmt.Errorf("failed to restart service: %w", err)
 	}
 
 	log.Infof("Job path: %d", job)
@@ -111,7 +115,7 @@ func (s *ServiceManager) RestartService(ctx context.Context) error {
 	case <-done:
 		return nil
 	case <-ctx.Done():
-		return fmt.Errorf("restarting service was cancelled or timed out")
+		return ErrServiceRestartCancellationTimeout
 	}
 }
 
@@ -121,7 +125,7 @@ func (s *ServiceManager) StopService(ctx context.Context) error {
 
 	job, err := s.connection.StopUnitContext(ctx, s.serviceName, s.modeAction, ch)
 	if err != nil {
-		return fmt.Errorf("failed to stop service: %s", err.Error())
+		return fmt.Errorf("failed to stop service: %w", err)
 	}
 
 	log.Infof("Job path: %d", job)
@@ -150,7 +154,7 @@ func (s *ServiceManager) StopService(ctx context.Context) error {
 		return nil
 	case <-ctx.Done():
 		// Timeout or cancellation from the upstream context.
-		return fmt.Errorf("stopping service was cancelled or timed out")
+		return fmt.Errorf("stopping service was cancelled or timed out: %w", ErrServiceTimeout)
 	}
 }
 
@@ -158,7 +162,7 @@ func (s *ServiceManager) StopService(ctx context.Context) error {
 func (s *ServiceManager) EnableService(ctx context.Context, runtime, force bool) error {
 	_, changes, err := s.connection.EnableUnitFilesContext(ctx, []string{s.serviceName}, runtime, force)
 	if err != nil {
-		return fmt.Errorf("failed to enable service: %s", err.Error())
+		return fmt.Errorf("failed to enable service: %w", err)
 	}
 
 	if len(changes) == 0 {
@@ -178,11 +182,11 @@ func (s *ServiceManager) WaitForServiceStatus(ctx context.Context, targetStatus 
 	for {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("timeout reached while waiting for service status")
+			return fmt.Errorf("waiting service cancelled: %w", ErrServiceTimeout)
 		default:
 			status, err := s.GetServiceStatus(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to get service status: %s", err.Error())
+				return fmt.Errorf("failed to get service status: %w", err)
 			}
 
 			if status == targetStatus {
