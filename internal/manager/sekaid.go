@@ -380,7 +380,7 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 	updates := s.getStandardConfigPack()
 	if len(s.config.ConfigTomlValues) == 0 {
 		log.Errorf("There is no provided configs for joiner")
-		return fmt.Errorf("cannot apply empty necessary configs for joiner")
+		return ErrEmptyNecessaryConfigs
 	}
 	updates = append(updates, s.config.ConfigTomlValues...)
 
@@ -422,7 +422,11 @@ func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 	}
 	if !check {
 		log.Errorf("Process '%s' is not running in '%s' container", processName, s.config.SekaidContainerName)
-		return fmt.Errorf("process '%s' is not running in '%s' container", processName, s.config.SekaidContainerName)
+		return &ProcessNotRunningError{
+			ProcessName:   processName,
+			ContainerName: s.config.SekaidContainerName,
+		}
+
 	}
 	return nil
 }
