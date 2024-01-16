@@ -40,19 +40,19 @@ func Generate() *cobra.Command {
 			if err != nil {
 				// Handle the error, for example, log it and return or exit
 				log.Errorf("Failed to get key type: %s", err)
-				return err // or os.Exit(1) or any other appropriate action
+				return err // Or os.Exit(1) or any other appropriate action
 			}
 
 			keyLength, err := cmd.Flags().GetInt(lengthFlag)
 			if err != nil {
 				log.Errorf("Failed to get key length: %s", err)
-				return err // or os.Exit(1) or any other appropriate action
+				return err // Or os.Exit(1) or any other appropriate action
 			}
 
 			outDir, err := cmd.Flags().GetString(outputDirectoryFlag)
 			if err != nil {
 				log.Errorf("Failed to get output directory: %s", err)
-				return err // or os.Exit(1) or any other appropriate action
+				return err // Or os.Exit(1) or any other appropriate action
 			}
 
 			switch keyType {
