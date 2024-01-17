@@ -1,9 +1,10 @@
 package closePort
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/mrlutik/kira2.0/internal/errors"
+	errUtils "github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallController"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/osutils"
@@ -22,7 +23,11 @@ const (
 	typeOfIPFlag = "type"
 )
 
-var log = logging.Log
+var (
+	log = logging.Log
+
+	ErrWrongPortType = errors.New("wrong port type, can only be <tcp> or <udp>")
+)
 
 func ClosePort() *cobra.Command {
 	closePortCmd := &cobra.Command{
@@ -69,7 +74,7 @@ func validateFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("error retrieving '%s' flag: %w", typeOfIPFlag, err)
 	}
 	if portType != "tcp" && portType != "udp" {
-		return fmt.Errorf("wrong port type: <%s>, can only be <tcp> or <udp>", portType)
+		return fmt.Errorf("%w: current value is '%s'", ErrWrongPortType, portType)
 	}
 
 	return nil
@@ -80,15 +85,15 @@ func mainClosePort(cmd *cobra.Command) {
 	var err error
 
 	port.Port, err = cmd.Flags().GetString(portFlag)
-	errors.HandleFatalErr(fmt.Sprintf("cannot get '%s' flag", portFlag), err)
+	errUtils.HandleFatalErr(fmt.Sprintf("cannot get '%s' flag", portFlag), err)
 	port.Type, err = cmd.Flags().GetString(typeOfIPFlag)
-	errors.HandleFatalErr(fmt.Sprintf("cannot get '%s' flag", typeOfIPFlag), err)
+	errUtils.HandleFatalErr(fmt.Sprintf("cannot get '%s' flag", typeOfIPFlag), err)
 
 	fc := firewallController.NewFireWalldController("validator")
 	log.Infof("Adding %s port with %s type\n", port.Port, port.Type)
 	_, err = fc.ClosePort(port, fc.ZoneName)
-	errors.HandleFatalErr(fmt.Sprintf("error while closing port %v", port), err)
+	errUtils.HandleFatalErr(fmt.Sprintf("error while closing port %v", port), err)
 
 	_, err = fc.ReloadFirewall()
-	errors.HandleFatalErr("error while reloading firewall", err)
+	errUtils.HandleFatalErr("error while reloading firewall", err)
 }
