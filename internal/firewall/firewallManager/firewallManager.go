@@ -234,7 +234,7 @@ func (fm *FirewallManager) ClostAllOpenedPorts(ctx context.Context) error {
 	var portsToClose []types.Port
 
 	for _, p := range ports {
-		port, err := fm.FirewallHandler.ConvertFirewalldPortToKM2Port(p)
+		port, err := fm.FirewallHandler.ConvertFirewallDPortToKM2Port(p)
 		if err != nil {
 			return fmt.Errorf("convert port: %w", err)
 		}

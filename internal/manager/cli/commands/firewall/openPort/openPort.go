@@ -64,8 +64,8 @@ func validateFlags(cmd *cobra.Command) error {
 	if err != nil {
 		return fmt.Errorf("error retrieving '%s' flag: %w", portFlag, err)
 	}
-	check, err := osutils.CheckIfPortIsValid(portToOpen)
-	if err != nil || !check {
+	err = osutils.CheckIfPortIsValid(portToOpen)
+	if err != nil {
 		return fmt.Errorf("cannot parse port <%v>: %w", portToOpen, err)
 	}
 
