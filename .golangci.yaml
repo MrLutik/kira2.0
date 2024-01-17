@@ -54,6 +54,8 @@ linters:
     - exportloopref
     - forbidigo
     - forcetypeassert
+    - gochecknoglobals
+    - gochecknoinits
     - godot
     - goerr113
 
