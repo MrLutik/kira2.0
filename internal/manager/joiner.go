@@ -269,12 +269,12 @@ func (j *JoinerManager) parseRPCfromSeedsList(seeds []string) ([]string, error) 
 		// tcp://23ca3770ae3874ac8f5a6f84a5cfaa1b39e49fc9@128.140.86.241:26656 -> 128.140.86.241:26657
 		parts := strings.Split(seed, "@")
 		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid seed format: '%s'", seed)
+			return nil, fmt.Errorf("%w: '%s'", ErrInvalidSeedFormat, seed)
 		}
 
 		ipAndPort := strings.Split(parts[1], ":")
 		if len(ipAndPort) != 2 {
-			return nil, fmt.Errorf("invalid IP and Port format in seed: '%s'", seed)
+			return nil, fmt.Errorf("%w: '%s'", ErrInvalidIPPortFormat, seed)
 		}
 
 		rpc := fmt.Sprintf("%s:%s", ipAndPort[0], j.targetConfig.SekaidRPCPort)
@@ -288,7 +288,7 @@ func (j *JoinerManager) parseRPCfromSeedsList(seeds []string) ([]string, error) 
 // checkFileContentGenesisFiles checks if the content of two Genesis files is identical.
 func (JoinerManager) checkFileContentGenesisFiles(genesis1, genesis2 []byte) error {
 	if string(genesis1) != string(genesis2) {
-		return fmt.Errorf("genesis files are not identical")
+		return ErrFilesContentNotIdentical
 	}
 
 	return nil
@@ -308,7 +308,7 @@ func (j *JoinerManager) checkGenSum(ctx context.Context, genesis []byte) error {
 
 	if genesisSum != hashString {
 		log.Error("sha256 check sum is not the same")
-		return fmt.Errorf("sha256 check sum is not the same")
+		return ErrSHA256ChecksumMismatch
 	}
 
 	return nil
@@ -427,7 +427,10 @@ func (h *httpKiraClient) getGenSum(ctx context.Context, ipAddress, interxPort st
 // trimPrefix trims the specified prefix from the given string.
 func trimPrefix(s, prefix string) (string, error) {
 	if !strings.HasPrefix(s, prefix) {
-		return "", fmt.Errorf("input does not have prefix '%s'", prefix)
+		return "", &StringPrefixError{
+			StringValue: s,
+			Prefix:      prefix,
+		}
 	}
 
 	return s[len(prefix):], nil

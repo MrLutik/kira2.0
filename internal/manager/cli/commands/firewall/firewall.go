@@ -2,27 +2,31 @@ package firewall
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/mrlutik/kira2.0/internal/config/configFileController"
 	"github.com/mrlutik/kira2.0/internal/docker"
-	"github.com/mrlutik/kira2.0/internal/errors"
+	errUtils "github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/blacklist"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/closePort"
-	openport "github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/openPort"
+	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/openPort"
 	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/whitelist"
 	"github.com/spf13/cobra"
 )
 
 const (
 	use   = "firewall"
-	short = "Seting up firewalld"
-	long  = "Seting up firewalld"
+	short = "Setting up firewalld"
+	long  = "Setting up firewalld"
 )
 
-var log = logging.Log
+var (
+	log = logging.Log
+
+	ErrOnlyOneFlagAllowed = errors.New("only one flag at a time is allowed")
+)
 
 func Firewall() *cobra.Command {
 	log.Info("Adding `firewall` command...")
@@ -42,7 +46,7 @@ func Firewall() *cobra.Command {
 		},
 	}
 
-	firewallCmd.AddCommand(openport.OpenPort())
+	firewallCmd.AddCommand(openPort.OpenPort())
 	firewallCmd.AddCommand(closePort.ClosePort())
 	firewallCmd.AddCommand(blacklist.Blacklist())
 	firewallCmd.AddCommand(whitelist.Whitelist())
@@ -61,24 +65,24 @@ func validateFlags(cmd *cobra.Command) error {
 
 func mainFirewall(cmd *cobra.Command) {
 	kiraCfg, err := configFileController.ReadOrCreateConfig()
-	errors.HandleFatalErr("Error while reading cfg file", err)
+	errUtils.HandleFatalErr("Error while reading cfg file", err)
 
 	log.Info("Validating flags")
 
 	openPorts, err := cmd.Flags().GetBool("open-ports")
-	errors.HandleFatalErr("cannot parse flag", err)
+	errUtils.HandleFatalErr("cannot parse flag", err)
 
 	closePorts, err := cmd.Flags().GetBool("close-ports")
-	errors.HandleFatalErr("cannot parse flag", err)
+	errUtils.HandleFatalErr("cannot parse flag", err)
 
 	defaultB, err := cmd.Flags().GetBool("default")
-	errors.HandleFatalErr("cannot parse flag", err)
+	errUtils.HandleFatalErr("cannot parse flag", err)
 
 	err = validateBoolFlags(openPorts, closePorts, defaultB)
-	errors.HandleFatalErr("only 1 flag can be accepted ", err)
+	errUtils.HandleFatalErr("only 1 flag can be accepted ", err)
 
 	dockerManager, err := docker.NewTestDockerManager()
-	errors.HandleFatalErr("Can't create instance of docker manager", err)
+	errUtils.HandleFatalErr("Can't create instance of docker manager", err)
 	defer dockerManager.Cli.Close()
 
 	fm := firewallManager.NewFirewallManager(dockerManager, kiraCfg)
@@ -87,13 +91,13 @@ func mainFirewall(cmd *cobra.Command) {
 	switch {
 	case closePorts:
 		err = fm.ClostAllOpenedPorts(ctx)
-		errors.HandleFatalErr("Error while closing ports", err)
+		errUtils.HandleFatalErr("Error while closing ports", err)
 	case openPorts:
 		err = fm.OpenConfigPorts(ctx)
-		errors.HandleFatalErr("Error while opening ports", err)
+		errUtils.HandleFatalErr("Error while opening ports", err)
 	case defaultB:
 		err = fm.SetUpFirewall(ctx)
-		errors.HandleFatalErr("Error while closing ports", err)
+		errUtils.HandleFatalErr("Error while closing ports", err)
 	}
 }
 
@@ -107,7 +111,7 @@ func validateBoolFlags(flags ...bool) error {
 	}
 
 	if sum > 1 {
-		return fmt.Errorf("only one flag at a time is allowed")
+		return ErrOnlyOneFlagAllowed
 	}
 	return nil
 }

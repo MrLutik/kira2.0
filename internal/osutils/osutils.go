@@ -66,6 +66,7 @@ func GetCurrentOSUser() *user.User {
 	if sudoUser != "" {
 		usr, err := user.Lookup(sudoUser)
 		if err != nil {
+			// TODO leave panic?
 			panic(err)
 		}
 		log.Debugf("Getting current user: %+v\n", usr)
@@ -74,6 +75,7 @@ func GetCurrentOSUser() *user.User {
 		// Fallback to the current user if not running via sudo
 		usr, err := user.Current()
 		if err != nil {
+			// TODO leave panic?
 			panic(err)
 		}
 		log.Debugf("Getting current user: %+v\n", usr)
@@ -82,7 +84,7 @@ func GetCurrentOSUser() *user.User {
 }
 
 func CheckItPathExist(path string) (bool, error) {
-	log.Debugf("CheckItPathExist():Checking if path exist: <%s>\n", path)
+	log.Debugf("Checking if path exist: %s\n", path)
 
 	_, err := os.Stat(path)
 	if err == nil {
@@ -97,24 +99,23 @@ func CheckItPathExist(path string) (bool, error) {
 func CheckIfIPIsValid(input string) (bool, error) {
 	ipCheck := net.ParseIP(input)
 	if ipCheck == nil {
-		return false, fmt.Errorf("<%s> is not a valid ip", input)
+		return false, &InvalidIPError{Input: input}
 	}
 	return true, nil
 }
 
-// Checks if input string is a valid port  0-65535
-func CheckIfPortIsValid(input string) (bool, error) {
-	// Convert string to integer
+// CheckIfPortIsValid checks if the input string is a valid port (0-65535) and returns true if valid, false otherwise.
+func CheckIfPortIsValid(input string) bool {
 	port, err := strconv.Atoi(input)
 	if err != nil {
-		return false, err
-	}
-	// Check if the port is in the valid range
-	if port < 0 || port > 65535 {
-		return false, fmt.Errorf("%v port in not in valid range", port)
+		return false
 	}
 
-	return true, nil
+	if port < 0 || port > 65535 {
+		return false
+	}
+
+	return true
 }
 
 // Run command

@@ -220,7 +220,10 @@ func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
 	}
 	if !check {
 		log.Errorf("Process '%s' is not running in '%s' container", interxProcessName, i.config.InterxContainerName)
-		return fmt.Errorf("process '%s' is not running in '%s' container", interxProcessName, i.config.InterxContainerName)
+		return &ProcessNotRunningError{
+			ProcessName:   interxProcessName,
+			ContainerName: i.config.InterxContainerName,
+		}
 	}
 	log.Infof("'%s' started\n", interxProcessName)
 	return nil

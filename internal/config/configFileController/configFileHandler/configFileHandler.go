@@ -20,20 +20,22 @@ func GetConfigFilePath() (filePath, folderPath string) {
 	return filePath, folderPath
 }
 
-func ReadConfigFile(filePath string) (cfg *config.KiraConfig, err error) {
-	ok, err := osutils.CheckIfFileExist(filePath)
+func ReadConfigFile(filePath string) (*config.KiraConfig, error) {
+	isFileExist, err := osutils.CheckIfFileExist(filePath)
 	if err != nil {
-		return cfg, err
+		return nil, err
 	}
-	log.Debugf("File <%s> exist:%v\n", filePath, ok)
-	if ok {
-		log.Debugf("Reding config from %s file", filePath)
-		if _, err := toml.DecodeFile(filePath, &cfg); err != nil {
+
+	var cfg *config.KiraConfig
+	log.Debugf("File '%s' exist: %t\n", filePath, isFileExist)
+	if isFileExist {
+		log.Debugf("Reading config from '%s' file", filePath)
+		if _, err = toml.DecodeFile(filePath, &cfg); err != nil {
 			return nil, err
 		}
 		log.Debugf("Config:\n %+v", cfg)
 	} else {
-		return cfg, fmt.Errorf("file <%s> does not exist, %w", filePath, err)
+		return nil, fmt.Errorf("file '%s' does not exist: %w", filePath, err)
 	}
 	return cfg, nil
 }

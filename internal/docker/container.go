@@ -93,12 +93,12 @@ func (dm *ContainerManager) CheckIfProcessIsRunningInContainer(ctx context.Conte
 		return false, "", err
 	}
 
-	output := stdout.String()
 	if errOutput := stderr.String(); errOutput != "" {
 		log.Infof("Stderr: %s", errOutput)
-		return false, "", fmt.Errorf("stderr: %s", errOutput)
+		return false, "", fmt.Errorf("%w:\nOutput: %s", ErrStderrNotEmpty, errOutput)
 	}
 
+	output := stdout.String()
 	if strings.TrimSpace(output) != "" {
 		log.Infof("Process with name '%s' running inside '%s' container with id: %s", processName, containerName, string(output))
 	} else {
@@ -205,7 +205,7 @@ func readTarArchive(tr *tar.Reader, fileName string) ([]byte, error) {
 			return b, nil
 		}
 	}
-	return nil, fmt.Errorf("file %s not found in tar archive", fileName)
+	return nil, fmt.Errorf("%w: %s", ErrFileNotFoundInTarBase, fileName)
 }
 
 // GetFileFromContainer retrieves a file from a specified container using the Docker API.
@@ -346,9 +346,8 @@ func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, 
 	}
 
 	if waitResponse.ExitCode != 0 {
-		err = fmt.Errorf("package installation failed: %s", string(output))
-		log.Errorf("Installation error: %s", err)
-		return err
+		log.Errorf("Installation error: %s", string(output))
+		return fmt.Errorf("%w:\nOutput: %s", ErrPackageInstallationFailed, string(output))
 	}
 
 	log.Infof("Package '%s' installed successfully", debDestPath)

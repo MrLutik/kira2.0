@@ -12,9 +12,16 @@ import (
 )
 
 const (
+	// Command info
 	use   = "maintenance"
 	short = "command for maintenance mode"
 	long  = "command for maintenance mode: pause for maintenance, unpause, and activate if validator was deactivated"
+
+	// Flags
+	pauseFlag    = "pause"
+	unpauseFlag  = "unpause"
+	activateFlag = "activate"
+	statusFlag   = "status"
 )
 
 var log = logging.Log
@@ -43,10 +50,10 @@ func Maintenance() *cobra.Command {
 		},
 	}
 
-	maintenanceCmd.Flags().Bool("pause", false, "Set this flag to pause block validation by node")
-	maintenanceCmd.Flags().Bool("unpause", false, "Set this flag to unpause block validation by node")
-	maintenanceCmd.Flags().Bool("activate", false, "Set this flag to reactivate block validation by node (if node bein deactivated for long period of inaction)")
-	maintenanceCmd.Flags().Bool("status", false, "Set this flag to get curent node status")
+	maintenanceCmd.Flags().Bool(pauseFlag, false, "Set this flag to pause block validation by node")
+	maintenanceCmd.Flags().Bool(unpauseFlag, false, "Set this flag to unpause block validation by node")
+	maintenanceCmd.Flags().Bool(activateFlag, false, "Set this flag to reactivate block validation by node (if node bein deactivated for long period of inaction)")
+	maintenanceCmd.Flags().Bool(statusFlag, false, "Set this flag to get curent node status")
 
 	return maintenanceCmd
 }
@@ -56,37 +63,37 @@ func validateFlags(cmd *cobra.Command) error {
 }
 
 func mainMaitenance(cmd *cobra.Command) error {
-	pause, err := cmd.Flags().GetBool("pause")
+	pause, err := cmd.Flags().GetBool(pauseFlag)
 	if err != nil {
-		return fmt.Errorf("error while geting <pause> flag")
+		return fmt.Errorf("%w: '%s' flag", ErrGettingFlagError, pauseFlag)
 	}
-	unpause, err := cmd.Flags().GetBool("unpause")
+	unpause, err := cmd.Flags().GetBool(unpauseFlag)
 	if err != nil {
-		return fmt.Errorf("error while geting <unpause> flag")
+		return fmt.Errorf("%w: '%s' flag", ErrGettingFlagError, unpauseFlag)
 	}
-	activate, err := cmd.Flags().GetBool("activate")
+	activate, err := cmd.Flags().GetBool(activateFlag)
 	if err != nil {
-		return fmt.Errorf("error while geting <activate> flag")
+		return fmt.Errorf("%w: '%s' flag", ErrGettingFlagError, activateFlag)
 	}
-	status, err := cmd.Flags().GetBool("status")
+	status, err := cmd.Flags().GetBool(statusFlag)
 	if err != nil {
-		return fmt.Errorf("error while geting <status> flag")
+		return fmt.Errorf("%w: '%s' flag", ErrGettingFlagError, statusFlag)
 	}
 
-	err = validateBoolFlags(cmd, pause, unpause, activate, status)
+	err = validateBoolFlags(pause, unpause, activate, status)
 	if err != nil {
 		return err
 	}
-	log.Debugln(pause, unpause, activate, status)
+	log.Debugf("Flags provided: pause - %t, unpause - %t, activate - %t, status - %t", pause, unpause, activate, status)
 	kiraCfg, err := configFileController.ReadOrCreateConfig()
 	if err != nil {
-		return fmt.Errorf("error while geting kira manager config: %w", err)
+		return fmt.Errorf("error while getting kira manager config: %w", err)
 	}
 	log.Debugf("kira manager cfg: %+v", kiraCfg)
 	ctx := context.Background()
 	cm, err := docker.NewTestContainerManager()
 	if err != nil {
-		return fmt.Errorf("error while geting containerManager: %w", err)
+		return fmt.Errorf("error while getting containerManager: %w", err)
 	}
 
 	switch {
@@ -116,7 +123,7 @@ func mainMaitenance(cmd *cobra.Command) error {
 	return nil
 }
 
-func validateBoolFlags(cmd *cobra.Command, flags ...bool) error {
+func validateBoolFlags(flags ...bool) error {
 	sum := 0
 	for _, val := range flags {
 		if val {
@@ -125,9 +132,9 @@ func validateBoolFlags(cmd *cobra.Command, flags ...bool) error {
 	}
 
 	if sum > 1 {
-		return fmt.Errorf("only one flag at a time is allowed")
+		return ErrOnlyOneFlagAllowed
 	} else if sum == 0 {
-		return fmt.Errorf("select flag")
+		return ErrNotSelectFlag
 	}
 	return nil
 }

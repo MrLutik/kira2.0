@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"os"
 
@@ -15,7 +16,12 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 )
 
-var log = logging.Log
+var (
+	log = logging.Log
+
+	ErrInvalidPublicKeyType = errors.New("public key is not of type *ecdsa.PublicKey")
+	ErrDecodingPublicKey    = errors.New("failed to decode public key")
+)
 
 func VerifyImageSignature(ctx context.Context, imageRef, pubKey string) (bool, error) {
 	log.Infof("Verifying image '%s' signature\n", imageRef)
@@ -23,7 +29,7 @@ func VerifyImageSignature(ctx context.Context, imageRef, pubKey string) (bool, e
 	block, _ := pem.Decode([]byte(pubKey))
 	if block == nil {
 		log.Errorln("Failed to decode public key")
-		return false, fmt.Errorf("failed to decode public key")
+		return false, ErrDecodingPublicKey
 	}
 
 	// Parse the public key from the decoded PEM block
@@ -38,7 +44,7 @@ func VerifyImageSignature(ctx context.Context, imageRef, pubKey string) (bool, e
 	ecdsaPubKey, ok := pub.(*ecdsa.PublicKey)
 	if !ok {
 		log.Errorln("Public key is not of type *ecdsa.PublicKey")
-		return false, fmt.Errorf("public key is not of type *ecdsa.PublicKey")
+		return false, ErrInvalidPublicKeyType
 	}
 
 	// Get image reference

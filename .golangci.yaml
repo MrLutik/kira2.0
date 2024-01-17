@@ -55,6 +55,7 @@ linters:
     - forbidigo
     - forcetypeassert
     - godot
+    - goerr113
 
   # enable:
   #   - cyclop
@@ -66,7 +67,6 @@ linters:
   #   - gocognit
   #   - gocritic
   #   - gocyclo
-  #   - goerr113
   #   - goimports
   #   - golint
   #   - gomnd

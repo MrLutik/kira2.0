@@ -52,12 +52,12 @@ func (fh *FirewallHandler) ClosePorts(portsToClose []types.Port, zoneName string
 	return nil
 }
 
-func (fh *FirewallHandler) ConvertFirewalldPortToKM2Port(firewalldPort string) (types.Port, error) {
+func (fh *FirewallHandler) ConvertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
 	re := regexp.MustCompile(`(?P<Port>\d+)/(?P<Type>tcp|udp)`)
-	matches := re.FindStringSubmatch(firewalldPort)
+	matches := re.FindStringSubmatch(firewallDPort)
 
 	if matches == nil {
-		return types.Port{}, fmt.Errorf("cannot convert %s port, no matches", firewalldPort)
+		return types.Port{}, fmt.Errorf("cannot convert '%s' port: %w", firewallDPort, ErrNoPortMatch)
 	}
 
 	// Extract matches based on named groups
@@ -66,12 +66,8 @@ func (fh *FirewallHandler) ConvertFirewalldPortToKM2Port(firewalldPort string) (
 
 	port := matches[portIndex]
 	portType := strings.TrimPrefix(matches[typeIndex], "/")
-	check, err := osutils.CheckIfPortIsValid(port)
-	if err != nil {
-		return types.Port{}, fmt.Errorf("cannot check if <%s> is a valid port", port)
-	}
-	if !check {
-		return types.Port{}, fmt.Errorf("<%s> is not a valid port", port)
+	if osutils.CheckIfPortIsValid(port) {
+		return types.Port{}, fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
 	}
 	return types.Port{
 		Port: port,
@@ -79,18 +75,13 @@ func (fh *FirewallHandler) ConvertFirewalldPortToKM2Port(firewalldPort string) (
 	}, nil
 }
 
-func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) (err error) {
-	var ok bool
+func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
-		ok, err = osutils.CheckIfPortIsValid(port.Port)
-		if err != nil {
-			return fmt.Errorf("error when parsinh <%s>: %w", port, err)
-		}
-		if !ok {
-			return fmt.Errorf("port <%s> is not valid: %w", port, err)
+		if osutils.CheckIfPortIsValid(port.Port) {
+			return fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
 		}
 		if port.Type != "tcp" && port.Type != "udp" {
-			return fmt.Errorf("port type <%s> is not valid", port.Type)
+			return fmt.Errorf("%w: '%s' is not valid", ErrInvalidPortType, port.Type)
 		}
 	}
 	return nil
@@ -125,7 +116,7 @@ func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, docker
 func (fh *FirewallHandler) BlackListIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
-		return fmt.Errorf("%s is not a valid ip", ip)
+		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
 	output, err := fh.firewalldController.RejectIp(ip, zoneName)
@@ -145,7 +136,7 @@ func (fh *FirewallHandler) BlackListIP(ip, zoneName string) error {
 func (fh *FirewallHandler) RemoveFromBlackListIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
-		return fmt.Errorf("%s is not a valid ip", ip)
+		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
 	output, err := fh.firewalldController.RemoveRejectRuleIp(ip, zoneName)
@@ -165,7 +156,7 @@ func (fh *FirewallHandler) RemoveFromBlackListIP(ip, zoneName string) error {
 func (fh *FirewallHandler) WhiteListIp(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
-		return fmt.Errorf("%s is not a valid ip", ip)
+		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
 	output, err := fh.firewalldController.AcceptIp(ip, zoneName)
@@ -185,7 +176,7 @@ func (fh *FirewallHandler) WhiteListIp(ip, zoneName string) error {
 func (fh *FirewallHandler) RemoveFromWhitelistIP(ip, zoneName string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
-		return fmt.Errorf("%s is not a valid ip", ip)
+		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
 	output, err := fh.firewalldController.RemoveAllowRuleIp(ip, zoneName)

@@ -14,7 +14,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
-func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (mastermnemonic string, err error) {
+func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (masterMnemonic string, err error) {
 	log := logging.Log
 	log.Infof("Checking if path exist: %s", pathToFile)
 	check, err := osutils.CheckItPathExist(pathToFile)
@@ -29,25 +29,25 @@ func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (mastermnemonic
 		}
 		// Retrieve the MASTER_MNEMONIC value
 		const masterMnemonicEnv = "MASTER_MNEMONIC"
-		mastermnemonic = os.Getenv(masterMnemonicEnv)
-		if mastermnemonic == "" {
-			err = fmt.Errorf("env variable '%s' not found", masterMnemonicEnv)
-			return mastermnemonic, err
+		masterMnemonic = os.Getenv(masterMnemonicEnv)
+		if masterMnemonic == "" {
+			err = &EnvVariableNotFoundError{VariableName: masterMnemonicEnv}
+			return masterMnemonic, err
 		} else {
-			log.Debugln("MASTER_MNEMONIC:", mastermnemonic)
+			log.Debugf("MASTER_MNEMONIC: %s", masterMnemonic)
 		}
 	}
 
-	return mastermnemonic, nil
+	return masterMnemonic, nil
 }
 
 func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg.MasterMnemonicSet, error) {
 	log := logging.Log
 	log.Debugf("GenerateMnemonicFromMaster: masterMnemonic:\n%s", masterMnemonic)
-	defaultprefix := "kira"
+	defaultPrefix := "kira"
 	defaultPath := "44'/118'/0'/0/0"
 
-	mnemonicSet, err := vlg.MasterKeysGen([]byte(masterMnemonic), defaultprefix, defaultPath, h.config.SecretsFolder)
+	mnemonicSet, err := vlg.MasterKeysGen([]byte(masterMnemonic), defaultPrefix, defaultPath, h.config.SecretsFolder)
 	if err != nil {
 		return &vlg.MasterMnemonicSet{}, err
 	}
@@ -131,12 +131,12 @@ func (h *HelperManager) SetEmptyValidatorState(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to create file <%s>, error: %w", tmpFilePath, err)
 	}
-	sekaidDataFoder := h.config.SekaidHome + "/data"
-	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidDataFoder)})
+	sekaidDataFolder := h.config.SekaidHome + "/data"
+	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidDataFolder)})
 	if err != nil {
-		return fmt.Errorf("unable to create folder <%s>, error: %w", sekaidDataFoder, err)
+		return fmt.Errorf("unable to create folder <%s>, error: %w", sekaidDataFolder, err)
 	}
-	err = h.containerManager.SendFileToContainer(ctx, tmpFilePath, sekaidDataFoder, h.config.SekaidContainerName)
+	err = h.containerManager.SendFileToContainer(ctx, tmpFilePath, sekaidDataFolder, h.config.SekaidContainerName)
 	if err != nil {
 		return fmt.Errorf("cannot send %s to container, err: %w", tmpFilePath, err)
 	}

@@ -2,7 +2,6 @@ package monitoring
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -97,7 +96,7 @@ func (m *MonitoringService) GetTopForValidator(ctx context.Context, interxPort, 
 		}
 	}
 
-	return "", fmt.Errorf("can't find validator address '%s'", validatorAddress)
+	return "", &ValidatorAddressNotFoundError{Address: validatorAddress}
 }
 
 // doGetConsensusQuery performs the Consensus query using the provided HTTP client,
