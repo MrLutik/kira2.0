@@ -15,9 +15,9 @@ import (
 
 var log = logging.Log
 
-// GetValidatorStatus is geting status of validator from `sekaid query customstaking validator“, returns *ValidatorStatus
+// GetValidatorStatus is getting status of validator from `sekaid query customstaking validator“, returns *ValidatorStatus
 func GetValidatorStatus(ctx context.Context, cfg *config.KiraConfig, cm *docker.ContainerManager) (*types.ValidatorStatus, error) {
-	log.Debugf("Geting validator status\n")
+	log.Debugf("Getting validator status\n")
 	h := utils.NewHelperManager(cm, cfg)
 	kiraAddr, err := h.GetAddressByName(ctx, "validator")
 	if err != nil {
@@ -37,7 +37,7 @@ func GetValidatorStatus(ctx context.Context, cfg *config.KiraConfig, cm *docker.
 	return data, nil
 }
 
-// PauseValidator is geting validator status, if status IS ACTIVE running `sekaid tx customslashing pause` inside sekaid container.
+// PauseValidator is getting validator status, if status IS ACTIVE running `sekaid tx customslashing pause` inside sekaid container.
 // Then checking if transaction of validator pausing was executed inside blockchain, if does -  again checking for validator status
 func PauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.ContainerManager) error {
 	log.Info("Pausing validator")
@@ -47,8 +47,11 @@ func PauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Cont
 	}
 	log.Debugf("VALIDATOR STATUS %s\n", strings.ToLower(nodeStatus.Status))
 	if strings.ToLower(nodeStatus.Status) != types.Active {
-		log.Errorf("Validator status is:  %s\n ", strings.ToLower(nodeStatus.Status))
-		return fmt.Errorf("cannot pause validator, node status is not <%s>, curent status <%s>", types.Active, nodeStatus.Status)
+		log.Errorf("Validator status is: %s\n ", strings.ToLower(nodeStatus.Status))
+		return fmt.Errorf("cannot pause validator: %w", &MismatchStatusError{
+			ExpectedStatus: types.Paused,
+			CurrentStatus:  nodeStatus.Status,
+		})
 	}
 
 	// Command:
@@ -84,23 +87,29 @@ func PauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Cont
 		return err
 	}
 	if txData.Code != 0 {
-		log.Errorf("Propagating transaction '%s' error. Transaction status: %d\n%+v\n", data.Txhash, txData.Code, txData)
-		return fmt.Errorf("pausing validator error\nTransaction hash: '%s'.\nCode: '%d'", data.Txhash, txData.Code)
+		log.Errorf("Propagating transaction '%s' error\nTransaction status: %d\nData: %+v\n", data.Txhash, txData.Code, txData)
+		return &TransactionError{
+			TxHash: data.Txhash,
+			Code:   txData.Code,
+		}
 	}
 
-	log.Debugf("Geting validator status second time\n")
+	log.Debugf("Getting validator status second time")
 	nodeStatus, err = GetValidatorStatus(ctx, cfg, cm)
 	if err != nil {
 		return err
 	}
-	log.Debugf("VALIDATOR STATUS %s\n", strings.ToLower(nodeStatus.Status))
+	log.Debugf("Validator status: %s", strings.ToLower(nodeStatus.Status))
 	if strings.ToLower(nodeStatus.Status) != types.Paused {
-		return fmt.Errorf("cannot pause validator, node status is not <%s>, curent status <%s>", types.Active, nodeStatus.Status)
+		return fmt.Errorf("cannot pause validator: %w", &MismatchStatusError{
+			ExpectedStatus: types.Paused,
+			CurrentStatus:  nodeStatus.Status,
+		})
 	}
 	return nil
 }
 
-// UnpauseValidator is geting validator status, if status IS PAUSED running `sekaid tx customslashing unpause` inside sekaid container.
+// UnpauseValidator is getting validator status, if status IS PAUSED running `sekaid tx customslashing unpause` inside sekaid container.
 // Then checking if transaction of validator unpausing was executed inside blockchain, if does -  again checking for validator status
 func UnpauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.ContainerManager) error {
 	log.Info("Unpausing validator")
@@ -110,7 +119,10 @@ func UnpauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Co
 	}
 	if strings.ToLower(nodeStatus.Status) != types.Paused {
 		log.Errorf("Validator status is:  %s\n ", strings.ToLower(nodeStatus.Status))
-		return fmt.Errorf("cannot unpause validator, node status is not <%s>, curent status <%s>", types.Active, nodeStatus.Status)
+		return fmt.Errorf("cannot unpause validator: %w", &MismatchStatusError{
+			ExpectedStatus: types.Inactive,
+			CurrentStatus:  nodeStatus.Status,
+		})
 	}
 
 	// Command:
@@ -145,12 +157,11 @@ func UnpauseValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.Co
 		return err
 	}
 	if txData.Code != 0 {
-		log.Errorf("Propagating transaction '%s' error. Transaction status: %d\n%+v\n", data.Txhash, txData.Code, txData)
-		return fmt.Errorf("unpausing validator error\nTransaction hash: '%s'.\nCode: '%d'", data.Txhash, txData.Code)
-	}
-	if strings.ToLower(nodeStatus.Status) != types.Paused {
-		log.Errorf("Validator status is:  %s\n ", strings.ToLower(nodeStatus.Status))
-		return fmt.Errorf("cannot unpause validator, node status is not <%s>, curent status <%s>", types.Active, nodeStatus.Status)
+		log.Errorf("Propagating transaction '%s' error\nTransaction status: %d\nData: %+v\n", data.Txhash, txData.Code, txData)
+		return &TransactionError{
+			TxHash: data.Txhash,
+			Code:   txData.Code,
+		}
 	}
 	return nil
 }
@@ -164,7 +175,10 @@ func ActivateValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.C
 		return err
 	}
 	if strings.ToLower(nodeStatus.Status) != types.Inactive {
-		return fmt.Errorf("cannot activate validator, node status is not <%s>, curent status <%s>", types.Inactive, nodeStatus.Status)
+		return fmt.Errorf("cannot activate validator: %w", &MismatchStatusError{
+			ExpectedStatus: types.Inactive,
+			CurrentStatus:  nodeStatus.Status,
+		})
 	}
 	// Command:
 	// sekaid tx customslashing activate
@@ -199,8 +213,11 @@ func ActivateValidator(ctx context.Context, cfg *config.KiraConfig, cm *docker.C
 		return err
 	}
 	if txData.Code != 0 {
-		log.Errorf("Propagating transaction '%s' error. Transaction status: %d\n%+v\n", data.Txhash, txData.Code, txData)
-		return fmt.Errorf("pausing validator error\nTransaction hash: '%s'.\nCode: '%d'", data.Txhash, txData.Code)
+		log.Errorf("Propagating transaction '%s' error\nTransaction status: %d\nData: %+v\n", data.Txhash, txData.Code, txData)
+		return fmt.Errorf("pausing validator error: %w", &TransactionError{
+			TxHash: data.Txhash,
+			Code:   txData.Code,
+		})
 	}
 	return nil
 }
