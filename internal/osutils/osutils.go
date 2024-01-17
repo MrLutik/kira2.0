@@ -104,19 +104,18 @@ func CheckIfIPIsValid(input string) (bool, error) {
 	return true, nil
 }
 
-// CheckIfPortIsValid checks if the input string is a valid port (0-65535).
-func CheckIfPortIsValid(input string) error {
-	// Convert string to integer
+// CheckIfPortIsValid checks if the input string is a valid port (0-65535) and returns true if valid, false otherwise.
+func CheckIfPortIsValid(input string) bool {
 	port, err := strconv.Atoi(input)
 	if err != nil {
-		return fmt.Errorf("invalid port format: %w", err)
-	}
-	// Check if the port is in the valid range
-	if port < 0 || port > 65535 {
-		return &InvalidPortRangeError{Port: port}
+		return false
 	}
 
-	return nil
+	if port < 0 || port > 65535 {
+		return false
+	}
+
+	return true
 }
 
 // Run command
