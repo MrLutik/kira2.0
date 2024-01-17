@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -23,7 +24,12 @@ const (
 )
 
 // log is the logger instance for this package.
-var log = logging.Log
+var (
+	log = logging.Log
+
+	ErrInvalidCurveSize = errors.New("invalid curve size")
+	ErrInvalidKeyType   = errors.New("invalid key type")
+)
 
 // Generate returns a cobra.Command that generates RSA or ECDSA keys
 // with given length and output directory. The command's flags allow
@@ -35,7 +41,7 @@ func Generate() *cobra.Command {
 		Use:   "keys",
 		Short: "Generates RSA or ECDSA keys",
 		Long:  "Generates RSA or ECDSA keys with given length and output directory",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			keyType, err := cmd.Flags().GetString(typeFlag)
 			if err != nil {
 				// Handle the error, for example, log it and return or exit
@@ -61,8 +67,8 @@ func Generate() *cobra.Command {
 			case "ecdsa":
 				return generateECDSA(keyLength, outDir)
 			default:
-				log.Errorf("invalid user input: %v\n", keyType)
-				return fmt.Errorf("invalid key type: %s", keyType)
+				log.Errorf("invalid user input: %s\n", keyType)
+				return fmt.Errorf("%w: %s", ErrInvalidKeyType, keyType)
 			}
 		},
 	}
@@ -115,8 +121,8 @@ func generateECDSA(curveBits int, outDir string) error {
 	case 521:
 		curve = elliptic.P521()
 	default:
-		log.Errorf("invalid user input `curve size`: %v\n", curveBits)
-		return fmt.Errorf("invalid curve size: %d", curveBits)
+		log.Errorf("invalid user input `curve size`: %d\n", curveBits)
+		return fmt.Errorf("%w: %d", ErrInvalidCurveSize, curveBits)
 
 	}
 
