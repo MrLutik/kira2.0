@@ -1,36 +1,46 @@
 package logging
 
 import (
-	"github.com/mrlutik/kira2.0/internal/hooks"
+	"errors"
+	"fmt"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	Log            *logrus.Logger
-	Hooks          = []logrus.Hook{&hooks.ColorHook{}}
-	ValidLogLevels = []string{"trace", "debug", "info", "warn", "error", "fatal", "panic"}
-)
-
-func init() {
-	Log = InitLogger(Hooks, "panic")
+type Logger struct {
+	*logrus.Logger
 }
 
-func InitLogger(h []logrus.Hook, logLevelStr string) *logrus.Logger {
-	log := logrus.New()
-	for _, hook := range h {
+var ErrInvalidLoggingLevel = errors.New("invalid logging level")
+
+func InitLogger(hooks []logrus.Hook, logLevelStr string) (*Logger, error) {
+	log := &Logger{logrus.New()}
+	for _, hook := range hooks {
 		log.AddHook(hook)
 	}
-	log.SetLevel(toLogLevel(logLevelStr))
 
-	return log
+	err := log.SetLoggingLevel(logLevelStr)
+	if err != nil {
+		return nil, fmt.Errorf("setting logging level error: %w", err)
+	}
+
+	return log, nil
 }
 
-func SetLevel(s string) {
-	Log.SetLevel(toLogLevel(s))
+func (l *Logger) SetLoggingLevel(s string) error {
+	level, err := toLogLevel(s)
+	if err != nil {
+		return fmt.Errorf("can't set the logging level '%s', error: %w", s, err)
+	}
+
+	l.SetLevel(level)
+
+	return nil
 }
 
-func toLogLevel(s string) (t logrus.Level) {
-	t = map[string]logrus.Level{
+func toLogLevel(s string) (logrus.Level, error) {
+	levelsMap := map[string]logrus.Level{
 		"trace": logrus.TraceLevel,
 		"debug": logrus.DebugLevel,
 		"info":  logrus.InfoLevel,
@@ -38,7 +48,25 @@ func toLogLevel(s string) (t logrus.Level) {
 		"error": logrus.ErrorLevel,
 		"fatal": logrus.FatalLevel,
 		"panic": logrus.PanicLevel,
-	}[s]
+	}
 
-	return
+	level, ok := levelsMap[strings.ToLower(s)]
+	if !ok {
+		return 0, ErrInvalidLoggingLevel
+	}
+
+	return level, nil
+}
+
+func GetValidLogLevels() []string {
+	return []string{"trace", "debug", "info", "warn", "error", "fatal", "panic"}
+}
+
+func IsValidLogLevel(levelValue string) bool {
+	for _, validLevel := range GetValidLogLevels() {
+		if levelValue == validLevel {
+			return true
+		}
+	}
+	return false
 }
