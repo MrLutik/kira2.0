@@ -1,6 +1,7 @@
 package configFileController
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,17 +12,21 @@ import (
 	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
-var log = logging.Log
+var (
+	log = logging.Log
+
+	ErrConfigPathNotExist = errors.New("config path does not exist")
+)
 
 func ChangeConfigFile(cfg *config.KiraConfig) error {
 	log.Infof("Changing config file\n")
 	filePath, configPath := configHandler.GetConfigFilePath()
-	okPath, err := osutils.CheckItPathExist(configPath)
+	isPathExist, err := osutils.CheckItPathExist(configPath)
 	if err != nil {
-		return fmt.Errorf("error while checking if %s exist, error:%w", configPath, err)
+		return fmt.Errorf("error checking if '%s' exist: %w", configPath, err)
 	}
-	if !okPath {
-		return fmt.Errorf("config path <%s> does not exist", configPath)
+	if !isPathExist {
+		return fmt.Errorf("%w: '%s'", ErrConfigPathNotExist, configPath)
 	}
 	err = configHandler.WriteConfigFile(filePath, cfg)
 	if err != nil {
@@ -32,7 +37,7 @@ func ChangeConfigFile(cfg *config.KiraConfig) error {
 
 func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	filePath, configPath := configHandler.GetConfigFilePath()
-	log.Infof("Reading config from <%s>\n", filePath)
+	log.Infof("Reading config from '%s'", filePath)
 	okPath, err := osutils.CheckItPathExist(configPath)
 	if err != nil {
 		return cfg, err
@@ -49,26 +54,23 @@ func ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	if err != nil {
 		return cfg, err
 	}
-	log.Debugf("%s exist?:%v\n", filePath, okFile)
+	log.Debugf("'%s' exist: %t", filePath, okFile)
 	if !okFile {
-		log.Infof("cannot find file <%s> file, creating new config file with default values\n", filePath)
+		log.Infof("Cannot find file '%s' file\nCreating new config file with default values", filePath)
 		defaultCfg := newDefaultKiraConfig()
 		defaultCfg.KiraConfigFilePath = filePath
 		err = configHandler.WriteConfigFile(filePath, defaultCfg)
 		if err != nil {
-			return cfg, fmt.Errorf("cannot create new KiraConfig in: <%s>", filePath)
+			return cfg, fmt.Errorf("cannot create new KiraConfig in: '%s': %w", filePath, err)
 		}
 	} else {
 		log.Infof("file <%s> exist, trying to read values\n", filePath)
 	}
 	cfg, err = configHandler.ReadConfigFile(filePath)
 	if err != nil {
-		return cfg, fmt.Errorf("cannot read KiraConfig from file: <%s>, %w", filePath, err)
+		return cfg, fmt.Errorf("cannot read Kira Config from file: '%s': %w", filePath, err)
 	}
-	if cfg == nil {
-		return cfg, fmt.Errorf("cannot read config from: <%s>, kiraconfig is NIL", filePath)
-	}
-	log.Debugf("RETURTING %+v \n", cfg)
+	log.Debugf("Returning %+v \n", cfg)
 	return cfg, nil
 }
 
