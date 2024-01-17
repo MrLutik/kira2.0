@@ -185,7 +185,7 @@ func (dm *DockerManager) DisableIpTablesForDocker() error {
 		}
 	} else {
 		defer file.Close()
-		if err := json.NewDecoder(file).Decode(&config); err != nil {
+		if err = json.NewDecoder(file).Decode(&config); err != nil {
 			return err
 		}
 		config.Iptables = false
