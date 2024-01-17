@@ -1,11 +1,12 @@
 package blacklist
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mrlutik/kira2.0/internal/config/configFileController"
 	"github.com/mrlutik/kira2.0/internal/docker"
-	"github.com/mrlutik/kira2.0/internal/errors"
+	errUtils "github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/osutils"
@@ -27,7 +28,11 @@ const (
 	removingFlag = "remove"
 )
 
-var log = logging.Log
+var (
+	log = logging.Log
+
+	ErrConflictingFlags = errors.New("conflicting flags")
+)
 
 func Blacklist() *cobra.Command {
 	blacklistCmd := &cobra.Command{
@@ -77,10 +82,10 @@ func validateFlags(cmd *cobra.Command) error {
 	}
 
 	if add && remove {
-		return fmt.Errorf("--%s and --%s flags cannot be both true", addingFlag, removingFlag)
+		return fmt.Errorf("%w: --%s and --%s flags cannot be both 'true'", ErrConflictingFlags, addingFlag, removingFlag)
 	}
 	if !add && !remove {
-		return fmt.Errorf("--%s and --%s flags cannot be both false", addingFlag, removingFlag)
+		return fmt.Errorf("%w: --%s and --%s flags cannot be both 'false'", ErrConflictingFlags, addingFlag, removingFlag)
 	}
 
 	return nil
@@ -88,33 +93,33 @@ func validateFlags(cmd *cobra.Command) error {
 
 func mainBlacklist(cmd *cobra.Command) {
 	ip, err := cmd.Flags().GetString("ip")
-	errors.HandleFatalErr("cannot Get blacklist-ip", err)
+	errUtils.HandleFatalErr("cannot Get blacklist-ip", err)
 	ok, err := osutils.CheckIfIPIsValid(ip)
-	errors.HandleFatalErr("cannot check if ip is valid", err)
+	errUtils.HandleFatalErr("cannot check if ip is valid", err)
 
 	add, err := cmd.Flags().GetBool("add")
 	if err != nil {
-		errors.HandleFatalErr("error retrieving 'add' flag", err)
+		errUtils.HandleFatalErr("error retrieving 'add' flag", err)
 	}
 	remove, err := cmd.Flags().GetBool("remove")
 	if err != nil {
-		errors.HandleFatalErr("error retrieving 'remove' flag", err)
+		errUtils.HandleFatalErr("error retrieving 'remove' flag", err)
 	}
 
 	kiraCfg, err := configFileController.ReadOrCreateConfig()
-	errors.HandleFatalErr("Error while reading cfg file", err)
+	errUtils.HandleFatalErr("Error while reading cfg file", err)
 
 	if add {
 		if ip != "" {
-			ok, err := osutils.CheckIfIPIsValid(ip)
-			errors.HandleFatalErr("cannot check if ip is valid", err)
-			if ok {
+			isValidIP, err := osutils.CheckIfIPIsValid(ip)
+			errUtils.HandleFatalErr("cannot check if ip is valid", err)
+			if isValidIP {
 				dockerManager, err := docker.NewTestDockerManager()
-				errors.HandleFatalErr("Can't create instance of docker manager", err)
+				errUtils.HandleFatalErr("Can't create instance of docker manager", err)
 				defer dockerManager.Cli.Close()
 				fm := firewallManager.NewFirewallManager(dockerManager, kiraCfg)
 				err = fm.FirewallHandler.BlackListIP(ip, fm.FirewallConfig.ZoneName)
-				errors.HandleFatalErr("Can't blacklist IP", err)
+				errUtils.HandleFatalErr("Can't blacklist IP", err)
 			}
 		}
 	}
@@ -122,12 +127,12 @@ func mainBlacklist(cmd *cobra.Command) {
 		if ip != "" {
 			if ok {
 				dockerManager, err := docker.NewTestDockerManager()
-				errors.HandleFatalErr("Can't create instance of docker manager", err)
+				errUtils.HandleFatalErr("Can't create instance of docker manager", err)
 				defer dockerManager.Cli.Close()
 
 				fm := firewallManager.NewFirewallManager(dockerManager, kiraCfg)
 				err = fm.FirewallHandler.RemoveFromBlackListIP(ip, fm.FirewallConfig.ZoneName)
-				errors.HandleFatalErr("Can't remove IP from blacklist firewall", err)
+				errUtils.HandleFatalErr("Can't remove IP from blacklist firewall", err)
 			}
 		}
 	}
