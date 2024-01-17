@@ -2,6 +2,7 @@ package firewallManager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 
@@ -29,7 +30,11 @@ type (
 	}
 )
 
-var log = logging.Log
+var (
+	log = logging.Log
+
+	ErrFirewallDNotInstalled = errors.New("firewalld is not installed on the system")
+)
 
 // Port range: 0 - 65535
 // Type: udp or tcp
@@ -60,7 +65,7 @@ func NewFirewallManager(dockerManager *docker.DockerManager, kiraCfg *config.Kir
 func (fm *FirewallManager) CheckFirewallSetUp(ctx context.Context) (bool, error) {
 	_, err := exec.LookPath("firewall-cmd")
 	if err != nil {
-		return false, fmt.Errorf("firewalld is not installed on the system")
+		return false, ErrFirewallDNotInstalled
 	}
 
 	// Checking if validator zone exist
