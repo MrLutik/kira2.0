@@ -25,8 +25,8 @@ func (g *Gui) showConnect() {
 	errorLabel.Wrapping = 2
 	submitFunc := func() {
 		var err error
-		// g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
-		g.sshClient, err = sshC.MakeSHH_Client("192.168.1.103:22", "d", "d")
+		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+		// g.sshClient, err = sshC.MakeSHH_Client("192.168.1.103:22", "d", "d")
 		if err != nil {
 
 			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
@@ -158,9 +158,23 @@ func showInitDialog(g *Gui) {
 	sekaidP2PPortEntry := widget.NewEntry()
 	sekaidP2PPortEntry.SetPlaceHolder(fmt.Sprintf("sekaid p2p port (default %v)", defaultSekaiP2PPort))
 
-	interxPort := defaultInterxPort
-	RPCport := defaultSekaidRpcPort
-	P2PPort := defaultSekaiP2PPort
+	validatePort := func(port *int, defaultValue int, portEntryText string) error {
+		if portEntryText == "" {
+			log.Debugln("switching to default value", port, defaultValue)
+			*port = defaultValue
+			return nil
+		}
+		if ok, err := osutils.CheckIfPortIsValid(portEntryText); ok {
+			*port, _ = strconv.Atoi(portEntryText)
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	var interxPort int
+	var RPCport int
+	var P2PPort int
 	//check flags
 	checkEntries := func() error {
 		ip, err := IPBinding.Get()
@@ -175,28 +189,15 @@ func showInitDialog(g *Gui) {
 			return fmt.Errorf("ip is not valid")
 		}
 
-		if ok, err := osutils.CheckIfPortIsValid(interxPortEntry.Text); ok {
-			interxPort, _ = strconv.Atoi(interxPortEntry.Text)
-		} else if interxPortEntry.Text == "" {
-			// do nothing
-		} else {
+		if err := validatePort(&interxPort, defaultInterxPort, interxPortEntry.Text); err != nil {
 			return fmt.Errorf("interx port <%s> is invalid: %w", interxPortEntry.Text, err)
 		}
-		if ok, err := osutils.CheckIfPortIsValid(sekaidRPCPortEntry.Text); ok {
-			RPCport, _ = strconv.Atoi(sekaidRPCPortEntry.Text)
-		} else if sekaidRPCPortEntry.Text == "" {
-			// do nothing
-		} else {
+		if err := validatePort(&RPCport, defaultSekaidRpcPort, sekaidRPCPortEntry.Text); err != nil {
 			return fmt.Errorf("rpc port <%s> is invalid: %w", sekaidRPCPortEntry.Text, err)
 		}
-		if ok, err := osutils.CheckIfPortIsValid(sekaidP2PPortEntry.Text); ok {
-			P2PPort, _ = strconv.Atoi(sekaidP2PPortEntry.Text)
-		} else if sekaidP2PPortEntry.Text == "" {
-			// do nothing
-		} else {
+		if err := validatePort(&P2PPort, defaultSekaiP2PPort, sekaidP2PPortEntry.Text); err != nil {
 			return fmt.Errorf("p2p port <%s> is invalid: %w", sekaidP2PPortEntry.Text, err)
 		}
-
 		return nil
 	}
 	errorMsgBinding := binding.NewString()
