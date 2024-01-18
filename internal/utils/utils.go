@@ -9,19 +9,23 @@ import (
 	"time"
 
 	"github.com/mrlutik/kira2.0/internal/config"
-	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/types"
 	"sigs.k8s.io/yaml"
 )
 
-type HelperManager struct {
-	config           *config.KiraConfig
-	containerManager *docker.ContainerManager
-}
+type (
+	HelperManager struct {
+		config            *config.KiraConfig
+		containerExecutor ContainerCommandExecutor
+	}
+	ContainerCommandExecutor interface {
+		ExecCommandInContainer(ctx context.Context, containerID string, command []string) ([]byte, error)
+	}
+)
 
-func NewHelperManager(containerManager *docker.ContainerManager, config *config.KiraConfig) *HelperManager {
-	return &HelperManager{containerManager: containerManager, config: config}
+func NewHelperManager(containerExecutor ContainerCommandExecutor, config *config.KiraConfig) *HelperManager {
+	return &HelperManager{containerExecutor: containerExecutor, config: config}
 }
 
 // Getting TX by parsing json output of `sekaid query tx <TXhash>`
@@ -30,7 +34,7 @@ func (h *HelperManager) GetTxQuery(ctx context.Context, transactionHash string) 
 	var data types.TxData
 
 	command := fmt.Sprintf(`sekaid query tx %s -output=json`, transactionHash)
-	out, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{`bash`, `-c`, command})
+	out, err := h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("Couldn't checking tx: '%s'. Command: '%s'. Error: %s", transactionHash, command, err)
 		return types.TxData{}, err
@@ -107,7 +111,7 @@ func (h *HelperManager) getBlockHeight(ctx context.Context) (string, error) {
 	log := logging.Log
 
 	cmd := "sekaid status"
-	statusOutput, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", cmd})
+	statusOutput, err := h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", cmd})
 	if err != nil {
 		return "", fmt.Errorf("getting '%s' error: %w", cmd, err)
 	}
@@ -136,7 +140,7 @@ func (h *HelperManager) getBlockHeight(ctx context.Context) (string, error) {
 func (h *HelperManager) GivePermissionToAddress(ctx context.Context, permissionToAdd int, address string) error {
 	log := logging.Log
 	command := fmt.Sprintf(`sekaid tx customgov permission whitelist --from %s --keyring-backend=test --permission=%v --addr=%s --chain-id=%s --home=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, address, permissionToAdd, address, h.config.NetworkName, h.config.SekaidHome)
-	out, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{`bash`, `-c`, command})
+	out, err := h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("Giving '%d' permission error. Command: '%s'. Error: %s", permissionToAdd, command, err)
 		return err
@@ -189,7 +193,7 @@ func (h *HelperManager) CheckAccountPermission(ctx context.Context, permissionTo
 	log := logging.Log
 
 	command := fmt.Sprintf("sekaid query customgov permissions %s --output=json", address)
-	out, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{`bash`, `-c`, command})
+	out, err := h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("Executing '%s' command in '%s' container error: %s", command, h.config.SekaidContainerName, err)
 		return false, err
@@ -222,7 +226,7 @@ func (h *HelperManager) CheckAccountPermission(ctx context.Context, permissionTo
 func (h *HelperManager) GetAddressByName(ctx context.Context, addressName string) (string, error) {
 	log := logging.Log
 	command := fmt.Sprintf("sekaid keys show %s --keyring-backend=%s --home=%s", addressName, h.config.KeyringBackend, h.config.SekaidHome)
-	out, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{`bash`, `-c`, command})
+	out, err := h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{`bash`, `-c`, command})
 	if err != nil {
 		log.Errorf("Can't get address by '%s' name. Command: '%s'. Error: %s", addressName, command, err)
 		return "", err
@@ -299,7 +303,7 @@ func (h *HelperManager) UpsertIdentityRecord(ctx context.Context, address, accou
 	if value != "" {
 		log.Infof("Registering identity record from address '%s': {'%s': '%s'}", address, key, value)
 		command := fmt.Sprintf(`sekaid tx customgov register-identity-records --infos-json="{\"%s\":\"%s\"}" --from=%s --keyring-backend=%s --home=%s --chain-id=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, key, value, address, h.config.KeyringBackend, h.config.SekaidHome, h.config.NetworkName)
-		out, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", command})
+		out, err = h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", command})
 		if err != nil {
 			log.Errorf("Executing command '%s' in '%s' container error: %s", command, h.config.SekaidContainerName, err)
 			return err
@@ -308,7 +312,7 @@ func (h *HelperManager) UpsertIdentityRecord(ctx context.Context, address, accou
 	} else {
 		log.Infof("Deleting identity record from address '%s': key %s", address, key)
 		command := fmt.Sprintf(`sekaid tx customgov delete-identity-records --keys="%s" --from=%s --keyring-backend=%s --home=%s --chain-id=%s --fees=100ukex --yes --broadcast-mode=async --log_format=json --output=json`, key, address, h.config.KeyringBackend, h.config.SekaidHome, h.config.NetworkName)
-		out, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", command})
+		out, err = h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", command})
 		if err != nil {
 			log.Errorf("Executing command '%s' in '%s' container error: %s", command, h.config.SekaidContainerName, err)
 			return err
