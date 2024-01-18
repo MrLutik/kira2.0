@@ -1,4 +1,4 @@
-package firewallManager
+package manager
 
 import (
 	"context"
