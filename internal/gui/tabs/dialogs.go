@@ -43,7 +43,7 @@ func (g *Gui) showConnect() {
 	passwordEntry.OnSubmitted = func(s string) { submitFunc() }
 	connectButton := widget.NewButton("connect to remote host", func() { submitFunc() })
 
-	loging := container.NewVBox(
+	logging := container.NewVBox(
 		widget.NewLabel("ip and port"),
 		ipEntry,
 		widget.NewLabel("user"),
@@ -59,28 +59,28 @@ func (g *Gui) showConnect() {
 		}),
 	)
 
-	wizard = dialogs.NewWizard("Create ssh connection", loging)
+	wizard = dialogs.NewWizard("Create ssh connection", logging)
 	wizard.Show(g.Window)
 	wizard.Resize(fyne.NewSize(300, 200))
 }
 
 func showCmdExecDialogAndRunCmdV4(g *Gui, infoMSG string, cmd string) {
-	outputchannnel := make(chan string)
+	outputChannel := make(chan string)
 	errorChannel := make(chan guiHelper.ResultV2)
-	go guiHelper.ExecuteSSHCommandV2(g.sshClient, cmd, outputchannnel, errorChannel)
+	go guiHelper.ExecuteSSHCommandV2(g.sshClient, cmd, outputChannel, errorChannel)
 
 	var wizard *dialogs.Wizard
 	outputMsg := binding.NewString()
 	statusMsg := binding.NewString()
 	statusMsg.Set("loading...")
-	loadiningWidget := widget.NewProgressBarInfinite()
+	loadingWidget := widget.NewProgressBarInfinite()
 
 	label := widget.NewLabelWithData(outputMsg)
 	closeButton := widget.NewButton("CLOSE", func() { wizard.Hide() })
 	outputScroll := container.NewVScroll(label)
 	loadingDialog := container.NewBorder(
 		widget.NewLabelWithData(statusMsg),
-		container.NewVBox(loadiningWidget, closeButton),
+		container.NewVBox(loadingWidget, closeButton),
 		nil,
 		nil,
 		container.NewHScroll(outputScroll),
@@ -91,20 +91,20 @@ func showCmdExecDialogAndRunCmdV4(g *Gui, infoMSG string, cmd string) {
 	wizard.Resize(fyne.NewSize(300, 400))
 	wizard.ChangeTitle(infoMSG)
 	var out string
-	for line := range outputchannnel {
+	for line := range outputChannel {
 		cleanLine := cleanString(line)
 		out = fmt.Sprintf("%s\n%s", out, cleanLine)
 		outputMsg.Set(out)
 		outputScroll.ScrollToBottom()
 	}
 	outputScroll.ScrollToBottom()
-	loadiningWidget.Hide()
+	loadingWidget.Hide()
 	closeButton.Show()
 	errcheck := <-errorChannel
 	if errcheck.Err != nil {
 		statusMsg.Set(fmt.Sprintf("Error:\n%s", errcheck.Err))
 	} else {
-		statusMsg.Set("Seccusess")
+		statusMsg.Set("Successes")
 	}
 }
 
@@ -133,8 +133,8 @@ func showInfoDialog(g *Gui, infoTitle, infoString string) {
 
 func showInitDialog(g *Gui) {
 	// var wizard *dialogs.Wizard
-	// open new dialogg with choises to init new or join to existing (check piont)
-	// if checkpoint is ture, opens new text entries for ip, ports, etc... and switch main button to start\\join
+	// open new dialog with choices to init new or join to existing (check point)
+	// if checkpoint is true, opens new text entries for ip, ports, etc... and switch main button to start\\join
 	// after main button pressed exec showCmdExecDialogAndRunCmdV4 with constructed cmd from previous step
 	joinExistingNetworkCheck := binding.NewBool()
 	newOrJoinCHeckButton := widget.NewCheckWithData("Join to existing network", joinExistingNetworkCheck)
@@ -151,8 +151,8 @@ func showInitDialog(g *Gui) {
 	ipEntry.SetPlaceHolder("ip of the node to connect to")
 	interxPortEntry := widget.NewEntryWithData(interxPortBinding)
 	interxPortEntry.SetPlaceHolder(fmt.Sprintf("interx port (default %v)", defaultInterxPort))
-	sekaidRPCPortentry := widget.NewEntryWithData(sekaidRPCPortBinding)
-	sekaidRPCPortentry.SetPlaceHolder(fmt.Sprintf("sekaid rpc port (default %v)", defaultSekaidRpcPort))
+	sekaidRPCPortEntry := widget.NewEntryWithData(sekaidRPCPortBinding)
+	sekaidRPCPortEntry.SetPlaceHolder(fmt.Sprintf("sekaid rpc port (default %v)", defaultSekaidRpcPort))
 	sekaidP2PPortEntry := widget.NewEntryWithData(sekaidP2PPortBinding)
 	sekaidP2PPortEntry.SetPlaceHolder(fmt.Sprintf("sekaid p2p port (default %v)", defaultSekaiP2PPort))
 
@@ -164,7 +164,7 @@ func showInitDialog(g *Gui) {
 		ipEntry,
 		interxPortEntry,
 		sekaidP2PPortEntry,
-		sekaidRPCPortentry,
+		sekaidRPCPortEntry,
 	)
 	// mainScreen := joinScreen
 	closeButton := widget.NewButton("Close", func() { wizard.Hide() })
@@ -207,7 +207,7 @@ func showInitDialog(g *Gui) {
 	switchFunc()
 	joinExistingNetworkCheck.AddListener(binding.NewDataListener(switchFunc))
 	content := container.NewBorder(newOrJoinCHeckButton, container.NewVBox(joinOrCreateButton, closeButton), nil, nil, mainScreen)
-	wizard = dialogs.NewWizard("Node initilasing", content)
+	wizard = dialogs.NewWizard("Node initializing", content)
 	wizard.Show(g.Window)
 	wizard.Resize(fyne.NewSize(400, 400))
 }
