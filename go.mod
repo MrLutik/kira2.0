@@ -3,7 +3,7 @@ module github.com/mrlutik/kira2.0
 go 1.20
 
 require (
-	fyne.io/fyne/v2 v2.4.2
+	fyne.io/fyne/v2 v2.4.3
 	github.com/BurntSushi/toml v1.3.2
 	github.com/PeepoFrog/validator-key-gen v0.0.0-20230822005145-4e776dbd2b2e
 	github.com/coreos/go-systemd/v22 v22.3.2
