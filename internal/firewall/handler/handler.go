@@ -1,4 +1,4 @@
-package firewallHandler
+package handler
 
 import (
 	"context"
