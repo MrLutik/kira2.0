@@ -4,80 +4,82 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"regexp"
 	"strings"
 
 	dockerTypes "github.com/docker/docker/api/types"
-	"github.com/mrlutik/kira2.0/internal/docker"
-	"github.com/mrlutik/kira2.0/internal/firewall/firewallController"
+	"github.com/mrlutik/kira2.0/internal/firewall/controller"
 	"github.com/mrlutik/kira2.0/internal/types"
 
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
-type FirewallHandler struct {
-	firewalldController *firewallController.FirewalldController
+type (
+	FirewallHandler struct {
+		controller       *controller.FirewallDController
+		networkInspector NetworkInspector
+		utils            *osutils.OSUtils
+
+		log *logging.Logger
+	}
+	NetworkInspector interface {
+		NetworkInspect(ctx context.Context, networkID string) (dockerTypes.NetworkResource, error)
+	}
+)
+
+func NewFirewallHandler(firewallDController *controller.FirewallDController, utils *osutils.OSUtils, networkInspector NetworkInspector, logger *logging.Logger) *FirewallHandler {
+	return &FirewallHandler{
+		controller:       firewallDController,
+		networkInspector: networkInspector,
+		utils:            utils,
+		log:              logger,
+	}
 }
 
-var log = logging.Log
-
-func NewFirewallHandler(firewalldController *firewallController.FirewalldController) *FirewallHandler {
-	return &FirewallHandler{firewalldController: firewalldController}
-}
-
-func (fh *FirewallHandler) OpenPorts(portsToOpen []types.Port, zoneName string) error {
+func (f *FirewallHandler) OpenPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
-		log.Debugf("Opening %s/%s port\n", port.Port, port.Type)
-		o, err := fh.firewalldController.OpenPort(port, zoneName)
+		f.log.Debugf("Opening '%s/%s' port", port.Port, port.Type)
+		_, err := f.controller.OpenPort(port)
 		if err != nil {
-			return fmt.Errorf("%s\n%w", o, err)
+			return fmt.Errorf("opening port '%s/%s' %w", port.Port, port.Type, err)
 		}
 	}
 	return nil
 }
 
-func (fh *FirewallHandler) ClosePorts(portsToClose []types.Port, zoneName string) error {
+func (f *FirewallHandler) ClosePorts(portsToClose []types.Port) error {
 	for _, port := range portsToClose {
 		if port.Port != "53" && port.Port != "22" {
-			log.Debugf("Closing %s/%s port\n", port.Port, port.Type)
-			o, err := fh.firewalldController.ClosePort(port, zoneName)
+			f.log.Debugf("Closing %s/%s port\n", port.Port, port.Type)
+			o, err := f.controller.ClosePort(port)
 			if err != nil {
 				return fmt.Errorf("%s\n%w", o, err)
 			}
 		} else {
-			log.Debugf("skiping %s port (sys port)", port.Port)
+			f.log.Debugf("skipping %s port (sys port)", port.Port)
 		}
 	}
 	return nil
 }
 
-func (fh *FirewallHandler) ConvertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
-	re := regexp.MustCompile(`(?P<Port>\d+)/(?P<Type>tcp|udp)`)
-	matches := re.FindStringSubmatch(firewallDPort)
-
-	if matches == nil {
-		return types.Port{}, fmt.Errorf("cannot convert '%s' port: %w", firewallDPort, ErrNoPortMatch)
+func (FirewallHandler) ConvertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
+	parts := strings.Split(firewallDPort, "/")
+	if len(parts) != 2 {
+		return types.Port{}, fmt.Errorf("invalid port format '%s': %w", firewallDPort, ErrInvalidPort)
 	}
 
-	// Extract matches based on named groups
-	portIndex := re.SubexpIndex("Port")
-	typeIndex := re.SubexpIndex("Type")
+	port, portType := parts[0], parts[1]
 
-	port := matches[portIndex]
-	portType := strings.TrimPrefix(matches[typeIndex], "/")
-	if osutils.CheckIfPortIsValid(port) {
-		return types.Port{}, fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
+	if portType != "tcp" && portType != "udp" {
+		return types.Port{}, fmt.Errorf("invalid port type '%s': %w", portType, ErrInvalidPortType)
 	}
-	return types.Port{
-		Port: port,
-		Type: portType,
-	}, nil
+
+	return types.Port{Port: port, Type: portType}, nil
 }
 
-func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) error {
+func (f *FirewallHandler) CheckPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
-		if osutils.CheckIfPortIsValid(port.Port) {
+		if f.utils.CheckIfPortIsValid(port.Port) {
 			return fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
 		}
 		if port.Type != "tcp" && port.Type != "udp" {
@@ -87,24 +89,27 @@ func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) error {
 	return nil
 }
 
-func (fh *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
-	out, zones, err := fh.firewalldController.GetAllFirewallZones()
-	log.Debugf("Output:%s\nZones: %+v\nError: %s\n", string(out), zones, err)
+func (f *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
+	out, zones, err := f.controller.GetAllFirewallZones()
 	if err != nil {
 		return false, fmt.Errorf("%s\n%w", out, err)
 	}
+
+	f.log.Debugf("Output:%s\nZones: %+v", string(out), zones)
+
 	for _, zone := range zones {
-		log.Debugf("Current zone: %s, expected zone: %s", zone, zoneName)
+		f.log.Debugf("Current zone: %s, expected zone: %s", zone, zoneName)
 		if zone == zoneName {
 			return true, nil
 		}
 	}
+
 	return false, nil
 }
 
 // GetDockerNetworkInterface gets docker's custom interface name
-func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string, dockerManager *docker.DockerManager) (dockerInterface dockerTypes.NetworkResource, err error) {
-	network, err := dockerManager.Cli.NetworkInspect(ctx, dockerNetworkName, dockerTypes.NetworkInspectOptions{})
+func (f *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string) (dockerInterface dockerTypes.NetworkResource, err error) {
+	network, err := f.networkInspector.NetworkInspect(ctx, dockerNetworkName)
 	if err != nil {
 		return dockerInterface, fmt.Errorf("cannot get docker network info: %w", err)
 	}
@@ -113,82 +118,86 @@ func (fh *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, docker
 
 // BlackListIP makes ip blacklisted
 // TODO: still thinking if I should do reloading in this func or latter separately, because reloading taking a bit time
-func (fh *FirewallHandler) BlackListIP(ip, zoneName string) error {
+func (f *FirewallHandler) BlackListIP(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
 		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
-	output, err := fh.firewalldController.RejectIp(ip, zoneName)
+	output, err := f.controller.RejectIp(ip)
 	if err != nil {
 		return fmt.Errorf("rejecting IP error: %w", err)
 	}
-	log.Infof("Output: %s", output)
+	f.log.Infof("Output: %s", output)
 
-	out, err := fh.firewalldController.ReloadFirewall()
-	log.Debugf("%s", out)
+	out, err := f.controller.ReloadFirewall()
 	if err != nil {
 		return err
 	}
+	f.log.Debugf("%s", out)
+
 	return nil
 }
 
-func (fh *FirewallHandler) RemoveFromBlackListIP(ip, zoneName string) error {
+func (f *FirewallHandler) RemoveFromBlackListIP(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
 		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
-	output, err := fh.firewalldController.RemoveRejectRuleIp(ip, zoneName)
+	output, err := f.controller.RemoveRejectRuleIp(ip)
 	if err != nil {
 		return fmt.Errorf("removing rejecting rule error: %w", err)
 	}
-	log.Infof("Output: %s", output)
+	f.log.Infof("Output: %s", output)
 
-	out, err := fh.firewalldController.ReloadFirewall()
-	log.Debugf("%s", out)
+	out, err := f.controller.ReloadFirewall()
 	if err != nil {
 		return err
 	}
+
+	f.log.Debugf("Output: %s", out)
 	return nil
 }
 
-func (fh *FirewallHandler) WhiteListIp(ip, zoneName string) error {
+func (f *FirewallHandler) WhiteListIp(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
 		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
-	output, err := fh.firewalldController.AcceptIp(ip, zoneName)
+	output, err := f.controller.AcceptIp(ip)
 	if err != nil {
 		return fmt.Errorf("accepting IP error: %w", err)
 	}
-	log.Infof("Output: %s", output)
+	f.log.Infof("Output: %s", output)
 
-	out, err := fh.firewalldController.ReloadFirewall()
-	log.Debugf("%s", out)
+	out, err := f.controller.ReloadFirewall()
 	if err != nil {
 		return err
 	}
+
+	f.log.Debugf("Output: %s", out)
 	return nil
 }
 
-func (fh *FirewallHandler) RemoveFromWhitelistIP(ip, zoneName string) error {
+func (f *FirewallHandler) RemoveFromWhitelistIP(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
 		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
-	output, err := fh.firewalldController.RemoveAllowRuleIp(ip, zoneName)
+	output, err := f.controller.RemoveAllowRuleIp(ip)
 	if err != nil {
 		return fmt.Errorf("removing allowing rule error: %w", err)
 	}
-	log.Infof("Output: %s", output)
+	f.log.Infof("Output: %s", output)
 
-	out, err := fh.firewalldController.ReloadFirewall()
-	log.Debugf("%s", out)
+	out, err := f.controller.ReloadFirewall()
 	if err != nil {
 		return err
 	}
+
+	f.log.Debugf("Output: %s", out)
 	return nil
 }
