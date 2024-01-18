@@ -8,45 +8,53 @@ import (
 	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
-func UpdateJsonValue(input []byte, config *config.JsonValue) ([]byte, error) {
-	var m map[string]any
+type JSONEditor struct {
+	log *logging.Logger
+}
 
-	if err := json.Unmarshal(input, &m); err != nil {
+func NewJSONEditor(logger *logging.Logger) *JSONEditor {
+	return &JSONEditor{
+		log: logger,
+	}
+}
+
+func (j *JSONEditor) UpdateJsonValue(input []byte, config *config.JsonValue) ([]byte, error) {
+	var mapJSONrepresentation map[string]any
+
+	if err := json.Unmarshal(input, &mapJSONrepresentation); err != nil {
 		return nil, err
 	}
 
 	keys := strings.Split(config.Key, ".")
-	if err := setNested(m, keys, config.Value); err != nil {
+	if err := j.setNested(mapJSONrepresentation, keys, config.Value); err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(m)
+	return json.Marshal(mapJSONrepresentation)
 }
 
-func setNested(m map[string]any, keys []string, value any) error {
-	log := logging.Log
-
+func (j *JSONEditor) setNested(mapJSONrepresentation map[string]any, keys []string, value any) error {
 	var exists bool
 	for i := 0; i < len(keys)-1; i++ {
-		if _, exists = m[keys[i]]; !exists {
+		if _, exists = mapJSONrepresentation[keys[i]]; !exists {
 			return &TargetKeyNotFoundError{Key: keys[i]}
 		}
 
-		nestedMap, ok := m[keys[i]].(map[string]any)
+		nestedMap, ok := mapJSONrepresentation[keys[i]].(map[string]any)
 		if !ok {
 			return &ExpectedMapError{Key: keys[i]}
 		}
 
-		log.Debugf("Found section: %s", keys[i])
-		m = nestedMap
+		j.log.Debugf("Found section: %s", keys[i])
+		mapJSONrepresentation = nestedMap
 	}
 
-	if _, exists = m[keys[len(keys)-1]]; !exists {
+	if _, exists = mapJSONrepresentation[keys[len(keys)-1]]; !exists {
 		return &TargetKeyNotFoundError{Key: keys[len(keys)-1]}
 	}
 
-	log.Debugf("Found key: %s\n", keys[len(keys)-1])
-	log.Infof("Update old value '%v' -> new value '%v'\n", m[keys[len(keys)-1]], value)
-	m[keys[len(keys)-1]] = value
+	j.log.Debugf("Found key: %s\n", keys[len(keys)-1])
+	j.log.Infof("Update old value '%v' -> new value '%v'", mapJSONrepresentation[keys[len(keys)-1]], value)
+	mapJSONrepresentation[keys[len(keys)-1]] = value
 	return nil
 }

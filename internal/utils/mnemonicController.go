@@ -10,19 +10,16 @@ import (
 	"github.com/joho/godotenv"
 	kiraMnemonicGen "github.com/kiracore/tools/bip39gen/cmd"
 	"github.com/kiracore/tools/bip39gen/pkg/bip39"
-	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
 func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (masterMnemonic string, err error) {
-	log := logging.Log
-	log.Infof("Checking if path exist: %s", pathToFile)
-	check, err := osutils.CheckItPathExist(pathToFile)
+	h.log.Infof("Checking if path exist: %s", pathToFile)
+	check, err := h.utils.CheckIfPathExists(pathToFile)
 	if err != nil {
-		log.Errorf("Checking path to '%s', error: %s", pathToFile, err)
+		h.log.Errorf("Checking path to '%s', error: %s", pathToFile, err)
 	}
 	if check {
-		log.Infof("Path exist, trying to read mnemonic from mnemonics.env file")
+		h.log.Infof("Path exist, trying to read mnemonic from mnemonics.env file")
 		if err := godotenv.Load(pathToFile); err != nil {
 			err = fmt.Errorf("error loading .env file: %w", err)
 			return "", err
@@ -34,7 +31,7 @@ func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (masterMnemonic
 			err = &EnvVariableNotFoundError{VariableName: masterMnemonicEnv}
 			return masterMnemonic, err
 		} else {
-			log.Debugf("MASTER_MNEMONIC: %s", masterMnemonic)
+			h.log.Debugf("MASTER_MNEMONIC: %s", masterMnemonic)
 		}
 	}
 
@@ -42,8 +39,7 @@ func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (masterMnemonic
 }
 
 func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg.MasterMnemonicSet, error) {
-	log := logging.Log
-	log.Debugf("GenerateMnemonicFromMaster: masterMnemonic:\n%s", masterMnemonic)
+	h.log.Debugf("GenerateMnemonicFromMaster: masterMnemonic:\n%s", masterMnemonic)
 	defaultPrefix := "kira"
 	defaultPath := "44'/118'/0'/0/0"
 
@@ -52,13 +48,12 @@ func (h *HelperManager) GenerateMnemonicsFromMaster(masterMnemonic string) (*vlg
 		return &vlg.MasterMnemonicSet{}, err
 	}
 	str := fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n", mnemonicSet.SignerAddrMnemonic, mnemonicSet.ValidatorNodeMnemonic, mnemonicSet.ValidatorNodeId, mnemonicSet.ValidatorAddrMnemonic, mnemonicSet.ValidatorValMnemonic)
-	log.Infof("Master mnemonic:\n%s", str)
+	h.log.Infof("Master mnemonic:\n%s", str)
 	return &mnemonicSet, nil
 }
 
 func (h *HelperManager) MnemonicReader() (masterMnemonic string) {
-	log := logging.Log
-	log.Infoln("ENTER YOUR MASTER MNEMONIC:")
+	h.log.Infoln("ENTER YOUR MASTER MNEMONIC:")
 
 	reader := bufio.NewReader(os.Stdin)
 	//nolint:forbidigo // reading user input
@@ -66,7 +61,7 @@ func (h *HelperManager) MnemonicReader() (masterMnemonic string) {
 
 	text, err := reader.ReadString('\n')
 	if err != nil {
-		log.Errorf("An error occurred: %s", err)
+		h.log.Errorf("An error occurred: %s", err)
 		return
 	}
 	mnemonicBytes := []byte(text)
@@ -86,31 +81,30 @@ func (h *HelperManager) GenerateMnemonic() (masterMnemonic bip39.Mnemonic, err e
 
 func (h *HelperManager) SetSekaidKeys(ctx context.Context) error {
 	// TODO path set as variables or constants
-	log := logging.Log
 	sekaidConfigFolder := h.config.SekaidHome + "/config"
-	_, err := h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome)})
+	_, err := h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, h.config.SekaidHome)})
 	if err != nil {
 		return fmt.Errorf("unable to create <%s> folder, err: %w", h.config.SekaidHome, err)
 	}
-	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidConfigFolder)})
+	_, err = h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidConfigFolder)})
 	if err != nil {
 		return fmt.Errorf("unable to create <%s> folder, err: %w", sekaidConfigFolder, err)
 	}
-	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
+	err = h.containerFileManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/priv_validator_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("cannot send priv_validator_key.json to container\n")
+		h.log.Errorf("cannot send priv_validator_key.json to container")
 		return err
 	}
 
-	err = osutils.CopyFile(h.config.SecretsFolder+"/validator_node_key.json", h.config.SecretsFolder+"/node_key.json")
+	err = h.utils.CopyFile(h.config.SecretsFolder+"/validator_node_key.json", h.config.SecretsFolder+"/node_key.json")
 	if err != nil {
-		log.Errorf("copying file error: %s", err)
+		h.log.Errorf("copying file error: %s", err)
 		return err
 	}
 
-	err = h.containerManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/node_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
+	err = h.containerFileManager.SendFileToContainer(ctx, h.config.SecretsFolder+"/node_key.json", sekaidConfigFolder, h.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("cannot send node_key.json to container")
+		h.log.Errorf("cannot send node_key.json to container")
 		return err
 	}
 	return nil
@@ -127,16 +121,16 @@ func (h *HelperManager) SetEmptyValidatorState(ctx context.Context) error {
 	// TODO
 	// mount docker volume to the folder on host machine and do file manipulations inside this folder
 	tmpFilePath := "/tmp/priv_validator_state.json"
-	err := osutils.CreateFileWithData(tmpFilePath, []byte(emptyState))
+	err := h.utils.CreateFileWithData(tmpFilePath, []byte(emptyState))
 	if err != nil {
 		return fmt.Errorf("unable to create file <%s>, error: %w", tmpFilePath, err)
 	}
 	sekaidDataFolder := h.config.SekaidHome + "/data"
-	_, err = h.containerManager.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidDataFolder)})
+	_, err = h.containerExecutor.ExecCommandInContainer(ctx, h.config.SekaidContainerName, []string{"bash", "-c", fmt.Sprintf(`mkdir %s`, sekaidDataFolder)})
 	if err != nil {
 		return fmt.Errorf("unable to create folder <%s>, error: %w", sekaidDataFolder, err)
 	}
-	err = h.containerManager.SendFileToContainer(ctx, tmpFilePath, sekaidDataFolder, h.config.SekaidContainerName)
+	err = h.containerFileManager.SendFileToContainer(ctx, tmpFilePath, sekaidDataFolder, h.config.SekaidContainerName)
 	if err != nil {
 		return fmt.Errorf("cannot send %s to container, err: %w", tmpFilePath, err)
 	}
