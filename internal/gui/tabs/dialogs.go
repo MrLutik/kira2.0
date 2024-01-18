@@ -3,6 +3,7 @@ package tabs
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -11,6 +12,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/gui/dialogs"
 	"github.com/mrlutik/kira2.0/internal/gui/guiHelper"
 	"github.com/mrlutik/kira2.0/internal/gui/sshC"
+	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
 func (g *Gui) showConnect() {
@@ -23,8 +25,8 @@ func (g *Gui) showConnect() {
 	errorLabel.Wrapping = 2
 	submitFunc := func() {
 		var err error
-		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
-		// g.sshClient, err = sshC.MakeSHH_Client("192.168.1.103:22", "d", "d")
+		// g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+		g.sshClient, err = sshC.MakeSHH_Client("192.168.1.103:22", "d", "d")
 		if err != nil {
 
 			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
@@ -141,31 +143,71 @@ func showInitDialog(g *Gui) {
 
 	var wizard *dialogs.Wizard
 	mainScreen := container.NewStack()
+	const defaultInterxPort, defaultSekaidRpcPort, defaultSekaiP2PPort int = 11000, 26657, 26656
 
 	IPBinding := binding.NewString()
-	interxPortBinding := binding.NewString()
-	sekaidRPCPortBinding := binding.NewString()
-	sekaidP2PPortBinding := binding.NewString()
-	const defaultInterxPort, defaultSekaidRpcPort, defaultSekaiP2PPort int = 11000, 26657, 26656
+	// interxPortBinding := binding.NewString()
+	// sekaidRPCPortBinding := binding.NewString()
+	// sekaidP2PPortBinding := binding.NewString()
 	ipEntry := widget.NewEntryWithData(IPBinding)
 	ipEntry.SetPlaceHolder("ip of the node to connect to")
-	interxPortEntry := widget.NewEntryWithData(interxPortBinding)
+	interxPortEntry := widget.NewEntry()
 	interxPortEntry.SetPlaceHolder(fmt.Sprintf("interx port (default %v)", defaultInterxPort))
-	sekaidRPCPortEntry := widget.NewEntryWithData(sekaidRPCPortBinding)
+	sekaidRPCPortEntry := widget.NewEntry()
 	sekaidRPCPortEntry.SetPlaceHolder(fmt.Sprintf("sekaid rpc port (default %v)", defaultSekaidRpcPort))
-	sekaidP2PPortEntry := widget.NewEntryWithData(sekaidP2PPortBinding)
+	sekaidP2PPortEntry := widget.NewEntry()
 	sekaidP2PPortEntry.SetPlaceHolder(fmt.Sprintf("sekaid p2p port (default %v)", defaultSekaiP2PPort))
 
-	// ip, _ := cmd.Flags().GetString("ip")
-	// interxPort, _ := cmd.Flags().GetString("interx-port")
-	// sekaidRPCPort, _ := cmd.Flags().GetString("rpc-port")
-	// sekaidP2PPort, _ := cmd.Flags().GetString("p2p-port")
-	joinScreen := container.NewVBox(
+	interxPort := defaultInterxPort
+	RPCport := defaultSekaidRpcPort
+	P2PPort := defaultSekaiP2PPort
+	//check flags
+	checkEntries := func() error {
+		ip, err := IPBinding.Get()
+		if err != nil {
+			return err
+		}
+		ok, err := osutils.CheckIfIPIsValid(ip)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("ip is not valid")
+		}
+
+		if ok, err := osutils.CheckIfPortIsValid(interxPortEntry.Text); ok {
+			interxPort, _ = strconv.Atoi(interxPortEntry.Text)
+		} else if interxPortEntry.Text == "" {
+			// do nothing
+		} else {
+			return fmt.Errorf("interx port <%s> is invalid: %w", interxPortEntry.Text, err)
+		}
+		if ok, err := osutils.CheckIfPortIsValid(sekaidRPCPortEntry.Text); ok {
+			RPCport, _ = strconv.Atoi(sekaidRPCPortEntry.Text)
+		} else if sekaidRPCPortEntry.Text == "" {
+			// do nothing
+		} else {
+			return fmt.Errorf("rpc port <%s> is invalid: %w", sekaidRPCPortEntry.Text, err)
+		}
+		if ok, err := osutils.CheckIfPortIsValid(sekaidP2PPortEntry.Text); ok {
+			P2PPort, _ = strconv.Atoi(sekaidP2PPortEntry.Text)
+		} else if sekaidP2PPortEntry.Text == "" {
+			// do nothing
+		} else {
+			return fmt.Errorf("p2p port <%s> is invalid: %w", sekaidP2PPortEntry.Text, err)
+		}
+
+		return nil
+	}
+	errorMsgBinding := binding.NewString()
+	errorMsgLabel := widget.NewLabelWithData(errorMsgBinding)
+	joinScreen := container.NewVScroll(container.NewVBox(
 		ipEntry,
 		interxPortEntry,
 		sekaidP2PPortEntry,
 		sekaidRPCPortEntry,
-	)
+		errorMsgLabel,
+	))
 	// mainScreen := joinScreen
 	closeButton := widget.NewButton("Close", func() { wizard.Hide() })
 	joinOrCreateButton := widget.NewButton("Create",
@@ -174,16 +216,22 @@ func showInitDialog(g *Gui) {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			switch b {
-			case true:
-				fmt.Println("joining")
-				func() {
-					//verifying ip and ports
-
-				}()
-			default:
-				fmt.Println("creating new")
+			err = checkEntries()
+			if err != nil {
+				err = errorMsgBinding.Set(err.Error())
+				if err != nil {
+					log.Fatalln(err)
+				}
+			} else {
+				switch b {
+				case true:
+					fmt.Println("joining")
+					log.Debugf("%v %v %v", interxPort, P2PPort, RPCport)
+				default:
+					fmt.Println("creating new")
+				}
 			}
+
 		},
 	)
 	switchFunc := func() {
