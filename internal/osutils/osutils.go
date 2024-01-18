@@ -22,6 +22,12 @@ type OSUtils struct {
 
 var ErrNotAFile = errors.New("path exists but is not a file")
 
+func NewOSUtils(logger *logging.Logger) *OSUtils {
+	return &OSUtils{
+		log: logger,
+	}
+}
+
 // CopyFile copies a file from a source path to a destination path.
 // - src: Source file path.
 // - dst: Destination file path.
