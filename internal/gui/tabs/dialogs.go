@@ -146,9 +146,6 @@ func showInitDialog(g *Gui) {
 	const defaultInterxPort, defaultSekaidRpcPort, defaultSekaiP2PPort int = 11000, 26657, 26656
 
 	IPBinding := binding.NewString()
-	// interxPortBinding := binding.NewString()
-	// sekaidRPCPortBinding := binding.NewString()
-	// sekaidP2PPortBinding := binding.NewString()
 	ipEntry := widget.NewEntryWithData(IPBinding)
 	ipEntry.SetPlaceHolder("ip of the node to connect to")
 	interxPortEntry := widget.NewEntry()
