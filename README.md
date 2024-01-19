@@ -31,6 +31,8 @@
 ## Disabling sudo request for docker 
 ```sudo usermod -aG docker $USER```
 
+```newgrp docker``` or logout and login again into user session
+
 
 
 
@@ -75,4 +77,4 @@ this is only example token
 
 
 
-sdf
+
