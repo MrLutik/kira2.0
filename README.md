@@ -54,11 +54,11 @@
 # Node initialization process 
 
 ## To initialize new network 
+for now it is required to have github access token and set it as variable name 
 
 ```export GITHUB_TOKEN=ghp_zQIII30pN114wyJv5rpNyfqVxjXpws3UfjYu``` 
 
-for now it is required to have github access token and set it as variable name 
-for example
+this is only example token 
 
 
 
