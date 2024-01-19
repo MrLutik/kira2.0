@@ -74,40 +74,40 @@ func (f *FirewalldController) DeleteFirewallZone(zonename string) (string, error
 
 // RejectIp adds rule for rejecting ip
 func (f *FirewalldController) RejectIp(ip, zoneName string) (string, error) {
-	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="rule family='ipv4' source address='%s' reject"`, zoneName, ip))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s  --add-rich-rule="rule family='ipv4' source address='%s' reject"`, zoneName, ip))
 	return string(out), err
 }
 
 // RemoveRejectRuleIp removes rule for rejecting ip
 func (f *FirewalldController) RemoveRejectRuleIp(ip, zoneName string) (string, error) {
-	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' reject"`, zoneName, ip))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' reject"`, zoneName, ip))
 	return string(out), err
 }
 
 // AcceptIp adds rule for accepting ip
 func (f *FirewalldController) AcceptIp(ip, zoneName string) (string, error) {
-	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="rule family='ipv4' source address='%s' accept"`, zoneName, ip))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s  --add-rich-rule="rule family='ipv4' source address='%s' accept"`, zoneName, ip))
 	return string(out), err
 }
 
 // RemoveAllowRuleIp removes rule for accepting ip
 func (f *FirewalldController) RemoveAllowRuleIp(ip, zoneName string) (string, error) {
-	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' accept"`, zoneName, ip))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s  --remove-rich-rule="rule family='ipv4' source address='%s' accept"`, zoneName, ip))
 	return string(out), err
 }
 
 func (f *FirewalldController) AddRichRule(rule, zoneName string) (string, error) {
-	out, err := osutils.RunCommandV2(fmt.Sprintf(`firewall-cmd --permanent --zone=%s  --add-rich-rule="%s"`, zoneName, rule))
+	out, err := osutils.RunCommandV2(fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s  --add-rich-rule="%s"`, zoneName, rule))
 	return string(out), err
 }
 
 func (f *FirewalldController) TurnOnMasquarade(zoneName string) (string, error) {
-	out, err := osutils.RunCommandV2(fmt.Sprintf("firewall-cmd --zone=%s --add-masquerade --permanent", zoneName))
+	out, err := osutils.RunCommandV2(fmt.Sprintf("sudo firewall-cmd --zone=%s --add-masquerade --permanent", zoneName))
 	return string(out), err
 }
 
 func (f *FirewalldController) GetOpenedPorts(zoneName string) (string, []string, error) {
-	out, err := osutils.RunCommandV2(fmt.Sprintf("firewall-cmd --zone=%s --list-ports", zoneName))
+	out, err := osutils.RunCommandV2(fmt.Sprintf("sudo firewall-cmd --zone=%s --list-ports", zoneName))
 	ports := strings.Fields(string(out))
 	return string(out), ports, err
 }
