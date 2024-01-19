@@ -66,7 +66,7 @@ func (fh *FirewallHandler) ConvertFirewallDPortToKM2Port(firewallDPort string) (
 
 	port := matches[portIndex]
 	portType := strings.TrimPrefix(matches[typeIndex], "/")
-	if osutils.CheckIfPortIsValid(port) {
+	if !osutils.CheckIfPortIsValid(port) {
 		return types.Port{}, fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
 	}
 	return types.Port{
@@ -77,7 +77,7 @@ func (fh *FirewallHandler) ConvertFirewallDPortToKM2Port(firewallDPort string) (
 
 func (fh *FirewallHandler) CheckPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
-		if osutils.CheckIfPortIsValid(port.Port) {
+		if !osutils.CheckIfPortIsValid(port.Port) {
 			return fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
 		}
 		if port.Type != "tcp" && port.Type != "udp" {
