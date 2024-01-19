@@ -25,6 +25,7 @@ const (
 	// Flags naming
 	sekaiVersionFlag  = "sekai-version"
 	interxVersionFlag = "interx-version"
+	recoveringFlag    = "recover"
 )
 
 var (
@@ -52,6 +53,7 @@ func New() *cobra.Command {
 
 	newCmd.Flags().String(sekaiVersionFlag, "latest", "Set this flag to choose what sekai version will be initialized")
 	newCmd.Flags().String(interxVersionFlag, "latest", "Set this flag to choose what interx version will be initialized")
+	newCmd.PersistentFlags().Bool(recoveringFlag, false, "If true recover keys and mnemonic from master mnemonic, otherwise generate random one")
 
 	return newCmd
 }
@@ -64,6 +66,10 @@ func validateFlags(cmd *cobra.Command) error {
 	interxVersion, err := cmd.Flags().GetString(interxVersionFlag)
 	if err != nil {
 		return fmt.Errorf("error retrieving <%s> flag: %w", interxVersion, err)
+	}
+	_, err = cmd.Flags().GetBool(recoveringFlag)
+	if err != nil {
+		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", recoveringFlag), err)
 	}
 	return nil
 }
@@ -103,6 +109,7 @@ func mainNew(cmd *cobra.Command) {
 		errors.HandleFatalErr("Can't change config file", err)
 	}
 
+	recover, _ = cmd.Flags().GetBool(recoveringFlag)
 	cfg.Recover = recover
 	log.Tracef("Recover flag is: %t", recover)
 	// TODO this docker service restart has to be after docker and firewalld installation, I'm doing it here because the launcher is not ready
