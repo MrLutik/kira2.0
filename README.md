@@ -1,5 +1,13 @@
 # Installation Process 
 
+## System Requirements
+
+To run this application, your system must meet the following minimum requirements:
+
+- **CPU**: 2 cores
+- **RAM**: 4 GB
+- **Operating System**: Ubuntu Server 20.04 or higher
+
 ## Upgrading system
 ```sudo apt update```
 
@@ -26,17 +34,24 @@
 
 ## Disabling ip tables for docker 
 
+To disable IP tables for Docker, execute the following command. This command updates the Docker daemon configuration and restarts the Docker and Firewalld services:
+
 ```sudo bash -c 'echo "{\"iptables\": false}" > /etc/docker/daemon.json && systemctl restart docker && systemctl restart firewalld'```
 
-## Disabling sudo request for docker 
+**Note:** This action modifies Docker's default networking behavior and might affect how containers access network resources. Ensure this change aligns with your network security policies and requirements.
+
+## Disabling Sudo Requirement for Docker Commands
+
 ```sudo usermod -aG docker $USER```
 
-```newgrp docker``` or logout and login again into user session
+```newgrp docker```
+
+Or, log out and log back into your user session to apply these changes.
 
 
 
 
-## Installing KM2
+## Installing Kira2
 
 ```git clone -b development https://github.com/MrLutik/kira2.0.git```
 
@@ -56,16 +71,16 @@
 # Node initialization process 
 
 ## To initialize new network 
-for now it is required to have github access token and set it as env variable  
+For initial setup, it is required to have a GitHub access token. Set this token as an environment variable with the following command:
 
 ```export GITHUB_TOKEN=ghp_zQIII30pN114wyJv5rpNyfqVxjXpws3UfjYu``` 
 
-this is only example token 
+**Note:** The token provided above is an example. [Follow this guide to obtain your personal access token.](https://docs.github.com/en/enterprise-server@3.9/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
 
 
+After setting up the environment variable, initialize the network with:
 
-
-``` kira2 init new --log-level info ```
+```kira2 init new --log-level info```
 
 
 
