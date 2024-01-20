@@ -141,7 +141,7 @@ Both the **kira2 init** new and **kira2 init join** commands include a recovery 
 
 ``kira2 init join --ip <ip_of_the_node_to_join>  --log-level info  --interx-version v0.4.35  --sekai-version v0.3.17 --p2p-port 36656 --rpc-port 36657 --recover``
 
-**Note:** When initializing a node, **kira2** will prompt you for your BIP39 24-word ***master mnemonic***. The key delivery algorithm used in **kira2** is the same as in **kira1**, allowing for seamless migration from a **kira1** node to **kira2**.
+**Note:** When initializing a node with `--recover` option, **kira2** will prompt you for your BIP39 24-word ***master mnemonic***. The key delivery algorithm used in **kira2** is the same as in **kira1**, allowing for seamless migration from a **kira1** node to **kira2**.
 
 
 
