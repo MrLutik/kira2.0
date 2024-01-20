@@ -1,45 +1,32 @@
-package handler
+package manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
 
 	dockerTypes "github.com/docker/docker/api/types"
-	"github.com/mrlutik/kira2.0/internal/firewall/controller"
 	"github.com/mrlutik/kira2.0/internal/types"
-
-	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
 type (
-	FirewallHandler struct {
-		controller       *controller.FirewallDController
-		networkInspector NetworkInspector
-		utils            *osutils.OSUtils
-
-		log *logging.Logger
-	}
 	NetworkInspector interface {
 		NetworkInspect(ctx context.Context, networkID string) (dockerTypes.NetworkResource, error)
 	}
 )
 
-func NewFirewallHandler(firewallDController *controller.FirewallDController, utils *osutils.OSUtils, networkInspector NetworkInspector, logger *logging.Logger) *FirewallHandler {
-	return &FirewallHandler{
-		controller:       firewallDController,
-		networkInspector: networkInspector,
-		utils:            utils,
-		log:              logger,
-	}
-}
+var (
+	ErrInvalidIPAddress = errors.New("invalid IP address")
+	ErrInvalidPortType  = errors.New("port type is not valid")
+	ErrInvalidPort      = errors.New("invalid port")
+)
 
-func (f *FirewallHandler) OpenPorts(portsToOpen []types.Port) error {
+func (f *FirewallManager) OpenPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
 		f.log.Debugf("Opening '%s/%s' port", port.Port, port.Type)
-		_, err := f.controller.OpenPort(port)
+		_, err := f.controllerKiraZone.OpenPort(port)
 		if err != nil {
 			return fmt.Errorf("opening port '%s/%s' %w", port.Port, port.Type, err)
 		}
@@ -47,11 +34,11 @@ func (f *FirewallHandler) OpenPorts(portsToOpen []types.Port) error {
 	return nil
 }
 
-func (f *FirewallHandler) ClosePorts(portsToClose []types.Port) error {
+func (f *FirewallManager) ClosePorts(portsToClose []types.Port) error {
 	for _, port := range portsToClose {
 		if port.Port != "53" && port.Port != "22" {
 			f.log.Debugf("Closing %s/%s port\n", port.Port, port.Type)
-			o, err := f.controller.ClosePort(port)
+			o, err := f.controllerKiraZone.ClosePort(port)
 			if err != nil {
 				return fmt.Errorf("%s\n%w", o, err)
 			}
@@ -62,7 +49,7 @@ func (f *FirewallHandler) ClosePorts(portsToClose []types.Port) error {
 	return nil
 }
 
-func (FirewallHandler) ConvertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
+func (FirewallManager) ConvertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
 	parts := strings.Split(firewallDPort, "/")
 	if len(parts) != 2 {
 		return types.Port{}, fmt.Errorf("invalid port format '%s': %w", firewallDPort, ErrInvalidPort)
@@ -77,7 +64,7 @@ func (FirewallHandler) ConvertFirewallDPortToKM2Port(firewallDPort string) (type
 	return types.Port{Port: port, Type: portType}, nil
 }
 
-func (f *FirewallHandler) CheckPorts(portsToOpen []types.Port) error {
+func (f *FirewallManager) CheckPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
 		if f.utils.CheckIfPortIsValid(port.Port) {
 			return fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
@@ -89,8 +76,8 @@ func (f *FirewallHandler) CheckPorts(portsToOpen []types.Port) error {
 	return nil
 }
 
-func (f *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
-	out, zones, err := f.controller.GetAllFirewallZones()
+func (f *FirewallManager) CheckFirewallZone(zoneName string) (bool, error) {
+	out, zones, err := f.controllerKiraZone.GetAllFirewallZones()
 	if err != nil {
 		return false, fmt.Errorf("%s\n%w", out, err)
 	}
@@ -108,8 +95,8 @@ func (f *FirewallHandler) CheckFirewallZone(zoneName string) (bool, error) {
 }
 
 // GetDockerNetworkInterface gets docker's custom interface name
-func (f *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string) (dockerInterface dockerTypes.NetworkResource, err error) {
-	network, err := f.networkInspector.NetworkInspect(ctx, dockerNetworkName)
+func (f *FirewallManager) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string) (dockerInterface dockerTypes.NetworkResource, err error) {
+	network, err := f.dockerMaintenance.NetworkInspect(ctx, dockerNetworkName)
 	if err != nil {
 		return dockerInterface, fmt.Errorf("cannot get docker network info: %w", err)
 	}
@@ -118,19 +105,19 @@ func (f *FirewallHandler) GetDockerNetworkInterface(ctx context.Context, dockerN
 
 // BlackListIP makes ip blacklisted
 // TODO: still thinking if I should do reloading in this func or latter separately, because reloading taking a bit time
-func (f *FirewallHandler) BlackListIP(ip string) error {
+func (f *FirewallManager) BlackListIP(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
 		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
-	output, err := f.controller.RejectIp(ip)
+	output, err := f.controllerKiraZone.RejectIp(ip)
 	if err != nil {
 		return fmt.Errorf("rejecting IP error: %w", err)
 	}
 	f.log.Infof("Output: %s", output)
 
-	out, err := f.controller.ReloadFirewall()
+	out, err := f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
 		return err
 	}
@@ -139,19 +126,19 @@ func (f *FirewallHandler) BlackListIP(ip string) error {
 	return nil
 }
 
-func (f *FirewallHandler) RemoveFromBlackListIP(ip string) error {
+func (f *FirewallManager) RemoveFromBlackListIP(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
 		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
-	output, err := f.controller.RemoveRejectRuleIp(ip)
+	output, err := f.controllerKiraZone.RemoveRejectRuleIp(ip)
 	if err != nil {
 		return fmt.Errorf("removing rejecting rule error: %w", err)
 	}
 	f.log.Infof("Output: %s", output)
 
-	out, err := f.controller.ReloadFirewall()
+	out, err := f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
 		return err
 	}
@@ -160,19 +147,19 @@ func (f *FirewallHandler) RemoveFromBlackListIP(ip string) error {
 	return nil
 }
 
-func (f *FirewallHandler) WhiteListIp(ip string) error {
+func (f *FirewallManager) WhiteListIp(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
 		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
-	output, err := f.controller.AcceptIp(ip)
+	output, err := f.controllerKiraZone.AcceptIp(ip)
 	if err != nil {
 		return fmt.Errorf("accepting IP error: %w", err)
 	}
 	f.log.Infof("Output: %s", output)
 
-	out, err := f.controller.ReloadFirewall()
+	out, err := f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
 		return err
 	}
@@ -181,19 +168,19 @@ func (f *FirewallHandler) WhiteListIp(ip string) error {
 	return nil
 }
 
-func (f *FirewallHandler) RemoveFromWhitelistIP(ip string) error {
+func (f *FirewallManager) RemoveFromWhitelistIP(ip string) error {
 	ipCheck := net.ParseIP(ip)
 	if ipCheck == nil {
 		return fmt.Errorf("%w: %s is not valid", ErrInvalidIPAddress, ip)
 	}
 
-	output, err := f.controller.RemoveAllowRuleIp(ip)
+	output, err := f.controllerKiraZone.RemoveAllowRuleIp(ip)
 	if err != nil {
 		return fmt.Errorf("removing allowing rule error: %w", err)
 	}
 	f.log.Infof("Output: %s", output)
 
-	out, err := f.controller.ReloadFirewall()
+	out, err := f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
 		return err
 	}
