@@ -5,10 +5,11 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/mrlutik/kira2.0/internal/logging"
 	"golang.org/x/crypto/ssh"
 )
 
-func checkPkg(client *ssh.Client, packageName string) (string, error) {
+func checkPkg(client *ssh.Client, packageName string, log *logging.Logger) (string, error) {
 	session, err := client.NewSession()
 	if err != nil {
 		return "", fmt.Errorf("failed to create SSH session: %w", err)
@@ -29,7 +30,7 @@ func checkPkg(client *ssh.Client, packageName string) (string, error) {
 	return pkgVersion, nil
 }
 
-func installPkg(path string) error {
+func installPkg(path string, log *logging.Logger) error {
 	installCmd := exec.Command("dpkg", "-i", path)
 	log.Infof("Executing command: %s", installCmd)
 	output, err := installCmd.CombinedOutput()
@@ -41,7 +42,7 @@ func installPkg(path string) error {
 	return nil
 }
 
-func downloadPkg(client *ssh.Client, url, path string) error {
+func downloadPkg(client *ssh.Client, url, path string, log *logging.Logger) error {
 	session, err := client.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create SSH session: %w", err)

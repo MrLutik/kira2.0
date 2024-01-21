@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mrlutik/kira2.0/internal/hooks"
 	"github.com/sirupsen/logrus"
 )
 
@@ -60,6 +61,10 @@ func toLogLevel(s string) (logrus.Level, error) {
 
 func GetValidLogLevels() []string {
 	return []string{"trace", "debug", "info", "warn", "error", "fatal", "panic"}
+}
+
+func GetHooks() []logrus.Hook {
+	return []logrus.Hook{&hooks.ColorHook{}}
 }
 
 func IsValidLogLevel(levelValue string) bool {

@@ -2,7 +2,7 @@ package deploy
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sync"
 
 	"github.com/mrlutik/kira2.0/internal/logging"
@@ -21,12 +21,7 @@ const (
 	publicKeyFlag  = "pub-key"
 )
 
-var (
-	log   = logging.Log
-	nodes = []string{"interx", "sekai"}
-)
-
-func Node() *cobra.Command {
+func Node(log *logging.Logger) *cobra.Command {
 	log.Debugln("Adding `deploy` command...")
 	nodeCmd := &cobra.Command{
 		Use:     use,
@@ -58,14 +53,14 @@ func Node() *cobra.Command {
 				log.Fatalf("Failed to forbid root login: %v", err)
 			}
 
-			osAndHardwareInfo, err := checkOSAndHardware(client)
+			osAndHardwareInfo, err := checkOSAndHardware(client, log)
 			if err != nil {
 				log.Fatalf("Failed to check OS and hardware: %v", err)
 			}
 			log.Infof("OS and Hardware info: %s", osAndHardwareInfo)
 		},
 	}
-	for _, node := range nodes {
+	for _, node := range []string{"interx", "sekai"} {
 		nodeCmd.PersistentFlags().String(node, "", "Provide version to deploy")
 	}
 	nodeCmd.PersistentFlags().String(privateKeyFlag, "", "Path to private key")
@@ -75,7 +70,7 @@ func Node() *cobra.Command {
 }
 
 func createSSHClient(host, privKeyPath string) (*ssh.Client, error) {
-	key, err := ioutil.ReadFile(privKeyPath)
+	key, err := os.ReadFile(privKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read private key: %w", err)
 	}
@@ -123,7 +118,7 @@ func forbidRootLogin(client *ssh.Client) error {
 	return nil
 }
 
-func checkOSAndHardware(client *ssh.Client) (string, error) {
+func checkOSAndHardware(client *ssh.Client, log *logging.Logger) (string, error) {
 	// Check the operating system
 	session, err := client.NewSession()
 	if err != nil {

@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mrlutik/kira2.0/internal/logging"
 	"golang.org/x/crypto/ssh"
 )
 
-func installDocker(client *ssh.Client) error {
+func installDocker(client *ssh.Client, log *logging.Logger) error {
 	session, err := client.NewSession()
 	if err != nil {
 		log.Errorln("Failed to create session: ", err)
@@ -34,7 +35,7 @@ func installDocker(client *ssh.Client) error {
 }
 
 // checkDocker checks if Docker is installed on the remote machine and returns its version or an error.
-func checkDocker(client *ssh.Client) (string, error) {
+func checkDocker(client *ssh.Client, log *logging.Logger) (string, error) {
 	session, err := client.NewSession()
 	if err != nil {
 		return "", fmt.Errorf("failed to create SSH session: %w", err)

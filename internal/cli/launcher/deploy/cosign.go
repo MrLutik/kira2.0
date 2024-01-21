@@ -3,10 +3,11 @@ package deploy
 import (
 	"fmt"
 
+	"github.com/mrlutik/kira2.0/internal/logging"
 	"golang.org/x/crypto/ssh"
 )
 
-func checkCosignInstalled(session *ssh.Session) error {
+func checkCosignInstalled(session *ssh.Session, log *logging.Logger) error {
 	log.Info("Checking if Cosign is installed on the remote machine...")
 	if err := session.Run("which cosign"); err != nil {
 		log.Warn("Cosign not found on the remote machine.")
@@ -15,7 +16,7 @@ func checkCosignInstalled(session *ssh.Session) error {
 	return nil
 }
 
-func installCosign(session *ssh.Session) error {
+func installCosign(session *ssh.Session, log *logging.Logger) error {
 	log.Info("Attempting to install Cosign...")
 	if err := session.Run("wget -q -O- https://github.com/sigstore/cosign/releases/download/v1.2.1/cosign-linux-amd64 | sudo tee /usr/local/bin/cosign > /dev/null && sudo chmod +x /usr/local/bin/cosign"); err != nil {
 		log.Error("Failed to install Cosign.")
@@ -25,7 +26,7 @@ func installCosign(session *ssh.Session) error {
 	return nil
 }
 
-func verifyCosignSignature(client *ssh.Client, pkgPath, sigPath string) error {
+func verifyCosignSignature(client *ssh.Client, pkgPath, sigPath string, log *logging.Logger) error {
 	session, err := client.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create SSH session: %w", err)
@@ -33,8 +34,8 @@ func verifyCosignSignature(client *ssh.Client, pkgPath, sigPath string) error {
 	defer session.Close()
 
 	// Check if cosign is installed
-	if err := checkCosignInstalled(session); err != nil {
-		if installErr := installCosign(session); installErr != nil {
+	if err := checkCosignInstalled(session, log); err != nil {
+		if installErr := installCosign(session, log); installErr != nil {
 			return fmt.Errorf("failed to install Cosign: %w", installErr)
 		}
 	}

@@ -9,7 +9,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
+	"os"
 	"path/filepath"
 
 	"github.com/mrlutik/kira2.0/internal/logging"
@@ -25,8 +26,6 @@ const (
 
 // log is the logger instance for this package.
 var (
-	log = logging.Log
-
 	ErrInvalidCurveSize = errors.New("invalid curve size")
 	ErrInvalidKeyType   = errors.New("invalid key type")
 )
@@ -34,7 +33,7 @@ var (
 // Generate returns a cobra.Command that generates RSA or ECDSA keys
 // with given length and output directory. The command's flags allow
 // specification of key type, key length, and output directory.
-func Generate() *cobra.Command {
+func Generate(log *logging.Logger) *cobra.Command {
 	log.Debugln("Adding `keys` command...")
 
 	keysCmd := &cobra.Command{
@@ -63,9 +62,9 @@ func Generate() *cobra.Command {
 
 			switch keyType {
 			case "rsa":
-				return generateRSA(keyLength, outDir)
+				return generateRSA(keyLength, outDir, log)
 			case "ecdsa":
-				return generateECDSA(keyLength, outDir)
+				return generateECDSA(keyLength, outDir, log)
 			default:
 				log.Errorf("invalid user input: %s\n", keyType)
 				return fmt.Errorf("%w: %s", ErrInvalidKeyType, keyType)
@@ -82,7 +81,7 @@ func Generate() *cobra.Command {
 
 // generateRSA generates an RSA key pair with the given number of bits and
 // writes the keys to files in the specified output directory.
-func generateRSA(bits int, outDir string) error {
+func generateRSA(bits int, outDir string, log *logging.Logger) error {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
 		log.Errorln("failed to generate RSA private key...")
@@ -91,7 +90,7 @@ func generateRSA(bits int, outDir string) error {
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	privateKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privateKeyBytes})
-	err = ioutil.WriteFile(filepath.Join(outDir, "private.pem"), privateKeyPEM, 0o600)
+	err = os.WriteFile(filepath.Join(outDir, "private.pem"), privateKeyPEM, fs.FileMode(0o600))
 	if err != nil {
 		log.Errorf("failed writing RSA private key to file %v\n", filepath.Join(outDir, "private.pem"))
 		return err
@@ -104,12 +103,12 @@ func generateRSA(bits int, outDir string) error {
 	}
 
 	publicKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: publicKeyBytes})
-	return ioutil.WriteFile(filepath.Join(outDir, "public.pem"), publicKeyPEM, 0o644)
+	return os.WriteFile(filepath.Join(outDir, "public.pem"), publicKeyPEM, fs.FileMode(0o644))
 }
 
 // generateECDSA generates an ECDSA key pair with the given curve size and
 // writes the keys to files in the specified output directory.
-func generateECDSA(curveBits int, outDir string) error {
+func generateECDSA(curveBits int, outDir string, log *logging.Logger) error {
 	var curve elliptic.Curve
 	switch curveBits {
 	case 224:
@@ -139,7 +138,7 @@ func generateECDSA(curveBits int, outDir string) error {
 	}
 
 	privateKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyBytes})
-	err = ioutil.WriteFile(filepath.Join(outDir, "private.pem"), privateKeyPEM, 0o600)
+	err = os.WriteFile(filepath.Join(outDir, "private.pem"), privateKeyPEM, fs.FileMode(0o600))
 	if err != nil {
 		log.Errorf("failed writing ECDSA private key to file %v\n", filepath.Join(outDir, "private.pem"))
 		return err
@@ -152,5 +151,5 @@ func generateECDSA(curveBits int, outDir string) error {
 	}
 
 	publicKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PUBLIC KEY", Bytes: publicKeyBytes})
-	return ioutil.WriteFile(filepath.Join(outDir, "public.pem"), publicKeyPEM, 0o644)
+	return os.WriteFile(filepath.Join(outDir, "public.pem"), publicKeyPEM, fs.FileMode(0o644))
 }

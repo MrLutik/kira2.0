@@ -6,7 +6,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func installKeys(client *ssh.Client, privKey, pubKey string) error {
+func installKeys(client *ssh.Client, _, pubKey string) error {
 	session, err := client.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
