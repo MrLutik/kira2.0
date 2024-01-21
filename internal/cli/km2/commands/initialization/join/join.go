@@ -3,19 +3,23 @@ package join
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"time"
 
+	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
-	"github.com/mrlutik/kira2.0/internal/config/configFileController"
+	"github.com/mrlutik/kira2.0/internal/config/controller"
+	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
-	"github.com/mrlutik/kira2.0/internal/errors"
-	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
+	firewallManager "github.com/mrlutik/kira2.0/internal/firewall/manager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager"
+	"github.com/mrlutik/kira2.0/internal/osutils"
 	"github.com/mrlutik/kira2.0/internal/systemd"
+	"github.com/mrlutik/kira2.0/internal/utils"
 )
 
 const (
@@ -38,14 +42,11 @@ const (
 
 	// Regular expression to match valid port numbers (from 1 to 65535).
 	portRegex = `^([1-9]\d{0,4}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`
+
+	envGithubTokenVariableName = "GITHUB_TOKEN"
 )
 
-var (
-	log     = logging.Log
-	recover bool
-)
-
-func Join() *cobra.Command {
+func Join(log *logging.Logger) *cobra.Command {
 	log.Info("Adding `join` command...")
 	joinCmd := &cobra.Command{
 		Use:   use,
@@ -59,7 +60,7 @@ func Join() *cobra.Command {
 				}
 				return
 			}
-			mainJoin(cmd)
+			mainJoin(cmd, log)
 		},
 	}
 
@@ -125,7 +126,6 @@ func validateFlags(cmd *cobra.Command) error {
 func isValidIP(ip string) bool {
 	match, err := regexp.MatchString(ipRegex, ip)
 	if err != nil {
-		log.Errorf("Can't match string, error: %s", err)
 		return false
 	}
 
@@ -135,23 +135,36 @@ func isValidIP(ip string) bool {
 func isValidPort(port string) bool {
 	match, err := regexp.MatchString(portRegex, port)
 	if err != nil {
-		log.Errorf("Can't match string, error: %s", err)
 		return false
 	}
 
 	return match
 }
 
-func mainJoin(cmd *cobra.Command) {
-	systemd.DockerServiceManagement()
+func mainJoin(cmd *cobra.Command, log *logging.Logger) {
+	err := systemd.DockerServiceManagement(log)
+	if err != nil {
+		log.Fatalf("Docker service management failed: %s", err)
+	}
 
-	dockerManager, err := docker.NewTestDockerManager()
-	errors.HandleFatalErr("Can't create instance of docker manager", err)
-	defer dockerManager.Cli.Close()
+	client, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Fatalf("Can't initialize the Docker client: %s", err)
+	}
 
-	containerManager, err := docker.NewTestContainerManager()
-	errors.HandleFatalErr("Can't create instance of container docker manager", err)
-	defer containerManager.Cli.Close()
+	utilsOS := osutils.NewOSUtils(log)
+
+	dockerManager := docker.NewTestDockerManager(client, utilsOS, log)
+	if err != nil {
+		log.Fatalf("Can't create instance of docker manager: %s", err)
+	}
+	defer dockerManager.CloseClient()
+
+	containerManager := docker.NewTestContainerManager(client, log)
+	if err != nil {
+		log.Fatalf("Can't create instance of container manager: %s", err)
+	}
+	defer containerManager.CloseClient()
 
 	// TODO make flexible setting timeout
 	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute*5)
@@ -159,19 +172,19 @@ func mainJoin(cmd *cobra.Command) {
 
 	ip, err := cmd.Flags().GetString(ipFlag)
 	if err != nil {
-		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", ipFlag), err)
+		log.Fatalf("Error retrieving flag '%s': %s", ipFlag, err)
 	}
 	interxPort, err := cmd.Flags().GetString(interxPortFlag)
 	if err != nil {
-		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", interxPortFlag), err)
+		log.Fatalf("Error retrieving flag '%s': %s", interxPortFlag, err)
 	}
 	sekaidRPCPort, err := cmd.Flags().GetString(rpcPortFlag)
 	if err != nil {
-		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", rpcPortFlag), err)
+		log.Fatalf("Error retrieving flag '%s': %s", rpcPortFlag, err)
 	}
 	sekaidP2PPort, err := cmd.Flags().GetString(p2pPortFlag)
 	if err != nil {
-		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", p2pPortFlag), err)
+		log.Fatalf("Error retrieving flag '%s': %s", p2pPortFlag, err)
 	}
 
 	// Information about validator we need to join
@@ -182,63 +195,116 @@ func mainJoin(cmd *cobra.Command) {
 		SekaidP2PPort: sekaidP2PPort,
 	}
 	joinerManager := manager.NewJoinerManager(joinerCfg)
-	recover, err = cmd.Flags().GetBool(recoveringFlag)
+
+	recover, err := cmd.Flags().GetBool(recoveringFlag)
 	if err != nil {
-		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", recoveringFlag), err)
+		log.Fatalf("Error retrieving flag '%s': %s", recoveringFlag, err)
 	}
 
 	cfg, err := joinerManager.GenerateKiraConfig(ctx, recover)
-	errors.HandleFatalErr("Can't get kira config", err)
+	if err != nil {
+		log.Fatalf("Can't get kira config: %s", err)
+	}
 
 	sekaiVersion, err := cmd.Flags().GetString(sekaiVersionFlag)
 	if err != nil {
-		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", sekaiVersionFlag), err)
+		log.Fatalf("Error retrieving flag '%s': %s", sekaiVersionFlag, err)
 	}
-
 	interxVersion, err := cmd.Flags().GetString(interxVersionFlag)
 	if err != nil {
-		errors.HandleFatalErr(fmt.Sprintf("Error retrieving flag '%s'", interxVersionFlag), err)
+		log.Fatalf("Error retrieving flag '%s': %s", interxVersionFlag, err)
 	}
 
 	if sekaiVersion != cfg.SekaiVersion || interxVersion != cfg.InterxVersion {
 		cfg.SekaiVersion = sekaiVersion
 		cfg.InterxVersion = interxVersion
-		err = configFileController.ChangeConfigFile(cfg)
-		errors.HandleFatalErr("Can't change config file", err)
+
+		configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+		err = configController.ChangeConfigFile(cfg)
+		if err != nil {
+			log.Fatalf("Can't change config file: %s", err)
+		}
 	}
+
 	// TODO method called twice
 	genesis, err := joinerManager.GetVerifiedGenesisFile(ctx)
-	errors.HandleFatalErr("Can't get genesis", err)
-
-	// TODO this docker service restart has to be after docker and firewalld instalation, im doin it here because laucnher is not ready
-	// temp remove docker restarting, only need once after firewalld instalation
-	// err = dockerManager.RestartDockerService()
-	errors.HandleFatalErr("Restarting docker service", err)
-	docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
-	err = containerManager.CleanupContainersAndVolumes(ctx, cfg)
-	errors.HandleFatalErr("Cleaning docker volume and containers", err)
-	// TODO Do we need to safe deb packages in temporary directory?
-	// Right now the files are downloaded in current directory, where the program starts
-	adapters.MustDownloadBinaries(ctx, cfg)
-
-	firewallManager := firewallManager.NewFirewallManager(dockerManager, cfg)
-	check, err := firewallManager.CheckFirewallSetUp(ctx)
-	errors.HandleFatalErr("Error while checking valid firewalld setup", err)
-	if !check {
-		err = firewallManager.SetUpFirewall(ctx)
-		errors.HandleFatalErr("Error while setuping firewall", err)
+	if err != nil {
+		log.Fatalf("Can't get genesis: %s", err)
 	}
 
-	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
-	errors.HandleFatalErr("Can't create new 'sekai' manager instance", err)
-	sekaiManager.MustInitJoiner(ctx, genesis)
-	sekaiManager.MustRunSekaid(ctx)
+	// TODO this docker service restart has to be after docker and firewalld installation, i'm doing it here because launcher is not ready
+	// temp remove docker restarting, only need once after firewalld installation
+	// err = dockerManager.RestartDockerService()
+	// if err != nil {
+	//     log.Fatalf("Restarting docker service: %s", err)
+	// }
+
+	err = docker.VerifyingDockerEnvironment(ctx, dockerManager, cfg)
+	if err != nil {
+		log.Fatalf("Verifying docker environment failed: %s", err)
+	}
+
+	err = containerManager.CleanupContainersAndVolumes(ctx, cfg)
+	if err != nil {
+		log.Fatalf("Cleaning docker volume and containers: %s", err)
+	}
+
+	token, exists := os.LookupEnv(envGithubTokenVariableName)
+	if !exists {
+		log.Fatalf("'%s' variable is not set", envGithubTokenVariableName)
+	}
+	adapterGitHub := adapters.NewGitHubAdapter(ctx, token)
+	// TODO Do we need to safe deb packages in temporary directory?
+	// Right now the files are downloaded in current directory, where the program starts
+	adapterGitHub.MustDownloadBinaries(ctx, cfg)
+
+	firewallManager, err := firewallManager.NewFirewallManager(dockerManager, utilsOS, cfg, log)
+	if err != nil {
+		log.Fatalf("Initialization of firewall manager failed: %s", err)
+	}
+
+	check, err := firewallManager.CheckFirewallSetUp(ctx)
+	if err != nil {
+		log.Fatalf("Checking valid firewalld setup failed: %s", err)
+	}
+
+	if !check {
+		err = firewallManager.SetUpFirewall(ctx)
+		if err != nil {
+			log.Fatalf("Setup firewall failed: %s", err)
+		}
+	}
+
+	helper := utils.NewHelperManager(containerManager, containerManager, utilsOS, cfg, log)
+
+	sekaiManager, err := manager.NewSekaidManager(containerManager, helper, dockerManager, cfg, log)
+	if err != nil {
+		log.Fatalf("Can't create new 'sekai' manager instance: %s", err)
+	}
+
+	err = sekaiManager.InitJoiner(ctx, genesis)
+	if err != nil {
+		log.Fatalf("Initialization of joiner node failed: %s", err)
+	}
+	err = sekaiManager.RunSekaid(ctx)
+	if err != nil {
+		log.Fatalf("Running of joiner node failed: %s", err)
+	}
 
 	log.Infof("Waiting for %v\n", cfg.TimeBetweenBlocks)
 	time.Sleep(cfg.TimeBetweenBlocks + time.Second)
 
-	interxManager, err := manager.NewInterxManager(containerManager, cfg)
-	errors.HandleFatalErr("Can't create new 'interx' manager instance", err)
-	interxManager.MustInitInterx(ctx)
-	interxManager.MustRunInterx(ctx)
+	interxManager, err := manager.NewInterxManager(containerManager, cfg, log)
+	if err != nil {
+		log.Fatalf("Can't create new 'interx' manager instance: %s", err)
+	}
+
+	err = interxManager.InitInterx(ctx)
+	if err != nil {
+		log.Fatalf("Initialization of interx failed: %s", err)
+	}
+	err = interxManager.RunInterx(ctx)
+	if err != nil {
+		log.Fatalf("Running interx failed: %s", err)
+	}
 }

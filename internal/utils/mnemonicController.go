@@ -20,7 +20,7 @@ func (h *HelperManager) ReadMnemonicsFromFile(pathToFile string) (masterMnemonic
 	}
 	if check {
 		h.log.Infof("Path exist, trying to read mnemonic from mnemonics.env file")
-		if err := godotenv.Load(pathToFile); err != nil {
+		if err = godotenv.Load(pathToFile); err != nil {
 			err = fmt.Errorf("error loading .env file: %w", err)
 			return "", err
 		}

@@ -33,11 +33,18 @@ type (
 	}
 )
 
-func NewHelperManager(containerExecutor ContainerCommandExecutor, containerFileManager ContainerFileManager, config *config.KiraConfig, logger *logging.Logger) *HelperManager {
+func NewHelperManager(
+	containerExecutor ContainerCommandExecutor,
+	containerFileManager ContainerFileManager,
+	utils *osutils.OSUtils,
+	config *config.KiraConfig,
+	logger *logging.Logger,
+) *HelperManager {
 	return &HelperManager{
 		config:               config,
 		containerExecutor:    containerExecutor,
-		containerFileManager: nil,
+		containerFileManager: containerFileManager,
+		utils:                utils,
 		log:                  logger,
 	}
 }

@@ -591,3 +591,7 @@ func (c *ContainerManager) StopProcessInsideContainer(ctx context.Context, proce
 	c.log.Infof("<%s> process was successfully stopped\n", processName)
 	return nil
 }
+
+func (c *ContainerManager) CloseClient() {
+	c.cli.Close()
+}

@@ -2,16 +2,16 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
-	"github.com/mrlutik/kira2.0/internal/errors"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/firewall"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/initialization"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/maintenance"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/monitoring"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/start"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/stop"
 	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall"
-	initnode "github.com/mrlutik/kira2.0/internal/manager/cli/commands/init"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/maintenance"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/monitoring"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/start"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/stop"
 	"github.com/spf13/cobra"
 )
 
@@ -25,9 +25,7 @@ const (
 	loggingLevelFlag = "log-level"
 )
 
-var log = logging.Log
-
-func NewKiraCLI(commands []*cobra.Command) *cobra.Command {
+func NewKiraCLI(commands []*cobra.Command, log *logging.Logger) *cobra.Command {
 	log.Info("Creating new Kira manager CLI...")
 	rootCmd := &cobra.Command{
 		Use:   use,
@@ -40,7 +38,10 @@ func NewKiraCLI(commands []*cobra.Command) *cobra.Command {
 			}
 
 			if logLevel != "" {
-				logging.SetLevel(logLevel)
+				err := log.SetLoggingLevel(logLevel)
+				if err != nil {
+					log.Fatalf("Setting logging level error: %s", err)
+				}
 			}
 		},
 	}
@@ -49,14 +50,35 @@ func NewKiraCLI(commands []*cobra.Command) *cobra.Command {
 		rootCmd.AddCommand(cmd)
 	}
 
-	rootCmd.PersistentFlags().String(loggingLevelFlag, "panic", fmt.Sprintf("Messages with this level and above will be logged. Valid levels are: %s", strings.Join(logging.ValidLogLevels, ", ")))
+	rootCmd.PersistentFlags().String(
+		"log-level",
+		"panic",
+		fmt.Sprintf(
+			"Messages with this level and above will be logged. Valid levels are: %s",
+			strings.Join(logging.GetValidLogLevels(), ", "),
+		),
+	)
+
 	return rootCmd
 }
 
 func Start() {
-	commands := []*cobra.Command{start.Start(), monitoring.Monitoring(), firewall.Firewall(), maintenance.Maintenance(), initnode.Init(), stop.Stop()}
-	c := NewKiraCLI(commands)
+	log, err := logging.InitLogger(logging.GetHooks(), "debug")
+	if err != nil {
+		fmt.Fprintf(os.Stdout, "Logging initialization error: %s\n", err)
+		os.Exit(1)
+	}
+
+	commands := []*cobra.Command{
+		initialization.Init(log),
+		start.Start(log),
+		stop.Stop(log),
+		maintenance.Maintenance(log),
+		firewall.Firewall(log),
+		monitoring.Monitoring(log),
+	}
+	c := NewKiraCLI(commands, log)
 	if err := c.Execute(); err != nil {
-		errors.HandleFatalErr("Failed to execute command", err)
+		log.Fatalf("Failed to execute command, error: %s", err)
 	}
 }

@@ -1,9 +1,9 @@
-package init
+package initialization
 
 import (
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/initialization/join"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/initialization/new"
 	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/init/join"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/init/new"
 	"github.com/spf13/cobra"
 )
 
@@ -13,26 +13,24 @@ const (
 	long  = "init your node with creating new network or joining to existing one"
 )
 
-var log = logging.Log
-
-func Init() *cobra.Command {
+func Init(log *logging.Logger) *cobra.Command {
 	log.Info("Adding `firewall` command...")
 	initCmd := &cobra.Command{
 		Use:   use,
 		Short: short,
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
-			mainInit(cmd)
+			mainInit(cmd, log)
 		},
 	}
 
-	initCmd.AddCommand(join.Join())
-	initCmd.AddCommand(new.New())
+	initCmd.AddCommand(join.Join(log))
+	initCmd.AddCommand(new.New(log))
 
 	return initCmd
 }
 
-func mainInit(cmd *cobra.Command) {
+func mainInit(cmd *cobra.Command, log *logging.Logger) {
 	if err := cmd.Help(); err != nil {
 		log.Fatalf("Error displaying help: %s", err)
 	}

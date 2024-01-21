@@ -183,3 +183,15 @@ func (d *DockerManager) DisableIpTablesForDocker() error {
 
 	return nil
 }
+
+func (d *DockerManager) NetworkInspect(ctx context.Context, dockerNetwork string) (*types.NetworkResource, error) {
+	network, err := d.cli.NetworkInspect(ctx, dockerNetwork, types.NetworkInspectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("cannot get docker network info: %w", err)
+	}
+	return &network, nil
+}
+
+func (d *DockerManager) CloseClient() {
+	d.cli.Close()
+}

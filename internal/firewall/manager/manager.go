@@ -29,7 +29,7 @@ type (
 	DockerMaintenance interface {
 		RestartDockerService() error
 		VerifyDockerInstallation(context.Context) error
-		NetworkInspect(context.Context, string) (dockerTypes.NetworkResource, error)
+		NetworkInspect(context.Context, string) (*dockerTypes.NetworkResource, error)
 	}
 
 	FirewallConfig struct {
@@ -82,7 +82,7 @@ func (f *FirewallManager) CheckFirewallSetUp(ctx context.Context) (bool, error) 
 	}
 
 	// Checking if validator zone exist
-	check, err := f.CheckFirewallZone(f.firewallConfig.zoneName)
+	check, err := f.checkFirewallZone(f.firewallConfig.zoneName)
 	if err != nil {
 		return false, fmt.Errorf("error while checking validator zone: %w", err)
 	}
@@ -110,21 +110,23 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	// TODO DOCKER ZONE
 	f.log.Infof("Checking and deleting default docker zone")
 	dockerZoneName := "docker"
-	check, err := f.CheckFirewallZone(dockerZoneName)
+	check, err := f.checkFirewallZone(dockerZoneName)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
+
 	if check {
 		f.log.Infof("docker zone exist: %s, deleting", dockerZoneName)
 
+		var output string
 		// TODO Docker firewall!
-		o, err := f.controllerKiraZone.DeleteFirewallZone()
+		output, err = f.controllerKiraZone.DeleteFirewallZone()
 		if err != nil {
-			return fmt.Errorf("%s\n%w", o, err)
+			return fmt.Errorf("%s\n%w", output, err)
 		}
-		o, err = f.controllerKiraZone.ReloadFirewall()
+		output, err = f.controllerKiraZone.ReloadFirewall()
 		if err != nil {
-			return fmt.Errorf("%s\n%w", o, err)
+			return fmt.Errorf("%s\n%w", output, err)
 		}
 	} else {
 		f.log.Infof("zone '%s' does not exist", dockerZoneName)
@@ -132,19 +134,22 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	// TODO DOCKER ZONE
 
 	f.log.Infof("Checking if '%s' zone exists", f.firewallConfig.zoneName)
-	check, err = f.CheckFirewallZone(f.firewallConfig.zoneName)
+	check, err = f.checkFirewallZone(f.firewallConfig.zoneName)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
+
 	if !check {
 		f.log.Infof("Creating new firewall zone '%s'", f.firewallConfig.zoneName)
-		o, err := f.controllerKiraZone.CreateNewZone()
+
+		var output string
+		output, err = f.controllerKiraZone.CreateNewZone()
 		if err != nil {
-			return fmt.Errorf("%s\n%w", o, err)
+			return fmt.Errorf("%s\n%w", output, err)
 		}
-		o, err = f.controllerKiraZone.ReloadFirewall()
+		output, err = f.controllerKiraZone.ReloadFirewall()
 		if err != nil {
-			return fmt.Errorf("%s\n%w", o, err)
+			return fmt.Errorf("%s\n%w", output, err)
 		}
 	}
 
@@ -159,7 +164,7 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	}
 
 	f.log.Infof("Checking ports %+v ", f.firewallConfig.portsToOpen)
-	err = f.CheckPorts(f.firewallConfig.portsToOpen)
+	err = f.checkPorts(f.firewallConfig.portsToOpen)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -188,7 +193,7 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
 
-	dockerInterface, err := f.GetDockerNetworkInterface(ctx, f.kiraConfig.DockerNetworkName)
+	dockerInterface, err := f.getDockerNetworkInterface(ctx, f.kiraConfig.DockerNetworkName)
 	interfaceName := "br-" + dockerInterface.ID[0:11]
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -243,7 +248,7 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 }
 
 // closing all opened ports in default km2 firewalld's zone except 22 and 53 (ssh and dns port)
-func (f *FirewallManager) ClostAllOpenedPorts(ctx context.Context) error {
+func (f *FirewallManager) CloseAllOpenedPorts(ctx context.Context) error {
 	_, ports, err := f.controllerKiraZone.GetOpenedPorts()
 	if err != nil {
 		return fmt.Errorf("cannot get opened ports: %w", err)
@@ -252,14 +257,15 @@ func (f *FirewallManager) ClostAllOpenedPorts(ctx context.Context) error {
 	var portsToClose []types.Port
 
 	for _, p := range ports {
-		port, err := f.ConvertFirewallDPortToKM2Port(p)
+		var port types.Port
+		port, err = f.convertFirewallDPortToKM2Port(p)
 		if err != nil {
 			return fmt.Errorf("convert port: %w", err)
 		}
 		portsToClose = append(portsToClose, port)
 	}
 
-	err = f.CheckPorts(portsToClose)
+	err = f.checkPorts(portsToClose)
 	if err != nil {
 		return fmt.Errorf("cannot while checking ports are valid: %w", err)
 	}
@@ -278,7 +284,7 @@ func (f *FirewallManager) ClostAllOpenedPorts(ctx context.Context) error {
 }
 
 func (f *FirewallManager) OpenConfigPorts(ctx context.Context) error {
-	err := f.CheckPorts(f.firewallConfig.portsToOpen)
+	err := f.checkPorts(f.firewallConfig.portsToOpen)
 	if err != nil {
 		return fmt.Errorf("cannot while checking ports are valid: %w", err)
 	}
@@ -295,25 +301,27 @@ func (f *FirewallManager) OpenConfigPorts(ctx context.Context) error {
 }
 
 func (f *FirewallManager) RestoreDefaultFirewalldSettingsForKM2(ctx context.Context) error {
-	check, err := f.CheckFirewallZone(f.firewallConfig.zoneName)
+	check, err := f.checkFirewallZone(f.firewallConfig.zoneName)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
+
 	if check {
+		var output string
 		f.log.Infof("docker zone exist: %s, deleting", f.firewallConfig.zoneName)
-		o, err := f.controllerKiraZone.DeleteFirewallZone()
+		output, err = f.controllerKiraZone.DeleteFirewallZone()
 		if err != nil {
-			return fmt.Errorf("%s\n%w", o, err)
+			return fmt.Errorf("%s\n%w", output, err)
 		}
-		o, err = f.controllerKiraZone.ReloadFirewall()
+		output, err = f.controllerKiraZone.ReloadFirewall()
 		if err != nil {
-			return fmt.Errorf("%s\n%w", o, err)
+			return fmt.Errorf("%s\n%w", output, err)
 		}
 	}
 
 	err = f.SetUpFirewall(ctx)
 	if err != nil {
-		return fmt.Errorf("errow while setuping firewalld: %w", err)
+		return fmt.Errorf("setting up firewall failed: %w", err)
 	}
 	return nil
 }

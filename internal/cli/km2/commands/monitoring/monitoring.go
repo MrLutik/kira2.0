@@ -2,12 +2,15 @@ package monitoring
 
 import (
 	"context"
+	"time"
 
-	"github.com/mrlutik/kira2.0/internal/config/configFileController"
+	"github.com/docker/docker/client"
+	"github.com/mrlutik/kira2.0/internal/config/controller"
+	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
-	"github.com/mrlutik/kira2.0/internal/errors"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/monitoring"
+	"github.com/mrlutik/kira2.0/internal/osutils"
 	"github.com/spf13/cobra"
 )
 
@@ -17,37 +20,50 @@ const (
 	long  = "Monitoring sekaid network"
 )
 
-var log = logging.Log
-
-func Monitoring() *cobra.Command {
+func Monitoring(log *logging.Logger) *cobra.Command {
 	log.Info("Adding `monitoring` command...")
 	monitoringCmd := &cobra.Command{
 		Use:   use,
 		Short: short,
 		Long:  long,
 		Run: func(_ *cobra.Command, _ []string) {
-			mainMonitoring()
+			mainMonitoring(log)
 		},
 	}
 
 	return monitoringCmd
 }
 
-func mainMonitoring() {
-	dockerManager, err := docker.NewTestDockerManager()
-	errors.HandleFatalErr("Can't create instance of docker manager", err)
-	defer dockerManager.Cli.Close()
+func mainMonitoring(log *logging.Logger) {
+	client, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Fatalf("Can't initialize the Docker client: %s", err)
+	}
 
-	containerManager, err := docker.NewTestContainerManager()
-	errors.HandleFatalErr("Can't create instance of container docker manager", err)
-	defer dockerManager.Cli.Close()
-	kiraCfg, err := configFileController.ReadOrCreateConfig()
-	ctx := context.Background()
+	utilsOS := osutils.NewOSUtils(log)
 
-	err = dockerManager.VerifyDockerInstallation(ctx)
-	errors.HandleFatalErr("Docker is not available", err)
+	dockerManager := docker.NewTestDockerManager(client, utilsOS, log)
+	if err != nil {
+		log.Fatalf("Can't create instance of docker manager: %s", err)
+	}
+	defer dockerManager.CloseClient()
 
-	monitoring := monitoring.NewMonitoringService(dockerManager, containerManager)
+	containerManager := docker.NewTestContainerManager(client, log)
+	if err != nil {
+		log.Fatalf("Can't create instance of container manager: %s", err)
+	}
+	defer containerManager.CloseClient()
+
+	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+	kiraCfg, _ := configController.ReadOrCreateConfig()
+
+	// TODO make flexible setting timeout
+	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute*5)
+	defer cancelFunc()
+
+	_ = dockerManager.VerifyDockerInstallation(ctx)
+
+	monitoring := monitoring.NewMonitoringService(dockerManager, containerManager, log)
 
 	networkResource, _ := monitoring.GetDockerNetwork(ctx, kiraCfg.DockerNetworkName)
 	log.Infof("%+v", networkResource)

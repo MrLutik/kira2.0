@@ -20,7 +20,7 @@ type Controller struct {
 
 var ErrConfigPathNotExist = errors.New("config path does not exist")
 
-func NewController(handler *handler.Handler, utils *osutils.OSUtils, logger *logging.Logger) *Controller {
+func NewConfigController(handler *handler.Handler, utils *osutils.OSUtils, logger *logging.Logger) *Controller {
 	return &Controller{
 		utils:   utils,
 		handler: handler,

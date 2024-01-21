@@ -31,6 +31,12 @@ func (f *FirewallManager) OpenPorts(portsToOpen []types.Port) error {
 			return fmt.Errorf("opening port '%s/%s' %w", port.Port, port.Type, err)
 		}
 	}
+
+	output, err := f.controllerKiraZone.ReloadFirewall()
+	if err != nil {
+		return fmt.Errorf("%s\n%w", output, err)
+	}
+
 	return nil
 }
 
@@ -43,13 +49,19 @@ func (f *FirewallManager) ClosePorts(portsToClose []types.Port) error {
 				return fmt.Errorf("%s\n%w", o, err)
 			}
 		} else {
-			f.log.Debugf("skipping %s port (sys port)", port.Port)
+			f.log.Debugf("skipping %s port (system port)", port.Port)
 		}
 	}
+
+	output, err := f.controllerKiraZone.ReloadFirewall()
+	if err != nil {
+		return fmt.Errorf("%s\n%w", output, err)
+	}
+
 	return nil
 }
 
-func (FirewallManager) ConvertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
+func (FirewallManager) convertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
 	parts := strings.Split(firewallDPort, "/")
 	if len(parts) != 2 {
 		return types.Port{}, fmt.Errorf("invalid port format '%s': %w", firewallDPort, ErrInvalidPort)
@@ -64,7 +76,7 @@ func (FirewallManager) ConvertFirewallDPortToKM2Port(firewallDPort string) (type
 	return types.Port{Port: port, Type: portType}, nil
 }
 
-func (f *FirewallManager) CheckPorts(portsToOpen []types.Port) error {
+func (f *FirewallManager) checkPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
 		if f.utils.CheckIfPortIsValid(port.Port) {
 			return fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
@@ -76,7 +88,7 @@ func (f *FirewallManager) CheckPorts(portsToOpen []types.Port) error {
 	return nil
 }
 
-func (f *FirewallManager) CheckFirewallZone(zoneName string) (bool, error) {
+func (f *FirewallManager) checkFirewallZone(zoneName string) (bool, error) {
 	out, zones, err := f.controllerKiraZone.GetAllFirewallZones()
 	if err != nil {
 		return false, fmt.Errorf("%s\n%w", out, err)
@@ -94,8 +106,8 @@ func (f *FirewallManager) CheckFirewallZone(zoneName string) (bool, error) {
 	return false, nil
 }
 
-// GetDockerNetworkInterface gets docker's custom interface name
-func (f *FirewallManager) GetDockerNetworkInterface(ctx context.Context, dockerNetworkName string) (dockerInterface dockerTypes.NetworkResource, err error) {
+// getDockerNetworkInterface gets docker's custom interface name
+func (f *FirewallManager) getDockerNetworkInterface(ctx context.Context, dockerNetworkName string) (dockerInterface *dockerTypes.NetworkResource, err error) {
 	network, err := f.dockerMaintenance.NetworkInspect(ctx, dockerNetworkName)
 	if err != nil {
 		return dockerInterface, fmt.Errorf("cannot get docker network info: %w", err)
@@ -138,12 +150,12 @@ func (f *FirewallManager) RemoveFromBlackListIP(ip string) error {
 	}
 	f.log.Infof("Output: %s", output)
 
-	out, err := f.controllerKiraZone.ReloadFirewall()
+	output, err = f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s\n%w", output, err)
 	}
 
-	f.log.Debugf("Output: %s", out)
+	f.log.Debugf("Output: %s", output)
 	return nil
 }
 
@@ -159,12 +171,12 @@ func (f *FirewallManager) WhiteListIp(ip string) error {
 	}
 	f.log.Infof("Output: %s", output)
 
-	out, err := f.controllerKiraZone.ReloadFirewall()
+	output, err = f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s\n%w", output, err)
 	}
 
-	f.log.Debugf("Output: %s", out)
+	f.log.Debugf("Output: %s", output)
 	return nil
 }
 
@@ -180,11 +192,11 @@ func (f *FirewallManager) RemoveFromWhitelistIP(ip string) error {
 	}
 	f.log.Infof("Output: %s", output)
 
-	out, err := f.controllerKiraZone.ReloadFirewall()
+	output, err = f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s\n%w", output, err)
 	}
 
-	f.log.Debugf("Output: %s", out)
+	f.log.Debugf("Output: %s", output)
 	return nil
 }

@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mrlutik/kira2.0/internal/config/configFileController"
+	"github.com/docker/docker/client"
+	"github.com/mrlutik/kira2.0/internal/config/controller"
+	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
-	errUtils "github.com/mrlutik/kira2.0/internal/errors"
-	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
+	"github.com/mrlutik/kira2.0/internal/firewall/manager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/osutils"
 	"github.com/spf13/cobra"
@@ -28,26 +29,22 @@ const (
 	removingFlag = "remove"
 )
 
-var (
-	log = logging.Log
+var ErrConflictingFlags = errors.New("conflicting flags")
 
-	ErrConflictingFlags = errors.New("conflicting flags")
-)
-
-func Whitelist() *cobra.Command {
+func Whitelist(log *logging.Logger) *cobra.Command {
 	closePortCmd := &cobra.Command{
 		Use:   use,
 		Short: short,
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
-			if err := validateFlags(cmd); err != nil {
+			if err := validateFlags(cmd, log); err != nil {
 				log.Errorf("Some flag is not valid: %s", err)
 				if err := cmd.Help(); err != nil {
 					log.Fatalf("Error displaying help: %s", err)
 				}
 				return
 			}
-			mainWhitelist(cmd)
+			mainWhitelist(cmd, log)
 		},
 	}
 
@@ -62,23 +59,26 @@ func Whitelist() *cobra.Command {
 	return closePortCmd
 }
 
-func validateFlags(cmd *cobra.Command) error {
-	ip, err := cmd.Flags().GetString(ipFlag)
+func validateFlags(cmd *cobra.Command, log *logging.Logger) error {
+	ipValue, err := cmd.Flags().GetString(ipFlag)
 	if err != nil {
 		return fmt.Errorf("error retrieving '%s' flag: %w", ipFlag, err)
 	}
-	check, err := osutils.CheckIfIPIsValid(ip)
+
+	utilsOS := osutils.NewOSUtils(log)
+
+	check, err := utilsOS.CheckIfIPIsValid(ipValue)
 	if err != nil || !check {
-		return fmt.Errorf("cannot parse ip <%v>: %w", ip, err)
+		return fmt.Errorf("cannot parse ip '%s': %w", ipValue, err)
 	}
 
 	add, err := cmd.Flags().GetBool(addingFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving '%s' flag: %w", addingFlag, err)
+		return fmt.Errorf("retrieving '%s' flag failed: %w", addingFlag, err)
 	}
 	remove, err := cmd.Flags().GetBool(removingFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving '%s' flag: %w", removingFlag, err)
+		return fmt.Errorf("retrieving '%s' flag failed: %w", removingFlag, err)
 	}
 
 	if add && remove {
@@ -91,49 +91,67 @@ func validateFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func mainWhitelist(cmd *cobra.Command) {
+func mainWhitelist(cmd *cobra.Command, log *logging.Logger) {
 	ip, err := cmd.Flags().GetString(ipFlag)
-	errUtils.HandleFatalErr("cannot Get whitelist-ip", err)
-	ok, err := osutils.CheckIfIPIsValid(ip)
-	errUtils.HandleFatalErr("cannot check if ip is valid", err)
+	if err != nil {
+		log.Fatalf("Cannot get blacklist-ip: %s", err)
+	}
+
+	utilsOS := osutils.NewOSUtils(log)
+
+	isIpValid, err := utilsOS.CheckIfIPIsValid(ip)
+	if err != nil {
+		log.Fatalf("Cannot check if ip is valid: %s", err)
+	}
 
 	add, err := cmd.Flags().GetBool(addingFlag)
 	if err != nil {
-		errUtils.HandleFatalErr(fmt.Sprintf("error retrieving '%s' flag", addingFlag), err)
-	}
-	remove, err := cmd.Flags().GetBool(removingFlag)
-	if err != nil {
-		errUtils.HandleFatalErr(fmt.Sprintf("error retrieving '%s' flag", removingFlag), err)
+		log.Fatalf("Retrieving '%s' flag failed: %s", addingFlag, err)
 	}
 
-	kiraCfg, err := configFileController.ReadOrCreateConfig()
-	errUtils.HandleFatalErr("Error while reading cfg file", err)
+	remove, err := cmd.Flags().GetBool(removingFlag)
+	if err != nil {
+		log.Fatalf("Retrieving '%s' flag failed: %s", removingFlag, err)
+	}
+
+	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+
+	kiraCfg, err := configController.ReadOrCreateConfig()
+	if err != nil {
+		log.Fatalf("Reading config file failed: %s", err)
+	}
+
+	client, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Fatalf("Can't initialize the Docker client: %s", err)
+	}
+
+	dockerManager := docker.NewTestDockerManager(client, utilsOS, log)
+	if err != nil {
+		log.Fatalf("Can't create instance of docker manager: %s", err)
+	}
+	defer dockerManager.CloseClient()
+
+	firewallManager, err := manager.NewFirewallManager(dockerManager, utilsOS, kiraCfg, log)
+	if err != nil {
+		log.Fatalf("Initialization of firewall manager failed: %s", err)
+	}
 
 	if add {
 		if ip != "" {
-			isValidIP, err := osutils.CheckIfIPIsValid(ip)
-			errUtils.HandleFatalErr("cannot check if ip is valid", err)
-			if isValidIP {
-				dockerManager, err := docker.NewTestDockerManager()
-				errUtils.HandleFatalErr("Can't create instance of docker manager", err)
-				defer dockerManager.Cli.Close()
-
-				fm := firewallManager.NewFirewallManager(dockerManager, kiraCfg)
-				err = fm.FirewallHandler.WhiteListIp(ip, fm.FirewallConfig.ZoneName)
-				errUtils.HandleFatalErr("Can't whitelist IP", err)
+			err = firewallManager.WhiteListIp(ip)
+			if err != nil {
+				log.Fatalf("Can't blacklist IP: %s", err)
 			}
 		}
 	}
 	if remove {
 		if ip != "" {
-			if ok {
-				dockerManager, err := docker.NewTestDockerManager()
-				errUtils.HandleFatalErr("Can't create instance of docker manager", err)
-				defer dockerManager.Cli.Close()
-
-				fm := firewallManager.NewFirewallManager(dockerManager, kiraCfg)
-				err = fm.FirewallHandler.RemoveFromWhitelistIP(ip, fm.FirewallConfig.ZoneName)
-				errUtils.HandleFatalErr("Can't remove IP from whitelist firewall", err)
+			if isIpValid {
+				err = firewallManager.RemoveFromWhitelistIP(ip)
+				if err != nil {
+					log.Fatalf("Can't remove IP from blacklist firewall: %s", err)
+				}
 			}
 		}
 	}

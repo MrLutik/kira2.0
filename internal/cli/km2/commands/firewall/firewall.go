@@ -3,32 +3,39 @@ package firewall
 import (
 	"context"
 	"errors"
+	"time"
 
-	"github.com/mrlutik/kira2.0/internal/config/configFileController"
+	"github.com/docker/docker/client"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/firewall/blacklist"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/firewall/closeport"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/firewall/openport"
+	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/firewall/whitelist"
+	"github.com/mrlutik/kira2.0/internal/config/controller"
+	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
-	errUtils "github.com/mrlutik/kira2.0/internal/errors"
-	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
+	"github.com/mrlutik/kira2.0/internal/firewall/manager"
+	"github.com/mrlutik/kira2.0/internal/osutils"
+
 	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/blacklist"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/closePort"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/openPort"
-	"github.com/mrlutik/kira2.0/internal/manager/cli/commands/firewall/whitelist"
+
 	"github.com/spf13/cobra"
 )
 
 const (
+	// Command information
 	use   = "firewall"
 	short = "Setting up firewalld"
 	long  = "Setting up firewalld"
+
+	// Flags
+	closingPortFlag = "close-ports"
+	openingPortFlag = "open-ports"
+	defaultFlag     = "default"
 )
 
-var (
-	log = logging.Log
+var ErrOnlyOneFlagAllowed = errors.New("only one flag at a time is allowed")
 
-	ErrOnlyOneFlagAllowed = errors.New("only one flag at a time is allowed")
-)
-
-func Firewall() *cobra.Command {
+func Firewall(log *logging.Logger) *cobra.Command {
 	log.Info("Adding `firewall` command...")
 	firewallCmd := &cobra.Command{
 		Use:   use,
@@ -42,19 +49,19 @@ func Firewall() *cobra.Command {
 				}
 				return
 			}
-			mainFirewall(cmd)
+			mainFirewall(cmd, log)
 		},
 	}
 
-	firewallCmd.AddCommand(openPort.OpenPort())
-	firewallCmd.AddCommand(closePort.ClosePort())
-	firewallCmd.AddCommand(blacklist.Blacklist())
-	firewallCmd.AddCommand(whitelist.Whitelist())
+	firewallCmd.AddCommand(openport.OpenPort(log))
+	firewallCmd.AddCommand(closeport.ClosePort(log))
+	firewallCmd.AddCommand(blacklist.Blacklist(log))
+	firewallCmd.AddCommand(whitelist.Whitelist(log))
 
-	firewallCmd.Flags().Bool("close-ports", false, "Set this flag to block all ports except ssh")
-	firewallCmd.Flags().Bool("open-ports", false, "Set this flag to open all km2 default ports")
+	firewallCmd.Flags().Bool(closingPortFlag, false, "Set this flag to block all ports except ssh")
+	firewallCmd.Flags().Bool(openingPortFlag, false, "Set this flag to open all km2 default ports")
 
-	firewallCmd.Flags().Bool("default", false, "Set this flag to restore default setting for firewall (what km2 is set after node installation)")
+	firewallCmd.Flags().Bool(defaultFlag, false, "Set this flag to restore default setting for firewall (what km2 is set after node installation)")
 
 	return firewallCmd
 }
@@ -63,41 +70,74 @@ func validateFlags(cmd *cobra.Command) error {
 	return nil
 }
 
-func mainFirewall(cmd *cobra.Command) {
-	kiraCfg, err := configFileController.ReadOrCreateConfig()
-	errUtils.HandleFatalErr("Error while reading cfg file", err)
-
+func mainFirewall(cmd *cobra.Command, log *logging.Logger) {
 	log.Info("Validating flags")
 
-	openPorts, err := cmd.Flags().GetBool("open-ports")
-	errUtils.HandleFatalErr("cannot parse flag", err)
+	openPorts, err := cmd.Flags().GetBool(openingPortFlag)
+	if err != nil {
+		log.Fatalf("Cannot get '%s' flag: %s", openingPortFlag, err)
+	}
 
-	closePorts, err := cmd.Flags().GetBool("close-ports")
-	errUtils.HandleFatalErr("cannot parse flag", err)
+	closePorts, err := cmd.Flags().GetBool(closingPortFlag)
+	if err != nil {
+		log.Fatalf("Cannot get '%s' flag: %s", closingPortFlag, err)
+	}
 
-	defaultB, err := cmd.Flags().GetBool("default")
-	errUtils.HandleFatalErr("cannot parse flag", err)
+	defaultB, err := cmd.Flags().GetBool(defaultFlag)
+	if err != nil {
+		log.Fatalf("Cannot get '%s' flag: %s", defaultFlag, err)
+	}
 
 	err = validateBoolFlags(openPorts, closePorts, defaultB)
-	errUtils.HandleFatalErr("only 1 flag can be accepted ", err)
+	if err != nil {
+		log.Fatalf("Only 1 flag can be accepted: %s", err)
+	}
 
-	dockerManager, err := docker.NewTestDockerManager()
-	errUtils.HandleFatalErr("Can't create instance of docker manager", err)
-	defer dockerManager.Cli.Close()
+	utilsOS := osutils.NewOSUtils(log)
 
-	fm := firewallManager.NewFirewallManager(dockerManager, kiraCfg)
-	ctx := context.Background()
+	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+
+	kiraCfg, err := configController.ReadOrCreateConfig()
+	if err != nil {
+		log.Fatalf("Reading config file failed: %s", err)
+	}
+
+	client, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Fatalf("Can't initialize the Docker client: %s", err)
+	}
+
+	dockerManager := docker.NewTestDockerManager(client, utilsOS, log)
+	if err != nil {
+		log.Fatalf("Can't create instance of docker manager: %s", err)
+	}
+	defer dockerManager.CloseClient()
+
+	firewallManager, err := manager.NewFirewallManager(dockerManager, utilsOS, kiraCfg, log)
+	if err != nil {
+		log.Fatalf("Initialization of firewall manager failed: %s", err)
+	}
+
+	// TODO make flexible setting timeout
+	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute*1)
+	defer cancelFunc()
 
 	switch {
 	case closePorts:
-		err = fm.ClostAllOpenedPorts(ctx)
-		errUtils.HandleFatalErr("Error while closing ports", err)
+		err = firewallManager.CloseAllOpenedPorts(ctx)
+		if err != nil {
+			log.Fatalf("Closing ports failed: %s", err)
+		}
 	case openPorts:
-		err = fm.OpenConfigPorts(ctx)
-		errUtils.HandleFatalErr("Error while opening ports", err)
+		err = firewallManager.OpenConfigPorts(ctx)
+		if err != nil {
+			log.Fatalf("Opening ports failed: %s", err)
+		}
 	case defaultB:
-		err = fm.SetUpFirewall(ctx)
-		errUtils.HandleFatalErr("Error while closing ports", err)
+		err = firewallManager.SetUpFirewall(ctx)
+		if err != nil {
+			log.Fatalf("Setup for firewall failed: %s", err)
+		}
 	}
 }
 

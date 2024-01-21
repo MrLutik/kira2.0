@@ -170,8 +170,11 @@ func (o *OSUtils) RunCommand(command string, args ...string) ([]byte, error) {
 	cmd := exec.Command(command, args...)
 	o.log.Debugf("Running: %s", cmd.String())
 
+	// TODO REFACTOR TO check execution status
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		// TODO https://pkg.go.dev/os/exec#example-Cmd.CombinedOutput
+		// NO SENSE in this output
 		return output, err
 	}
 	return output, err
@@ -189,8 +192,12 @@ func (o *OSUtils) RunCommandV2(commandStr string) ([]byte, error) {
 	}
 
 	cmd := exec.Command(args[0], args[1:]...)
+
+	// TODO REFACTOR TO check execution status
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		// TODO https://pkg.go.dev/os/exec#example-Cmd.CombinedOutput
+		// NO SENSE in this output
 		return out, err
 	}
 	return (out), nil
