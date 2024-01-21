@@ -191,7 +191,7 @@ func (f *FirewallDController) RejectIp(ip string) (string, error) {
 		return "", err
 	}
 
-	cmd := fmt.Sprintf(`firewall-cmd --permanent --zone=%s --add-rich-rule="rule family='ipv4' source address='%s' reject"`, f.zoneName, ip)
+	cmd := fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s --add-rich-rule="rule family='ipv4' source address='%s' reject"`, f.zoneName, ip)
 	out, err := f.commandExecutor.RunCommandV2(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to reject IP '%s' in zone '%s', error: %w", ip, f.zoneName, err)
@@ -205,7 +205,7 @@ func (f *FirewallDController) RemoveRejectRuleIp(ip string) (string, error) {
 		return "", err
 	}
 
-	cmd := fmt.Sprintf(`firewall-cmd --permanent --zone=%s --remove-rich-rule="rule family='ipv4' source address='%s' reject"`, f.zoneName, ip)
+	cmd := fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s --remove-rich-rule="rule family='ipv4' source address='%s' reject"`, f.zoneName, ip)
 	out, err := f.commandExecutor.RunCommandV2(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to remove reject rule for IP '%s' from zone '%s', error: %w", ip, f.zoneName, err)
@@ -219,7 +219,7 @@ func (f *FirewallDController) AcceptIp(ip string) (string, error) {
 		return "", err
 	}
 
-	cmd := fmt.Sprintf(`firewall-cmd --permanent --zone=%s --add-rich-rule="rule family='ipv4' source address='%s' accept"`, f.zoneName, ip)
+	cmd := fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s --add-rich-rule="rule family='ipv4' source address='%s' accept"`, f.zoneName, ip)
 	out, err := f.commandExecutor.RunCommandV2(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to accept IP '%s' in zone '%s', error: %w", ip, f.zoneName, err)
@@ -233,7 +233,7 @@ func (f *FirewallDController) RemoveAllowRuleIp(ip string) (string, error) {
 		return "", err
 	}
 
-	cmd := fmt.Sprintf(`firewall-cmd --permanent --zone=%s --remove-rich-rule="rule family='ipv4' source address='%s' accept"`, f.zoneName, ip)
+	cmd := fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s --remove-rich-rule="rule family='ipv4' source address='%s' accept"`, f.zoneName, ip)
 	out, err := f.commandExecutor.RunCommandV2(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to remove allow rule for IP '%s' from zone '%s', error: %w", ip, f.zoneName, err)
@@ -243,7 +243,7 @@ func (f *FirewallDController) RemoveAllowRuleIp(ip string) (string, error) {
 
 // AddRichRule adds a rich rule to the specified zone.
 func (f *FirewallDController) AddRichRule(rule string) (string, error) {
-	cmd := fmt.Sprintf(`firewall-cmd --permanent --zone=%s --add-rich-rule="%s"`, f.zoneName, rule)
+	cmd := fmt.Sprintf(`sudo firewall-cmd --permanent --zone=%s --add-rich-rule="%s"`, f.zoneName, rule)
 	out, err := f.commandExecutor.RunCommandV2(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to add rich rule '%s' to zone '%s', error: %w", rule, f.zoneName, err)
@@ -253,7 +253,7 @@ func (f *FirewallDController) AddRichRule(rule string) (string, error) {
 
 // TurnOnMasquerade enables masquerading in the specified zone.
 func (f *FirewallDController) TurnOnMasquerade() (string, error) {
-	cmd := fmt.Sprintf("firewall-cmd --zone=%s --add-masquerade --permanent", f.zoneName)
+	cmd := fmt.Sprintf("sudo firewall-cmd --zone=%s --add-masquerade --permanent", f.zoneName)
 	out, err := f.commandExecutor.RunCommandV2(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to turn on masquerading in zone '%s': %w", f.zoneName, err)
@@ -263,7 +263,7 @@ func (f *FirewallDController) TurnOnMasquerade() (string, error) {
 
 // GetOpenedPorts retrieves a list of open ports for the specified zone.
 func (f *FirewallDController) GetOpenedPorts() (string, []string, error) {
-	cmd := fmt.Sprintf("firewall-cmd --zone=%s --list-ports", f.zoneName)
+	cmd := fmt.Sprintf("sudo firewall-cmd --zone=%s --list-ports", f.zoneName)
 	out, err := f.commandExecutor.RunCommandV2(cmd)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get opened ports for zone '%s', error: %w", f.zoneName, err)

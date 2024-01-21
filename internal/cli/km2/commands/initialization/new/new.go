@@ -59,13 +59,17 @@ func New(log *logging.Logger) *cobra.Command {
 }
 
 func validateFlags(cmd *cobra.Command) error {
-	sekaiVersion, err := cmd.Flags().GetString(sekaiVersionFlag)
+	_, err := cmd.Flags().GetString(sekaiVersionFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving <%s> flag: %w", sekaiVersion, err)
+		return fmt.Errorf("error retrieving '%s' flag: %w", sekaiVersionFlag, err)
 	}
-	interxVersion, err := cmd.Flags().GetString(interxVersionFlag)
+	_, err = cmd.Flags().GetString(interxVersionFlag)
 	if err != nil {
-		return fmt.Errorf("error retrieving <%s> flag: %w", interxVersion, err)
+		return fmt.Errorf("error retrieving '%s flag: %w", interxVersionFlag, err)
+	}
+	_, err = cmd.Flags().GetString(recoveringFlag)
+	if err != nil {
+		return fmt.Errorf("error retrieving '%s flag: %w", recoveringFlag, err)
 	}
 	return nil
 }

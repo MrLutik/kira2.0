@@ -61,7 +61,7 @@ func (f *FirewallManager) ClosePorts(portsToClose []types.Port) error {
 	return nil
 }
 
-func (FirewallManager) convertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
+func (f *FirewallManager) convertFirewallDPortToKM2Port(firewallDPort string) (types.Port, error) {
 	parts := strings.Split(firewallDPort, "/")
 	if len(parts) != 2 {
 		return types.Port{}, fmt.Errorf("invalid port format '%s': %w", firewallDPort, ErrInvalidPort)
@@ -73,12 +73,16 @@ func (FirewallManager) convertFirewallDPortToKM2Port(firewallDPort string) (type
 		return types.Port{}, fmt.Errorf("invalid port type '%s': %w", portType, ErrInvalidPortType)
 	}
 
+	if !f.utils.CheckIfPortIsValid(port) {
+		return types.Port{}, fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
+	}
+
 	return types.Port{Port: port, Type: portType}, nil
 }
 
 func (f *FirewallManager) checkPorts(portsToOpen []types.Port) error {
 	for _, port := range portsToOpen {
-		if f.utils.CheckIfPortIsValid(port.Port) {
+		if !f.utils.CheckIfPortIsValid(port.Port) {
 			return fmt.Errorf("%w: '%s'", ErrInvalidPort, port)
 		}
 		if port.Type != "tcp" && port.Type != "udp" {
