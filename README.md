@@ -42,6 +42,12 @@ To disable IP tables for Docker, execute the following command. This command upd
 
 **Note:** This action modifies Docker's default networking behavior and might affect how containers access network resources. Ensure this change aligns with your network security policies and requirements.
 
+Reboot system
+
+`sudo reboot`
+
+
+
 ## Disabling Sudo Requirement for Docker Commands
 
 `sudo usermod -aG docker $USER`
