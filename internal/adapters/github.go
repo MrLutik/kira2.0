@@ -45,11 +45,14 @@ func (g *GitHubAdapter) MustDownloadBinaries(ctx context.Context, cfg *config.Ki
 }
 
 // NewGitHubAdapter initializes a new GitHubAdapter instance
-func NewGitHubAdapter(ctx context.Context, accessToken string) *GitHubAdapter {
+func NewGitHubAdapter(ctx context.Context, accessToken string, log *logging.Logger) *GitHubAdapter {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: accessToken})
 	tc := oauth2.NewClient(ctx, ts)
 
-	return &GitHubAdapter{client: github.NewClient(tc)}
+	return &GitHubAdapter{
+		client: github.NewClient(tc),
+		log:    log,
+	}
 }
 
 // getLatestRelease fetches the latest release from the specified repository
