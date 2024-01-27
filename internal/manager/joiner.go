@@ -33,9 +33,9 @@ type (
 	}
 
 	ConfigController interface {
-		ReadOrCreateConfig() (cfg *config.KiraConfig, err error)
-		GetConfigFilePath() (filePath, folderPath string)
-		WriteConfigFile(filePath string, cfg *config.KiraConfig) error
+		ReadOrCreateConfig() (*config.KiraConfig, error)
+		GetConfigFilePath() (string, error)
+		WriteConfigFile(string, *config.KiraConfig) error
 	}
 
 	// Structure httpKiraClient is a struct for making HTTP calls to the nodes for retrieving information about network
@@ -67,10 +67,16 @@ const (
 	endpointPubP2PList = "api/pub_p2p_list?peers_only=true"
 )
 
-func NewJoinerManager(config *TargetSeedKiraConfig) *JoinerManager {
+func NewJoinerManager(cfgController ConfigController, config *TargetSeedKiraConfig, logger *logging.Logger) *JoinerManager {
+	if cfgController == nil {
+		logger.Fatal("Config controller is not initialized")
+	}
+
 	return &JoinerManager{
-		client:       &httpKiraClient{client: &http.Client{}},
-		targetConfig: config,
+		client:           &httpKiraClient{client: &http.Client{}},
+		targetConfig:     config,
+		configController: cfgController,
+		log:              logger,
 	}
 }
 

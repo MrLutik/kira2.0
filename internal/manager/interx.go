@@ -15,6 +15,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/types"
+	"github.com/mrlutik/kira2.0/internal/utils"
 )
 
 // InterxManager represents a manager for Interx container and its associated configurations.
@@ -74,12 +75,15 @@ func NewInterxManager(containerManager ContainerManager, config *config.KiraConf
 		Privileged: true,
 	}
 
+	jsonEditor := utils.NewJSONEditor(logger)
+
 	return &InterxManager{
 		ContainerConfig:     interxContainerConfig,
 		InterxHostConfig:    interxHostConfig,
 		InterxNetworkConfig: interxNetworkingConfig,
-		containerManager:    containerManager,
 		config:              config,
+		containerManager:    containerManager,
+		jsonEditor:          jsonEditor,
 		log:                 logger,
 	}, err
 }

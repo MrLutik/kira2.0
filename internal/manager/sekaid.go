@@ -16,6 +16,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/monitoring"
 	"github.com/mrlutik/kira2.0/internal/types"
+	"github.com/mrlutik/kira2.0/internal/utils"
 )
 
 // SekaidManager represents a manager for Sekaid container and its associated configurations.
@@ -128,14 +129,18 @@ func NewSekaidManager(containerManager ContainerManager, helper HelperManager, d
 			config.DockerNetworkName: {},
 		},
 	}
+
+	tomlEditor := utils.NewTOMLEditor(logger)
+
 	return &SekaidManager{
 		ContainerConfig:        sekaiContainerConfig,
 		SekaiHostConfig:        sekaiHostConfig,
 		SekaidNetworkingConfig: sekaidNetworkingConfig,
-		containerManager:       containerManager,
 		config:                 config,
-		helper:                 helper,
 		dockerManager:          dockerManager,
+		containerManager:       containerManager,
+		helper:                 helper,
+		tomlEditor:             tomlEditor,
 		log:                    logger,
 	}, err
 }
