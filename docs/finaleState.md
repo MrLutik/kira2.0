@@ -2,7 +2,7 @@
 
 ## Configuration File
 
-The configuration file should be placed within the` ~/.config/km2/` directory and named `config.toml`.
+The configuration file should be placed within the `~/.config/km2/` directory and named `config.toml`.
 
 
 
@@ -10,7 +10,7 @@ The configuration file should be placed within the` ~/.config/km2/` directory an
 
 Ensure that the firewalld is set up with an active `validator` zone, featuring the following parameters:
 
-Open system ports` 22/tcp` and `53/udp`.
+Open system ports `22/tcp` and `53/udp`.
 Open the ports `RpcPort`, `GrpcPort`, `P2PPort`, `PrometheusPort`, and `InterxPort` with the corresponding values specified in the `config.toml` file.
 
 
