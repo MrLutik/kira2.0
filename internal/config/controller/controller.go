@@ -28,6 +28,16 @@ func NewConfigController(handler *handler.Handler, utils *osutils.OSUtils, logge
 	}
 }
 
+// TODO reorganize config package
+// Ask Dmytro why we have handler + controller logic separation
+func (c *Controller) GetConfigFilePath() (string, error) {
+	return c.handler.GetConfigFilePath()
+}
+
+func (c *Controller) WriteConfigFile(filePath string, cfg *config.KiraConfig) error {
+	return c.handler.WriteConfigFile(filePath, cfg)
+}
+
 func (c *Controller) ChangeConfigFile(cfg *config.KiraConfig) error {
 	c.log.Infof("Changing config file")
 
