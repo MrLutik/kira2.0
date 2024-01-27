@@ -54,6 +54,7 @@ func New(log *logging.Logger) *cobra.Command {
 
 	newCmd.Flags().String(sekaiVersionFlag, "latest", "Set this flag to choose what sekai version will be initialized")
 	newCmd.Flags().String(interxVersionFlag, "latest", "Set this flag to choose what interx version will be initialized")
+	newCmd.PersistentFlags().Bool(recoveringFlag, false, "If true recover keys and mnemonic from master mnemonic, otherwise generate random one")
 
 	return newCmd
 }
@@ -67,7 +68,7 @@ func validateFlags(cmd *cobra.Command) error {
 	if err != nil {
 		return fmt.Errorf("error retrieving '%s flag: %w", interxVersionFlag, err)
 	}
-	_, err = cmd.Flags().GetString(recoveringFlag)
+	_, err = cmd.Flags().GetBool(recoveringFlag)
 	if err != nil {
 		return fmt.Errorf("error retrieving '%s flag: %w", recoveringFlag, err)
 	}
@@ -160,7 +161,7 @@ func mainNew(cmd *cobra.Command, log *logging.Logger) {
 	if !exists {
 		log.Fatalf("'%s' variable is not set", envGithubTokenVariableName)
 	}
-	adapterGitHub := adapters.NewGitHubAdapter(ctx, token)
+	adapterGitHub := adapters.NewGitHubAdapter(ctx, token, log)
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
 	adapterGitHub.MustDownloadBinaries(ctx, cfg)

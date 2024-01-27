@@ -194,7 +194,10 @@ func mainJoin(cmd *cobra.Command, log *logging.Logger) {
 		SekaidRPCPort: sekaidRPCPort,
 		SekaidP2PPort: sekaidP2PPort,
 	}
-	joinerManager := manager.NewJoinerManager(joinerCfg)
+
+	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+
+	joinerManager := manager.NewJoinerManager(configController, joinerCfg, log)
 
 	recover, err := cmd.Flags().GetBool(recoveringFlag)
 	if err != nil {
@@ -253,7 +256,7 @@ func mainJoin(cmd *cobra.Command, log *logging.Logger) {
 	if !exists {
 		log.Fatalf("'%s' variable is not set", envGithubTokenVariableName)
 	}
-	adapterGitHub := adapters.NewGitHubAdapter(ctx, token)
+	adapterGitHub := adapters.NewGitHubAdapter(ctx, token, log)
 	// TODO Do we need to safe deb packages in temporary directory?
 	// Right now the files are downloaded in current directory, where the program starts
 	adapterGitHub.MustDownloadBinaries(ctx, cfg)
