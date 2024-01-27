@@ -1,18 +1,31 @@
-# OS state after init:
+#  Operating System Configuration After Node Initialization:
 
-## Config file
-config file has to be located inside `~/.config/km2/` folder with `config.toml` file name.
+## Configuration File
 
-## Firewald 
-
-firewalld must be configured so that it has active `validator` zone with next parameters:
-- Opened system ports `22/tcp`, `53/udp`. 
-- Opened `RpcPort`, `GrpcPort`, `P2PPort`, `PrometheusPort`, `InterxPort` with values from `config.toml` file. 
+The configuration file should be placed within the` ~/.config/km2/` directory and named `config.toml`.
 
 
-## Docker
- Docker must have 2 existing containers `sekaid`, `interx` and volume with `kira_volume`. 
- 
-- sekaid container has to have forwarded ports: `RpcPort`, `P2PPort`, `PrometheusPort` with values from `config.toml` file. 
-- interx container has to have forwarded  `InterxPort` port with value from `config.toml` file. 
-- both containers must have mounted volume with `VolumeName` value from `config.toml` file.
+
+## Firewalld Configuration
+
+Ensure that the firewalld is set up with an active `validator` zone, featuring the following parameters:
+
+Open system ports` 22/tcp` and `53/udp`.
+Open the ports `RpcPort`, `GrpcPort`, `P2PPort`, `PrometheusPort`, and `InterxPort` with the corresponding values specified in the `config.toml` file.
+
+
+
+## Docker Setup
+
+For Docker, make sure there are two existing containers, namely sekaid and interx, along with a volume named kira_volume.
+
+The `sekaid` container should have the following ports forwarded: `RpcPort`, `P2PPort`, and `PrometheusPort`, with values obtained from the `config.toml` file.
+
+The `interx` container should have the `InterxPort` forwarded with the value specified in the config.toml file.
+
+Both containers must have a mounted volume using the `VolumeName` value from the `config.toml` file.
+	
+	
+	
+	
+	
