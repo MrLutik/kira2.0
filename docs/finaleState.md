@@ -8,6 +8,8 @@ The configuration file should be placed within the `~/.config/km2/` directory an
 
 ## Firewalld Configuration
 
+Delete `docker` zone.
+
 Ensure that the firewalld is set up with an active `validator` zone, featuring the following parameters:
 
 Open system ports `22/tcp` and `53/udp`.
