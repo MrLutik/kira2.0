@@ -1,8 +1,33 @@
 package sshC
 
-import "golang.org/x/crypto/ssh"
+import (
+	"crypto/ecdsa"
 
-func MakeSHH_Client(ipAndPort, user, psswrd string) (*ssh.Client, error) {
+	"golang.org/x/crypto/ssh"
+)
+
+func MakeSHH_ClientWithKey(ipAndPort, user string, pKey *ecdsa.PrivateKey) (*ssh.Client, error) {
+	privateKey, err := ssh.NewSignerFromKey(pKey)
+	if err != nil {
+		return nil, err
+	}
+	config := &ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(privateKey),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	// Connect to the SSH server
+	client, err := ssh.Dial("tcp", ipAndPort, config)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func MakeSHH_ClientWithPassword(ipAndPort, user, psswrd string) (*ssh.Client, error) {
 	config := &ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{
