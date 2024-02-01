@@ -1,16 +1,20 @@
 package tabs
 
 import (
+	"os"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/mrlutik/kira2.0/internal/gui/guiHelper"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
 type Gui struct {
-	sshClient *ssh.Client
-	Window    fyne.Window
+	sshClient  *ssh.Client
+	Window     fyne.Window
+	HomeFolder string
 }
 
 func (g *Gui) MakeGui() fyne.CanvasObject {
@@ -23,7 +27,13 @@ func (g *Gui) MakeGui() fyne.CanvasObject {
 	// a.Lifecycle().SetOnStarted(func() {
 	g.showConnect()
 	// })
-
+	homeFolder, err := guiHelper.GetAndSetHomeFolderForKMUI()
+	if err != nil {
+		log.Fatalf("cant get home folder", err)
+		os.Exit(1)
+	}
+	g.HomeFolder = homeFolder
+	log.Printf("Home: %s\n", g.HomeFolder)
 	tab := container.NewBorder(container.NewVBox(title, info), nil, nil, nil, mainWindow)
 
 	setTab := func(t Tab) {
