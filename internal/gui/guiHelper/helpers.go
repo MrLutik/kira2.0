@@ -8,11 +8,14 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"runtime"
 	"sync"
 
 	"github.com/mrlutik/kira2.0/internal/config"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	cmdConfig "github.com/mrlutik/kira2.0/internal/manager/cli/commands/config"
+	"github.com/mrlutik/kira2.0/internal/osutils"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -176,4 +179,53 @@ func ReadKiraConfigFromKM2cfgFile(client *ssh.Client) (*config.KiraConfig, error
 
 	log.Println(config)
 	return &config, nil
+}
+
+func getHomeFolder() (homeDir string, err error) {
+	if runtime.GOOS == "windows" {
+		homeDir = os.Getenv("USERPROFILE")
+	} else { // for Linux, Unix, Mac, etc.
+		homeDir = os.Getenv("HOME")
+	}
+
+	if homeDir == "" {
+		err = fmt.Errorf("home directory not found")
+		fmt.Println(err)
+		return "", err
+	}
+	return homeDir, err
+}
+
+// getting and  creating (if not exist) home folder for UI
+func GetAndSetHomeFolderForKMUI() (string, error) {
+	hF, err := getHomeFolder()
+	if err != nil {
+		return "", err
+	}
+	hF += "/.km2"
+
+	check := checkIfPathExists(hF)
+	if !check {
+		err = osutils.CreateDirPath(hF)
+		if err != nil {
+			log.Printf(err.Error())
+			return "", err
+		}
+		check = checkIfPathExists(hF)
+		if !check {
+			return "", fmt.Errorf("could't create %s dir", hF)
+		}
+	} else {
+		log.Printf("%s already exist\n", hF)
+	}
+	return hF, nil
+}
+
+// Todo: move to osutils after refactor
+func checkIfPathExists(path string) bool {
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return err == nil
 }
