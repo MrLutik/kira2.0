@@ -1,6 +1,7 @@
 package tabs
 
 import (
+	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -15,53 +16,140 @@ import (
 	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
+var sshMnemonicsMap = make(map[string]string)
+
 func (g *Gui) showConnect() {
 	var wizard *dialogs.Wizard
-	userEntry := widget.NewEntry()
-	ipEntry := widget.NewEntry()
-	passwordEntry := widget.NewPasswordEntry()
-	errorLabel := widget.NewLabel("")
 
-	errorLabel.Wrapping = 2
-	submitFunc := func() {
-		var err error
-		g.sshClient, err = sshC.MakeSHH_Client(ipEntry.Text, userEntry.Text, passwordEntry.Text)
-		// g.sshClient, err = sshC.MakeSHH_Client("192.168.1.103:22", "d", "d")
-		if err != nil {
+	joinToInitializedNode := func() *fyne.Container {
 
-			errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
-		} else {
-			err = TryToRunSSHSessionForTerminal(g.sshClient)
-			if err != nil {
-			} else {
-				wizard.Hide()
+		var mnemonics []string
+		encryptedMnemonics, _ := guiHelper.GetKeys()
+		for _, m := range encryptedMnemonics {
 
-			}
+			mnemonics = append(mnemonics, m.Name)
 		}
+		var selectedKeyToJoin guiHelper.EncryptedMnemonic
+		userEntry := widget.NewEntry()
+		ipEntry := widget.NewEntry()
+		errorLabel := widget.NewLabel("")
+		decryptionPasswordEntry := widget.NewPasswordEntry()
+		encryptedMnemonicsSelect := widget.NewSelect(mnemonics, func(s string) {
+			k, err := guiHelper.GetKey(s)
+			if err != nil {
+				errorLabel.Text = err.Error()
+				return
+			}
+			log.Println("selected to join: ", s, k)
+			selectedKeyToJoin = k
+		})
+		restoreButton := widget.NewButton("restore SSH key", func() {})
+		bnonce := []byte(guiHelper.Nonce)
+		log.Printf("nonce: %s hexNonce %s", guiHelper.Nonce, hex.EncodeToString([]byte(guiHelper.Nonce)))
+		log.Printf("bnonce: %s hexbnonce %s", bnonce, hex.EncodeToString(bnonce))
+		log.Printf("bnonce: %v", bnonce)
 
+		submitFunc := func() {
+			var err error
+			convertedPassword, err := guiHelper.Set32BytePassword(decryptionPasswordEntry.Text)
+			if err != nil {
+				errorLabel.Text = err.Error()
+				return
+			}
+			sshMnemonic := guiHelper.DecryptMnemonic(selectedKeyToJoin.EncoderMnemonicHex, hex.EncodeToString(convertedPassword), hex.EncodeToString([]byte(guiHelper.Nonce)))
+			log.Printf("HexPassword: %s, hexNonce%s", hex.EncodeToString(convertedPassword), hex.EncodeToString([]byte(guiHelper.Nonce)))
+			log.Println("decrypted mnemonic", string(sshMnemonic))
+			privateKey, err := guiHelper.GeneratePrivateP256KeyFromMnemonic(string(sshMnemonic))
+
+			if err != nil {
+				errorLabel.Text = err.Error()
+				return
+			}
+			g.sshClient, err = sshC.MakeSHH_ClientWithKey(ipEntry.Text, userEntry.Text, privateKey)
+			// g.sshClient, err = sshC.MakeSHH_Client("192.168.1.103:22", "d", "d")
+			if err != nil {
+
+				errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
+			} else {
+				err = TryToRunSSHSessionForTerminal(g.sshClient)
+				if err != nil {
+				} else {
+					wizard.Hide()
+
+				}
+			}
+
+		}
+		connectButton := widget.NewButton("connect", func() { submitFunc() })
+
+		authScreen := container.NewVBox(
+			widget.NewLabel("ip and port"),
+			ipEntry,
+			widget.NewLabel("user"),
+			userEntry,
+			widget.NewLabel("select SSH key"),
+			encryptedMnemonicsSelect,
+			widget.NewLabel("Password to unlock SSH key"),
+			decryptionPasswordEntry,
+			connectButton,
+			errorLabel,
+			restoreButton,
+		)
+		return authScreen
 	}
-	ipEntry.OnSubmitted = func(s string) { submitFunc() }
-	userEntry.OnSubmitted = func(s string) { submitFunc() }
-	passwordEntry.OnSubmitted = func(s string) { submitFunc() }
-	connectButton := widget.NewButton("connect to remote host", func() { submitFunc() })
 
-	logging := container.NewVBox(
-		widget.NewLabel("ip and port"),
-		ipEntry,
-		widget.NewLabel("user"),
-		userEntry,
-		widget.NewLabel("password"),
-		passwordEntry,
-		connectButton,
-		errorLabel,
+	//join to new host tab
+	joinToNewHost := func() *fyne.Container {
+		userEntry := widget.NewEntry()
+		ipEntry := widget.NewEntry()
+		passwordEntry := widget.NewPasswordEntry()
+		errorLabel := widget.NewLabel("")
 
-		widget.NewButton("test", func() {
-			wizard.Push("set up your node", widget.NewLabel("Create node or smth"))
+		errorLabel.Wrapping = 2
+		submitFunc := func() {
+			var err error
+			g.sshClient, err = sshC.MakeSHH_ClientWithPassword(ipEntry.Text, userEntry.Text, passwordEntry.Text)
+			// g.sshClient, err = sshC.MakeSHH_Client("192.168.1.103:22", "d", "d")
+			if err != nil {
 
-		}),
+				errorLabel.SetText(fmt.Sprintf("ERROR: %s", err.Error()))
+			} else {
+				err = TryToRunSSHSessionForTerminal(g.sshClient)
+				if err != nil {
+				} else {
+					wizard.Hide()
+
+				}
+			}
+
+		}
+		ipEntry.OnSubmitted = func(s string) { submitFunc() }
+		userEntry.OnSubmitted = func(s string) { submitFunc() }
+		passwordEntry.OnSubmitted = func(s string) { submitFunc() }
+		connectButton := widget.NewButton("connect to remote host", func() { submitFunc() })
+
+		logging := container.NewVBox(
+			widget.NewLabel("ip and port"),
+			ipEntry,
+			widget.NewLabel("user"),
+			userEntry,
+			widget.NewLabel("password"),
+			passwordEntry,
+			connectButton,
+			errorLabel,
+
+			widget.NewButton("test", func() {
+				wizard.Push("set up your node", widget.NewLabel("Create node or smth"))
+
+			}),
+		)
+		return logging
+	}
+	mainDialogScreen := container.NewAppTabs(
+		container.NewTabItem("Existing Node", joinToInitializedNode()),
+		container.NewTabItem("New Host", joinToNewHost()),
 	)
-
-	wizard = dialogs.NewWizard("Create ssh connection", logging)
+	wizard = dialogs.NewWizard("Create ssh connection", mainDialogScreen)
 	wizard.Show(g.Window)
 	wizard.Resize(fyne.NewSize(300, 200))
 }
