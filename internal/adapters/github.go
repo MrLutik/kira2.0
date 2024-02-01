@@ -103,7 +103,15 @@ func (g *GitHubAdapter) downloadBinaryFromRepo(ctx context.Context, owner, repo,
 		return &BinaryNotFoundError{BinaryName: binaryName}
 	}
 
-	resp, err := http.Get(*asset.BrowserDownloadURL)
+	// Create a request with context
+	req, err := http.NewRequestWithContext(ctx, "GET", *asset.BrowserDownloadURL, nil)
+	if err != nil {
+		return fmt.Errorf("creating request error: %w", err)
+	}
+
+	// Create an HTTP client and do the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("downloading binary error: %w", err)
 	}
