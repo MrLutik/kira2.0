@@ -9,7 +9,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/config/controller"
-	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	firewallManager "github.com/mrlutik/kira2.0/internal/firewall/manager"
 	"github.com/mrlutik/kira2.0/internal/logging"
@@ -104,7 +103,7 @@ func mainNew(cmd *cobra.Command, log *logging.Logger) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute*5)
 	defer cancelFunc()
 
-	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+	configController := controller.NewConfigController(utilsOS, log)
 	cfg, err := configController.ReadOrCreateConfig()
 	if err != nil {
 		log.Fatalf("Can't read or create config file: %s", err)
@@ -123,7 +122,6 @@ func mainNew(cmd *cobra.Command, log *logging.Logger) {
 		cfg.SekaiVersion = sekaiVersion
 		cfg.InterxVersion = interxVersion
 
-		configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
 		err = configController.ChangeConfigFile(cfg)
 		if err != nil {
 			log.Fatalf("Can't change config file: %s", err)

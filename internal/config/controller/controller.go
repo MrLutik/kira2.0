@@ -6,44 +6,42 @@ import (
 	"time"
 
 	"github.com/mrlutik/kira2.0/internal/config"
-	"github.com/mrlutik/kira2.0/internal/config/handler"
-
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/osutils"
 )
 
 type Controller struct {
-	utils   *osutils.OSUtils
-	handler *handler.Handler
-	log     *logging.Logger
+	utils *osutils.OSUtils
+	log   *logging.Logger
 }
+
+const configFileName = "config.toml"
 
 var ErrConfigPathNotExist = errors.New("config path does not exist")
 
-func NewConfigController(handler *handler.Handler, utils *osutils.OSUtils, logger *logging.Logger) *Controller {
+func NewConfigController(utils *osutils.OSUtils, logger *logging.Logger) *Controller {
 	return &Controller{
-		utils:   utils,
-		handler: handler,
-		log:     logger,
+		utils: utils,
+		log:   logger,
 	}
 }
 
-// TODO reorganize config package
-// Ask Dmytro why we have handler + controller logic separation
 func (c *Controller) GetConfigFilePath() (string, error) {
-	return c.handler.GetConfigFilePath()
-}
+	configFolderPath, err := c.getConfigFolderPath()
+	if err != nil {
+		return "", fmt.Errorf("getting config file error: %w", err)
+	}
 
-func (c *Controller) WriteConfigFile(filePath string, cfg *config.KiraConfig) error {
-	return c.handler.WriteConfigFile(filePath, cfg)
+	configPath := fmt.Sprintf("%s/%s", configFolderPath, configFileName)
+	return configPath, nil
 }
 
 func (c *Controller) ChangeConfigFile(cfg *config.KiraConfig) error {
 	c.log.Infof("Changing config file")
 
-	configPath, err := c.handler.GetConfigFilePath()
+	configPath, err := c.GetConfigFilePath()
 	if err != nil {
-		return fmt.Errorf("getting config file error: %w", err)
+		return err
 	}
 
 	isPathExist, err := c.utils.CheckIfPathExists(configPath)
@@ -54,7 +52,7 @@ func (c *Controller) ChangeConfigFile(cfg *config.KiraConfig) error {
 		return fmt.Errorf("%w: '%s'", ErrConfigPathNotExist, configPath)
 	}
 
-	err = c.handler.WriteConfigFile(configPath, cfg)
+	err = c.WriteConfigFile(configPath, cfg)
 	if err != nil {
 		return fmt.Errorf("writing cfg file error: %w", err)
 	}
@@ -65,23 +63,25 @@ func (c *Controller) ChangeConfigFile(cfg *config.KiraConfig) error {
 func (c *Controller) ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 	c.log.Info("Reading config file")
 
-	configPath, err := c.handler.GetConfigFilePath()
+	configFolderPath, err := c.getConfigFolderPath()
 	if err != nil {
-		return nil, fmt.Errorf("getting config path error: %w", err)
+		return nil, fmt.Errorf("getting config directory path error: %w", err)
 	}
 
-	c.log.Infof("Config path is '%s', checking if exists", configPath)
-	okPath, err := c.utils.CheckIfPathExists(configPath)
+	c.log.Infof("Config path is '%s', checking if exists", configFolderPath)
+	okPath, err := c.utils.CheckIfPathExists(configFolderPath)
 	if err != nil {
 		return cfg, err
 	}
 
 	if !okPath {
-		err = c.utils.CreateDirPath(configPath)
+		err = c.utils.CreateDirPath(configFolderPath)
 		if err != nil {
 			return cfg, err
 		}
 	}
+
+	configPath := fmt.Sprintf("%s/%s", configFolderPath, configFileName)
 
 	okFile, err := c.utils.CheckIfFileExist(configPath)
 	if err != nil {
@@ -96,7 +96,7 @@ func (c *Controller) ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 		defaultCfg := newDefaultKiraConfig()
 		defaultCfg.KiraConfigFilePath = configPath
 
-		err = c.handler.WriteConfigFile(configPath, defaultCfg)
+		err = c.WriteConfigFile(configPath, defaultCfg)
 		if err != nil {
 			return cfg, fmt.Errorf("cannot create new KiraConfig in: '%s': %w", configPath, err)
 		}
@@ -104,7 +104,7 @@ func (c *Controller) ReadOrCreateConfig() (cfg *config.KiraConfig, err error) {
 		c.log.Infof("File '%s' exist, trying to read values", configPath)
 	}
 
-	cfg, err = c.handler.ReadConfigFile(configPath)
+	cfg, err = c.ReadConfigFile(configPath)
 	if err != nil {
 		return cfg, fmt.Errorf("cannot read Kira Config from file: '%s': %w", configPath, err)
 	}

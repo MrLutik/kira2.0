@@ -6,7 +6,6 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/mrlutik/kira2.0/internal/config/controller"
-	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/firewall/manager"
 	"github.com/mrlutik/kira2.0/internal/logging"
@@ -114,7 +113,7 @@ func mainBlacklist(cmd *cobra.Command, log *logging.Logger) {
 		log.Fatalf("Retrieving '%s' flag failed: %s", removingFlag, err)
 	}
 
-	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+	configController := controller.NewConfigController(utilsOS, log)
 
 	kiraCfg, err := configController.ReadOrCreateConfig()
 	if err != nil {

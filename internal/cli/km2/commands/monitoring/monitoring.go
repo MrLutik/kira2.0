@@ -6,7 +6,6 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/mrlutik/kira2.0/internal/config/controller"
-	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/monitoring"
@@ -54,7 +53,7 @@ func mainMonitoring(log *logging.Logger) {
 	}
 	defer containerManager.CloseClient()
 
-	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+	configController := controller.NewConfigController(utilsOS, log)
 	kiraCfg, _ := configController.ReadOrCreateConfig()
 
 	// TODO make flexible setting timeout

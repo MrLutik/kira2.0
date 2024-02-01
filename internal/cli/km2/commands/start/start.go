@@ -6,7 +6,6 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/mrlutik/kira2.0/internal/config/controller"
-	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager"
@@ -65,7 +64,7 @@ func mainStart(_ *cobra.Command, log *logging.Logger) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute*5)
 	defer cancelFunc()
 
-	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+	configController := controller.NewConfigController(utilsOS, log)
 	cfg, err := configController.ReadOrCreateConfig()
 	if err != nil {
 		log.Fatalf("Can't read or create config file: %s", err)

@@ -12,7 +12,6 @@ import (
 
 	"github.com/mrlutik/kira2.0/internal/adapters"
 	"github.com/mrlutik/kira2.0/internal/config/controller"
-	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	firewallManager "github.com/mrlutik/kira2.0/internal/firewall/manager"
 	"github.com/mrlutik/kira2.0/internal/logging"
@@ -195,7 +194,7 @@ func mainJoin(cmd *cobra.Command, log *logging.Logger) {
 		SekaidP2PPort: sekaidP2PPort,
 	}
 
-	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+	configController := controller.NewConfigController(utilsOS, log)
 
 	joinerManager := manager.NewJoinerManager(configController, joinerCfg, log)
 
@@ -222,7 +221,6 @@ func mainJoin(cmd *cobra.Command, log *logging.Logger) {
 		cfg.SekaiVersion = sekaiVersion
 		cfg.InterxVersion = interxVersion
 
-		configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
 		err = configController.ChangeConfigFile(cfg)
 		if err != nil {
 			log.Fatalf("Can't change config file: %s", err)

@@ -11,7 +11,6 @@ import (
 	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/firewall/openport"
 	"github.com/mrlutik/kira2.0/internal/cli/km2/commands/firewall/whitelist"
 	"github.com/mrlutik/kira2.0/internal/config/controller"
-	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/firewall/manager"
 	"github.com/mrlutik/kira2.0/internal/osutils"
@@ -95,7 +94,7 @@ func mainFirewall(cmd *cobra.Command, log *logging.Logger) {
 
 	utilsOS := osutils.NewOSUtils(log)
 
-	configController := controller.NewConfigController(handler.NewHandler(utilsOS, log), utilsOS, log)
+	configController := controller.NewConfigController(utilsOS, log)
 
 	kiraCfg, err := configController.ReadOrCreateConfig()
 	if err != nil {

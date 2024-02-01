@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/mrlutik/kira2.0/internal/config/controller"
-	"github.com/mrlutik/kira2.0/internal/config/handler"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/maintenance"
@@ -80,8 +79,7 @@ func mainMaintenance(cmd *cobra.Command, log *logging.Logger) error {
 	log.Debugf("Flags provided: pause - %t, unpause - %t, activate - %t, status - %t", pause, unpause, activate, status)
 
 	utilsOS := osutils.NewOSUtils(log)
-	configHandler := handler.NewHandler(utilsOS, log)
-	configController := controller.NewConfigController(configHandler, utilsOS, log)
+	configController := controller.NewConfigController(utilsOS, log)
 
 	kiraCfg, err := configController.ReadOrCreateConfig()
 	if err != nil {
