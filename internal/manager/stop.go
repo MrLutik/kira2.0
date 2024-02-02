@@ -3,32 +3,36 @@ package manager
 import (
 	"context"
 	"fmt"
-
-	"github.com/docker/docker/api/types/container"
-	"github.com/mrlutik/kira2.0/internal/errors"
-	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
-var log = logging.Log
-
-// MustStopSekaid is stopping sekaid process with StopProcessInsideContainer func (signal code - 15) and stopping sekaid container
-func (s *SekaidManager) MustStopSekaid(ctx context.Context) {
+// StopSekaid is stopping sekaid process with StopProcessInsideContainer func (signal code - 15) and stopping sekaid container
+func (s *SekaidManager) StopSekaid(ctx context.Context) error {
 	err := s.containerManager.StopProcessInsideContainer(ctx, "sekaid", 15, s.config.SekaidContainerName)
-	errors.HandleFatalErr("Stopping sekaid bin in container", err)
+	if err != nil {
+		return fmt.Errorf("stopping sekaid bin in container '%s' error: %w", s.config.SekaidContainerName, err)
+	}
 
 	// TODO change method for dockerManager method instead of Cli
-	log.Infof("Stopping <%s> container\n", s.config.SekaidContainerName)
-	err = s.dockerManager.Cli.ContainerStop(ctx, s.config.SekaidContainerName, container.StopOptions{})
-	errors.HandleFatalErr(fmt.Sprintf("cannot stop %s container", s.config.SekaidContainerName), err)
+	s.log.Infof("Stopping '%s' container", s.config.SekaidContainerName)
+	err = s.containerManager.StopContainer(ctx, s.config.SekaidContainerName)
+	if err != nil {
+		return fmt.Errorf("cannot stop '%s' container, error: %w", s.config.SekaidContainerName, err)
+	}
+	return nil
 }
 
-// MustStopInterx is stopping interx process with StopProcessInsideContainer func (signal code - 9) and stopping interx container
-func (i *InterxManager) MustStopInterx(ctx context.Context) {
+// StopInterx is stopping interx process with StopProcessInsideContainer func (signal code - 9) and stopping interx container
+func (i *InterxManager) StopInterx(ctx context.Context) error {
 	err := i.containerManager.StopProcessInsideContainer(ctx, interxProcessName, 9, i.config.InterxContainerName)
-	errors.HandleFatalErr("Stopping interx bin in container", err)
+	if err != nil {
+		return fmt.Errorf("stopping interx bin in container, error: %w", err)
+	}
 
 	// TODO change method for dockerManager method instead of Cli
-	log.Infof("Stopping <%s> container\n", i.config.InterxContainerName)
-	err = i.containerManager.Cli.ContainerStop(ctx, i.config.InterxContainerName, container.StopOptions{})
-	errors.HandleFatalErr(fmt.Sprintf("cannot stop %s container", i.config.InterxContainerName), err)
+	i.log.Infof("Stopping <%s> container\n", i.config.InterxContainerName)
+	err = i.containerManager.StopContainer(ctx, i.config.InterxContainerName)
+	if err != nil {
+		return fmt.Errorf("cannot stop '%s' container, error: %w", i.config.InterxContainerName, err)
+	}
+	return nil
 }

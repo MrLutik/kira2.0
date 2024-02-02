@@ -15,19 +15,14 @@ const (
 	long  = "long description for version command"
 )
 
-var (
-	KiraLauncherVersion string = types.KiraVersion
-	log                        = logging.Log
-)
-
-func Version() *cobra.Command {
+func Version(log *logging.Logger) *cobra.Command {
 	log.Debugln("Adding `version` command...")
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: short,
 		Long:  long,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Fprintf(os.Stdout, "%v\n", KiraLauncherVersion)
+		Run: func(_ *cobra.Command, _ []string) {
+			fmt.Fprintf(os.Stdout, "%v\n", types.KiraVersion)
 		},
 	}
 	return versionCmd

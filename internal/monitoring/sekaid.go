@@ -5,7 +5,6 @@ package monitoring
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -24,16 +23,16 @@ type SekaidInfo struct {
 // GetSekaidInfo retrieves the information about Sekaid using the provided
 // context, sekaidPort, and MonitoringService's HTTP client, and returns
 // the SekaidInfo or an error.
-func (m *MonitoringService) GetSekaidInfo(ctx context.Context, sekaidPort string) (*SekaidInfo, error) {
-	response, err := doGetSekaidStatusQuery(ctx, m.httpClient, sekaidPort, getQueryTimeout)
+func (m *Service) GetSekaidInfo(ctx context.Context, sekaidPort string) (*SekaidInfo, error) {
+	response, err := m.doGetSekaidStatusQuery(ctx, sekaidPort, getQueryTimeout)
 	if err != nil {
-		log.Errorf("GET query error: %s", err)
+		m.log.Errorf("GET query error: %s", err)
 		return nil, err
 	}
 
 	latestBlockHeight, err := strconv.Atoi(response.Result.SyncInfo.LatestBlockHeight)
 	if err != nil {
-		log.Errorf("Can't parse 'latest_block_height' value, got '%s': %s", response.Result.SyncInfo.LatestBlockHeight, err)
+		m.log.Errorf("Can't parse 'latest_block_height' value, got '%s': %s", response.Result.SyncInfo.LatestBlockHeight, err)
 		return nil, err
 	}
 
@@ -47,11 +46,11 @@ func (m *MonitoringService) GetSekaidInfo(ctx context.Context, sekaidPort string
 
 // GetValidatorAddress retrieves the address of the validator using the specified
 // sekaid container name, keyring backend, and home directory.
-func (m *MonitoringService) GetValidatorAddress(ctx context.Context, sekaidContainerName, keyringBackend, homeDir string) (string, error) {
+func (m *Service) GetValidatorAddress(ctx context.Context, sekaidContainerName, keyringBackend, homeDir string) (string, error) {
 	cmd := fmt.Sprintf("sekaid keys show validator -a --keyring-backend=%s --home=%s", keyringBackend, homeDir)
 	output, err := m.containerManager.ExecCommandInContainer(ctx, sekaidContainerName, []string{"bash", "-c", cmd})
 	if err != nil {
-		log.Errorf("Can't execute command '%s', error: '%s'", cmd, err)
+		m.log.Errorf("Can't execute command '%s', error: '%s'", cmd, err)
 		return "", err
 	}
 
@@ -61,9 +60,9 @@ func (m *MonitoringService) GetValidatorAddress(ctx context.Context, sekaidConta
 
 // doGetSekaidStatusQuery performs the Sekaid status query using the provided HTTP client,
 // sekaid port, and timeout duration, and returns the parsed response or an error.
-func doGetSekaidStatusQuery(ctx context.Context, httpClient *http.Client, sekaidPort string, timeout time.Duration) (*types.ResponseSekaidStatus, error) {
+func (m *Service) doGetSekaidStatusQuery(ctx context.Context, sekaidPort string, timeout time.Duration) (*types.ResponseSekaidStatus, error) {
 	var response *types.ResponseSekaidStatus
-	err := doHTTPGetQuery(ctx, httpClient, sekaidPort, timeout, "status", &response)
+	err := m.doHTTPGetQuery(ctx, sekaidPort, timeout, "status", &response)
 	if err != nil {
 		return nil, err
 	}

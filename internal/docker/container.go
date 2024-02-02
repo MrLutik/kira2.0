@@ -16,43 +16,46 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/mrlutik/kira2.0/internal/config"
+	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
-type ContainerManager struct {
-	Cli *client.Client
-}
-
-func NewTestContainerManager() (*ContainerManager, error) {
-	client, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, err
+type (
+	ContainerManager struct {
+		cli *client.Client
+		log *logging.Logger
 	}
-	return &ContainerManager{Cli: client}, err
+)
+
+func NewTestContainerManager(dockerClient *client.Client, logger *logging.Logger) *ContainerManager {
+	return &ContainerManager{
+		cli: dockerClient,
+		log: logger,
+	}
 }
 
 // CheckForContainersName checks if a container with the specified name exists.
 // ctx: The context for the operation.
 // containerNameToCheck: The name of the container to check.
 // Returns true if a container with the specified name is found, false otherwise, and an error if any issue occurs during the process.
-func (dm *ContainerManager) CheckForContainersName(ctx context.Context, containerNameToCheck string) (bool, error) {
-	log.Infof("Checking container with name: %s", containerNameToCheck)
+func (c *ContainerManager) CheckForContainersName(ctx context.Context, containerNameToCheck string) (bool, error) {
+	c.log.Infof("Checking container with name: %s", containerNameToCheck)
 
-	containers, err := dm.Cli.ContainerList(ctx, types.ContainerListOptions{All: true})
+	containers, err := c.cli.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
-		log.Errorf("Cannot get the list of containers: %s", err)
+		c.log.Errorf("Cannot get the list of containers: %s", err)
 		return false, err
 	}
 
-	for _, c := range containers {
-		for _, name := range c.Names {
+	for _, container := range containers {
+		for _, name := range container.Names {
 			if name == `/`+containerNameToCheck {
-				log.Infof("Container '%s' detected", name)
+				c.log.Infof("Container '%s' detected", name)
 				return true, nil
 			}
 		}
 	}
 
-	log.Infof("Container '%s' is not detected", containerNameToCheck)
+	c.log.Infof("Container '%s' is not detected", containerNameToCheck)
 	return false, nil
 }
 
@@ -61,8 +64,8 @@ func (dm *ContainerManager) CheckForContainersName(ctx context.Context, containe
 // - processName: The name of the process to check.
 // - containerName: The name of the container.
 // Returns a boolean indicating if the process is running, the output of the process, and an error if any issue occurs.
-func (dm *ContainerManager) CheckIfProcessIsRunningInContainer(ctx context.Context, processName, containerName string) (bool, string, error) {
-	log.Infof("Checking if sekaid is running inside a '%s' container", containerName)
+func (c *ContainerManager) CheckIfProcessIsRunningInContainer(ctx context.Context, processName, containerName string) (bool, string, error) {
+	c.log.Infof("Checking if sekaid is running inside a '%s' container", containerName)
 	// Create exec configuration
 	execConfig := types.ExecConfig{
 		Cmd:          []string{"sh", "-c", fmt.Sprintf("pgrep %s", processName)},
@@ -73,13 +76,13 @@ func (dm *ContainerManager) CheckIfProcessIsRunningInContainer(ctx context.Conte
 	}
 
 	// Create exec
-	resp, err := dm.Cli.ContainerExecCreate(ctx, containerName, execConfig)
+	resp, err := c.cli.ContainerExecCreate(ctx, containerName, execConfig)
 	if err != nil {
 		return false, "", err
 	}
 
 	// Attach to exec
-	attach, err := dm.Cli.ContainerExecAttach(ctx, resp.ID, types.ExecStartCheck{})
+	attach, err := c.cli.ContainerExecAttach(ctx, resp.ID, types.ExecStartCheck{})
 	if err != nil {
 		return false, "", err
 	}
@@ -94,15 +97,15 @@ func (dm *ContainerManager) CheckIfProcessIsRunningInContainer(ctx context.Conte
 	}
 
 	if errOutput := stderr.String(); errOutput != "" {
-		log.Infof("Stderr: %s", errOutput)
+		c.log.Infof("Stderr: %s", errOutput)
 		return false, "", fmt.Errorf("%w:\nOutput: %s", ErrStderrNotEmpty, errOutput)
 	}
 
 	output := stdout.String()
 	if strings.TrimSpace(output) != "" {
-		log.Infof("Process with name '%s' running inside '%s' container with id: %s", processName, containerName, string(output))
+		c.log.Infof("Process with name '%s' running inside '%s' container with id: %s", processName, containerName, string(output))
 	} else {
-		log.Infof("Process with name '%s' is not running inside '%s' container ", processName, containerName)
+		c.log.Infof("Process with name '%s' is not running inside '%s' container ", processName, containerName)
 	}
 	// If the output is not empty, the process is running
 	return strings.TrimSpace(output) != "", string(output), nil
@@ -113,24 +116,24 @@ func (dm *ContainerManager) CheckIfProcessIsRunningInContainer(ctx context.Conte
 // containerID: The ID or name of the container.
 // command: The command to execute inside the container.
 // Returns the output of the command as a byte slice and an error if any issue occurs during the command execution.
-func (dm *ContainerManager) ExecCommandInContainerInDetachMode(ctx context.Context, containerID string, command []string) ([]byte, error) {
-	log.Infof("Running command '%s' in detach mode in '%s'", strings.Join(command, " "), containerID)
+func (c *ContainerManager) ExecCommandInContainerInDetachMode(ctx context.Context, containerID string, command []string) ([]byte, error) {
+	c.log.Infof("Running command '%s' in detach mode in '%s'", strings.Join(command, " "), containerID)
 
-	execCreateResponse, err := dm.Cli.ContainerExecCreate(ctx, containerID, types.ExecConfig{
+	execCreateResponse, err := c.cli.ContainerExecCreate(ctx, containerID, types.ExecConfig{
 		Cmd:          command,
 		AttachStdout: false,
 		AttachStderr: false,
 		Detach:       true,
 	})
 	if err != nil {
-		log.Errorf("Exec configuration error: %s", err)
+		c.log.Errorf("Exec configuration error: %s", err)
 		return nil, err
 	}
 
 	execAttachConfig := types.ExecStartCheck{}
-	resp, err := dm.Cli.ContainerExecAttach(ctx, execCreateResponse.ID, execAttachConfig)
+	resp, err := c.cli.ContainerExecAttach(ctx, execCreateResponse.ID, execAttachConfig)
 	if err != nil {
-		log.Errorf("Attaching to container '%s' error: %s", containerID, err)
+		c.log.Errorf("Attaching to container '%s' error: %s", containerID, err)
 		return nil, err
 	}
 	defer resp.Close()
@@ -138,13 +141,13 @@ func (dm *ContainerManager) ExecCommandInContainerInDetachMode(ctx context.Conte
 	var outBuf, errBuf bytes.Buffer
 	_, err = stdcopy.StdCopy(&outBuf, &errBuf, resp.Reader)
 	if err != nil {
-		log.Errorf("Reading response error: %s", err)
+		c.log.Errorf("Reading response error: %s", err)
 		return nil, err
 	}
 
 	output := outBuf.Bytes()
 
-	log.Infoln("Reading successfully")
+	c.log.Infoln("Reading successfully")
 	return output, err
 }
 
@@ -153,23 +156,23 @@ func (dm *ContainerManager) ExecCommandInContainerInDetachMode(ctx context.Conte
 // containerID: The ID or name of the container.
 // command: The command to execute inside the container.
 // Returns the output of the command as a byte slice and an error if any issue occurs during the command execution.
-func (dm *ContainerManager) ExecCommandInContainer(ctx context.Context, containerID string, command []string) ([]byte, error) {
-	log.Infof("Running command '%s' in '%s'", strings.Join(command, " "), containerID)
+func (c *ContainerManager) ExecCommandInContainer(ctx context.Context, containerID string, command []string) ([]byte, error) {
+	c.log.Infof("Running command '%s' in '%s'", strings.Join(command, " "), containerID)
 
-	execCreateResponse, err := dm.Cli.ContainerExecCreate(ctx, containerID, types.ExecConfig{
+	execCreateResponse, err := c.cli.ContainerExecCreate(ctx, containerID, types.ExecConfig{
 		Cmd:          command,
 		AttachStdout: true,
 		AttachStderr: true,
 	})
 	if err != nil {
-		log.Errorf("Exec configuration error: %s", err)
+		c.log.Errorf("Exec configuration error: %s", err)
 		return nil, err
 	}
 
 	execAttachConfig := types.ExecStartCheck{}
-	resp, err := dm.Cli.ContainerExecAttach(ctx, execCreateResponse.ID, execAttachConfig)
+	resp, err := c.cli.ContainerExecAttach(ctx, execCreateResponse.ID, execAttachConfig)
 	if err != nil {
-		log.Errorf("Attaching to container '%s' error: %s", containerID, err)
+		c.log.Errorf("Attaching to container '%s' error: %s", containerID, err)
 		return nil, err
 	}
 	defer resp.Close()
@@ -177,12 +180,12 @@ func (dm *ContainerManager) ExecCommandInContainer(ctx context.Context, containe
 	var outBuf, errBuf bytes.Buffer
 	_, err = stdcopy.StdCopy(&outBuf, &errBuf, resp.Reader)
 	if err != nil {
-		log.Errorf("Reading response error: %s", err)
+		c.log.Errorf("Reading response error: %s", err)
 		return nil, err
 	}
 
 	output := outBuf.Bytes()
-	log.Infof("Running '%s' successfully", strings.Join(command, " "))
+	c.log.Infof("Running '%s' successfully", strings.Join(command, " "))
 	return output, err
 }
 
@@ -211,12 +214,12 @@ func readTarArchive(tr *tar.Reader, fileName string) ([]byte, error) {
 // GetFileFromContainer retrieves a file from a specified container using the Docker API.
 // It copies the TAR archive with file from the specified folder path in the container,
 // read file from TAR archive and returns the file content as a byte slice.
-func (dm *ContainerManager) GetFileFromContainer(ctx context.Context, folderPathOnContainer, fileName, containerID string) ([]byte, error) {
-	log.Infof("Getting file '%s' from container '%s'", fileName, folderPathOnContainer)
+func (c *ContainerManager) GetFileFromContainer(ctx context.Context, folderPathOnContainer, fileName, containerID string) ([]byte, error) {
+	c.log.Infof("Getting file '%s' from container '%s'", fileName, folderPathOnContainer)
 
-	rc, _, err := dm.Cli.CopyFromContainer(ctx, containerID, folderPathOnContainer+"/"+fileName)
+	rc, _, err := c.cli.CopyFromContainer(ctx, containerID, folderPathOnContainer+"/"+fileName)
 	if err != nil {
-		log.Errorf("Copying from container error: %s", err)
+		c.log.Errorf("Copying from container error: %s", err)
 		return nil, err
 	}
 	defer rc.Close()
@@ -224,7 +227,7 @@ func (dm *ContainerManager) GetFileFromContainer(ctx context.Context, folderPath
 	tr := tar.NewReader(rc)
 	b, err := readTarArchive(tr, fileName)
 	if err != nil {
-		log.Errorf("Reading Tar archive error: %s", err)
+		c.log.Errorf("Reading Tar archive error: %s", err)
 		return nil, err
 	}
 
@@ -236,12 +239,12 @@ func (dm *ContainerManager) GetFileFromContainer(ctx context.Context, folderPath
 // The containerIdentification parameter is the identifier of the container to inspect, such as the container ID or name.
 // The function returns the docker package types.ContainerJSON struct containing the detailed information about the container,
 // or an error if the inspection fails.
-func (dm *ContainerManager) GetInspectOfContainer(ctx context.Context, containerIdentification string) (*types.ContainerJSON, error) {
-	log.Infof("Inspecting container '%s'", containerIdentification)
+func (c *ContainerManager) GetInspectOfContainer(ctx context.Context, containerIdentification string) (*types.ContainerJSON, error) {
+	c.log.Infof("Inspecting container '%s'", containerIdentification)
 
-	containerInfo, err := dm.Cli.ContainerInspect(ctx, containerIdentification)
+	containerInfo, err := c.cli.ContainerInspect(ctx, containerIdentification)
 	if err != nil {
-		log.Errorf("Inspection container error: %s", err)
+		c.log.Errorf("Inspection container error: %s", err)
 		return &types.ContainerJSON{}, err
 	}
 
@@ -255,45 +258,45 @@ func (dm *ContainerManager) GetInspectOfContainer(ctx context.Context, container
 // - hostConfig: The host configuration.
 // - containerName: The name of the container.
 // Returns an error if any issue occurs during the container initialization and creation process.
-func (dm *ContainerManager) InitAndCreateContainer(
+func (c *ContainerManager) InitAndCreateContainer(
 	ctx context.Context,
 	containerConfig *container.Config,
 	networkConfig *network.NetworkingConfig,
 	hostConfig *container.HostConfig,
 	containerName string,
 ) error {
-	log.Infof("Starting new container '%s'", containerName)
+	c.log.Infof("Starting new container '%s'", containerName)
 
-	resp, err := dm.Cli.ContainerCreate(ctx, containerConfig, hostConfig, networkConfig, nil, containerName)
+	resp, err := c.cli.ContainerCreate(ctx, containerConfig, hostConfig, networkConfig, nil, containerName)
 	if err != nil {
-		log.Errorf("Creating container error: %s", err)
+		c.log.Errorf("Creating container error: %s", err)
 		return err
 	}
 
-	err = dm.Cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
+	err = c.cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
 	if err != nil {
-		log.Errorf("Starting container error: %s", err)
+		c.log.Errorf("Starting container error: %s", err)
 		return err
 	}
 
-	log.Infof("'%s' container started successfully! ID: %s", containerName, resp.ID)
+	c.log.Infof("'%s' container started successfully! ID: %s", containerName, resp.ID)
 	return err
 }
 
-func (dm *ContainerManager) StartContainer(ctx context.Context, containerName string) error {
-	err := dm.Cli.ContainerStart(ctx, containerName, types.ContainerStartOptions{})
+func (c *ContainerManager) StartContainer(ctx context.Context, containerName string) error {
+	err := c.cli.ContainerStart(ctx, containerName, types.ContainerStartOptions{})
 	if err != nil {
-		log.Errorf("Starting container error: %s", err)
+		c.log.Errorf("Starting container error: %s", err)
 		return err
 	}
 
 	return nil
 }
 
-func (dm *ContainerManager) StopContainer(ctx context.Context, containerName string) error {
-	err := dm.Cli.ContainerStop(ctx, containerName, container.StopOptions{})
+func (c *ContainerManager) StopContainer(ctx context.Context, containerName string) error {
+	err := c.cli.ContainerStop(ctx, containerName, container.StopOptions{})
 	if err != nil {
-		log.Errorf("Stopping container error: %s", err)
+		c.log.Errorf("Stopping container error: %s", err)
 		return err
 	}
 
@@ -305,8 +308,8 @@ func (dm *ContainerManager) StopContainer(ctx context.Context, containerName str
 // - containerID: The ID or name of the container where the package will be installed.
 // - debDestPath: The destination path of the .deb package inside the container.
 // Returns an error if any issue occurs during the package installation process.
-func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, debDestPath string) error {
-	log.Infof("Installing '%s'", debDestPath)
+func (c *ContainerManager) InstallDebPackage(ctx context.Context, containerID, debDestPath string) error {
+	c.log.Infof("Installing '%s'", debDestPath)
 
 	installCmd := []string{"dpkg", "-i", debDestPath}
 	execOptions := types.ExecConfig{
@@ -314,9 +317,9 @@ func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, 
 		AttachStdout: true,
 		AttachStderr: true,
 	}
-	resp, err := dm.Cli.ContainerExecCreate(ctx, containerID, execOptions)
+	resp, err := c.cli.ContainerExecCreate(ctx, containerID, execOptions)
 	if err != nil {
-		log.Errorf("Creating exec configuration error: %s", err)
+		c.log.Errorf("Creating exec configuration error: %s", err)
 		return err
 	}
 
@@ -324,9 +327,9 @@ func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, 
 		Detach: false,
 		Tty:    false,
 	}
-	respConn, err := dm.Cli.ContainerExecAttach(ctx, resp.ID, attachOptions)
+	respConn, err := c.cli.ContainerExecAttach(ctx, resp.ID, attachOptions)
 	if err != nil {
-		log.Errorf("Attaching error: %s", err)
+		c.log.Errorf("Attaching error: %s", err)
 		return err
 	}
 	defer respConn.Close()
@@ -334,23 +337,23 @@ func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, 
 	// Capture the output from the container
 	output, err := io.ReadAll(respConn.Reader)
 	if err != nil {
-		log.Errorf("Reading output error: %s", err)
+		c.log.Errorf("Reading output error: %s", err)
 		return err
 	}
 
 	// Wait for the execution to complete
-	waitResponse, err := dm.Cli.ContainerExecInspect(ctx, resp.ID)
+	waitResponse, err := c.cli.ContainerExecInspect(ctx, resp.ID)
 	if err != nil {
-		log.Errorf("Inspecting process '%s' error: %s", resp.ID, err)
+		c.log.Errorf("Inspecting process '%s' error: %s", resp.ID, err)
 		return err
 	}
 
 	if waitResponse.ExitCode != 0 {
-		log.Errorf("Installation error: %s", string(output))
+		c.log.Errorf("Installation error: %s", string(output))
 		return fmt.Errorf("%w:\nOutput: %s", ErrPackageInstallationFailed, string(output))
 	}
 
-	log.Infof("Package '%s' installed successfully", debDestPath)
+	c.log.Infof("Package '%s' installed successfully", debDestPath)
 
 	return nil
 }
@@ -358,8 +361,8 @@ func (dm *ContainerManager) InstallDebPackage(ctx context.Context, containerID, 
 // WriteFileDataToContainer writes the provided fileData as a file with the given fileName into the specified container.
 // It creates a tar archive containing the file data and sends it to the container using the Docker client's CopyToContainer method.
 // The destination path in the container is determined by the destPath parameter.
-func (dm *ContainerManager) WriteFileDataToContainer(ctx context.Context, fileData []byte, fileName, destPath, containerID string) error {
-	log.Infof("Writing file to container '%s'", containerID)
+func (c *ContainerManager) WriteFileDataToContainer(ctx context.Context, fileData []byte, fileName, destPath, containerID string) error {
+	c.log.Infof("Writing file to container '%s'", containerID)
 
 	tarBuffer := new(bytes.Buffer)
 	tw := tar.NewWriter(tarBuffer)
@@ -370,29 +373,29 @@ func (dm *ContainerManager) WriteFileDataToContainer(ctx context.Context, fileDa
 		Size: int64(len(fileData)),
 	}
 	if err := tw.WriteHeader(header); err != nil {
-		log.Errorf("Writing tar header error: %s", err)
+		c.log.Errorf("Writing tar header error: %s", err)
 		return err
 	}
 
 	if _, err := tw.Write(fileData); err != nil {
-		log.Errorf("Writing file data to tar error: %s", err)
+		c.log.Errorf("Writing file data to tar error: %s", err)
 		return err
 	}
 
 	if err := tw.Close(); err != nil {
-		log.Errorf("Closing tar writer error: %s", err)
+		c.log.Errorf("Closing tar writer error: %s", err)
 		return err
 	}
 
-	err := dm.Cli.CopyToContainer(ctx, containerID, destPath, tarBuffer, types.CopyToContainerOptions{
+	err := c.cli.CopyToContainer(ctx, containerID, destPath, tarBuffer, types.CopyToContainerOptions{
 		AllowOverwriteDirWithFile: true,
 	})
 	if err != nil {
-		log.Errorf("Failed to copy file to container '%s': %s", containerID, err)
+		c.log.Errorf("Failed to copy file to container '%s': %s", containerID, err)
 		return err
 	}
 
-	log.Infof("File '%s' is successfully written on '%s' in container '%s'", fileName, destPath, containerID)
+	c.log.Infof("File '%s' is successfully written on '%s' in container '%s'", fileName, destPath, containerID)
 
 	return nil
 }
@@ -403,33 +406,34 @@ func (dm *ContainerManager) WriteFileDataToContainer(ctx context.Context, fileDa
 // - directoryPathOnContainer: The path of the directory inside the container where the file will be copied.
 // - containerID: The ID or name of the Docker container.
 // Returns an error if any issue occurs during the file sending process.
-func (dm *ContainerManager) SendFileToContainer(ctx context.Context, filePathOnHostMachine, directoryPathOnContainer, containerID string) error {
-	log.Infof("Sending file '%s' to container '%s' to '%s'", filePathOnHostMachine, containerID, directoryPathOnContainer)
+func (c *ContainerManager) SendFileToContainer(ctx context.Context, filePathOnHostMachine, directoryPathOnContainer, containerID string) error {
+	c.log.Infof("Sending file '%s' to container '%s' to '%s'", filePathOnHostMachine, containerID, directoryPathOnContainer)
 	file, err := os.Open(filePathOnHostMachine)
 	if err != nil {
-		log.Errorf("Opening file error: %s", err)
+		c.log.Errorf("Opening file error: %s", err)
 		return err
 	}
 	defer file.Close()
 
 	fileInfo, err := file.Stat()
 	if err != nil {
-		log.Errorf("Can't open file stat: %s", err)
+		c.log.Errorf("Can't open file stat: %s", err)
 		return err
 	}
 
 	var buf bytes.Buffer
 	tarWriter := tar.NewWriter(&buf)
 
+	c.log.Infof("Writing file '%s' to tar archive", fileInfo.Name())
 	err = addFileToTar(fileInfo, file, tarWriter)
 	if err != nil {
-		log.Errorf("Adding file to tar error: %s", err)
+		c.log.Errorf("Adding file to tar error: %s", err)
 		return err
 	}
 
 	err = tarWriter.Close()
 	if err != nil {
-		log.Errorf("Closing tar error: %s", err)
+		c.log.Errorf("Closing tar error: %s", err)
 		return err
 	}
 
@@ -439,13 +443,13 @@ func (dm *ContainerManager) SendFileToContainer(ctx context.Context, filePathOnH
 		AllowOverwriteDirWithFile: false,
 	}
 
-	err = dm.Cli.CopyToContainer(ctx, containerID, directoryPathOnContainer, tarReader, copyOptions)
+	err = c.cli.CopyToContainer(ctx, containerID, directoryPathOnContainer, tarReader, copyOptions)
 	if err != nil {
-		log.Errorf("Copying tar to container error: %s", err)
+		c.log.Errorf("Copying tar to container error: %s", err)
 		return err
 	}
 
-	log.Infof("Successfully copied '%s' to '%s' in '%s' container", filePathOnHostMachine, directoryPathOnContainer, containerID)
+	c.log.Infof("Successfully copied '%s' to '%s' in '%s' container", filePathOnHostMachine, directoryPathOnContainer, containerID)
 	return nil
 }
 
@@ -455,8 +459,6 @@ func (dm *ContainerManager) SendFileToContainer(ctx context.Context, filePathOnH
 // - tarWriter: The tar writer.
 // Returns an error if any issue occurs during the file writing process.
 func addFileToTar(fileInfo os.FileInfo, file io.Reader, tarWriter *tar.Writer) error {
-	log.Infof("Writing file '%s' to tar archive", fileInfo.Name())
-
 	header := &tar.Header{
 		Name: fileInfo.Name(),
 		Mode: int64(fileInfo.Mode()),
@@ -464,13 +466,11 @@ func addFileToTar(fileInfo os.FileInfo, file io.Reader, tarWriter *tar.Writer) e
 	}
 
 	if err := tarWriter.WriteHeader(header); err != nil {
-		log.Errorf("Writing tar header error: %s", err)
-		return err
+		return fmt.Errorf("writing tar header error: %w", err)
 	}
 
 	if _, err := io.Copy(tarWriter, file); err != nil {
-		log.Errorf("Copying error: %s", err)
-		return err
+		return fmt.Errorf("copying error: %w", err)
 	}
 
 	return nil
@@ -480,77 +480,77 @@ func addFileToTar(fileInfo os.FileInfo, file io.Reader, tarWriter *tar.Writer) e
 // ctx: The context for the operation.
 // containerNameToStop: The name of the container to stop and delete.
 // Returns an error if any issue occurs during the process.
-func (dm *ContainerManager) StopAndDeleteContainer(ctx context.Context, containerNameToStop string) error {
-	log.Infof("Stopping '%s' container...", containerNameToStop)
+func (c *ContainerManager) StopAndDeleteContainer(ctx context.Context, containerNameToStop string) error {
+	c.log.Infof("Stopping '%s' container...", containerNameToStop)
 
-	err := dm.Cli.ContainerStop(ctx, containerNameToStop, container.StopOptions{})
+	err := c.cli.ContainerStop(ctx, containerNameToStop, container.StopOptions{})
 	if err != nil {
-		log.Errorf("Stopping container error: %s", err)
+		c.log.Errorf("Stopping container error: %s", err)
 		return err
 	}
 
-	log.Infof("Deleting %s container...", containerNameToStop)
-	err = dm.Cli.ContainerRemove(ctx, containerNameToStop, types.ContainerRemoveOptions{})
+	c.log.Infof("Deleting %s container...", containerNameToStop)
+	err = c.cli.ContainerRemove(ctx, containerNameToStop, types.ContainerRemoveOptions{})
 	if err != nil {
-		log.Errorf("Removing container '%s' error: %s", containerNameToStop, err)
+		c.log.Errorf("Removing container '%s' error: %s", containerNameToStop, err)
 		return err
 	}
 
-	log.Infof("Container %s is deleted", containerNameToStop)
+	c.log.Infof("Container %s is deleted", containerNameToStop)
 	return nil
 }
 
 // CheckForVolumeName is checking if docker volume with volumeName exist, if do - returns true
-func (dm *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName string) (bool, error) {
-	log.Info("Getting volumes list")
-	volumes, err := dm.Cli.VolumeList(ctx, volume.ListOptions{})
+func (c *ContainerManager) CheckForVolumeName(ctx context.Context, volumeName string) (bool, error) {
+	c.log.Info("Getting volumes list")
+	volumes, err := c.cli.VolumeList(ctx, volume.ListOptions{})
 	if err != nil {
-		log.Errorf("cannot get list of volumes: %s", err)
+		c.log.Errorf("cannot get list of volumes: %s", err)
 		return false, err
 	}
-	log.Debugf("Volumes list %v\n", volumes.Volumes)
+	c.log.Debugf("Volumes list %v\n", volumes.Volumes)
 
 	for _, volume := range volumes.Volumes {
-		log.Tracef("searching for %s, curent: %s\n", volumeName, volume.Name)
+		c.log.Tracef("searching for %s, curent: %s\n", volumeName, volume.Name)
 		if volume.Name == volumeName {
-			log.Debugf("Volume with <%s> name was found\n", volumeName)
+			c.log.Debugf("Volume with <%s> name was found\n", volumeName)
 			return true, nil
 		}
 	}
-	log.Debugf("Volume with <%s> name was not found\n", volumeName)
+	c.log.Debugf("Volume with <%s> name was not found\n", volumeName)
 	return false, nil
 }
 
 // CleanupContainersAndVolumes is cleaning up container and volumes (needed for new node initializing),
 // accepts only *KiraConfig and takes all values from it
-func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kiraCfg *config.KiraConfig) error {
-	check, err := dm.CheckForContainersName(ctx, kiraCfg.SekaidContainerName)
+func (c *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kiraCfg *config.KiraConfig) error {
+	check, err := c.CheckForContainersName(ctx, kiraCfg.SekaidContainerName)
 	if err != nil {
 		return err
 	}
 	if check {
-		err = dm.StopAndDeleteContainer(ctx, kiraCfg.SekaidContainerName)
+		err = c.StopAndDeleteContainer(ctx, kiraCfg.SekaidContainerName)
 		if err != nil {
 			return err
 		}
 	}
-	check, err = dm.CheckForContainersName(ctx, kiraCfg.InterxContainerName)
+	check, err = c.CheckForContainersName(ctx, kiraCfg.InterxContainerName)
 	if err != nil {
 		return err
 	}
 	if check {
-		err = dm.StopAndDeleteContainer(ctx, kiraCfg.InterxContainerName)
+		err = c.StopAndDeleteContainer(ctx, kiraCfg.InterxContainerName)
 		if err != nil {
 			return err
 		}
 	}
-	check, err = dm.CheckForVolumeName(ctx, kiraCfg.VolumeName)
+	check, err = c.CheckForVolumeName(ctx, kiraCfg.VolumeName)
 	if err != nil {
 		return err
 	}
 	if check {
-		log.Infof("Removing '%s' volume\n", kiraCfg.VolumeName)
-		err = dm.Cli.VolumeRemove(ctx, kiraCfg.VolumeName, true)
+		c.log.Infof("Removing '%s' volume\n", kiraCfg.VolumeName)
+		err = c.cli.VolumeRemove(ctx, kiraCfg.VolumeName, true)
 		if err != nil {
 			return err
 		}
@@ -558,36 +558,40 @@ func (dm *ContainerManager) CleanupContainersAndVolumes(ctx context.Context, kir
 	return nil
 }
 
-// StopProcessInsideContainer is checking if process is running inside container, then execcuting pkill, then checking again if process exist
+// StopProcessInsideContainer is checking if process is running inside container, then executing p-kill, then checking again if process exist
 //
 // processName - process to kill,
 // codeToStopWith - signal code to stop with,
 // containerName - container name in which pkill will be executed
-func (dm *ContainerManager) StopProcessInsideContainer(ctx context.Context, processName string, codeToStopWith int, containerName string) error {
-	log.Infof("Checking if '%s' is running inside container", processName)
-	check, _, err := dm.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
+func (c *ContainerManager) StopProcessInsideContainer(ctx context.Context, processName string, codeToStopWith int, containerName string) error {
+	c.log.Infof("Checking if '%s' is running inside container", processName)
+	check, _, err := c.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
 	if err != nil {
 		return fmt.Errorf("cant check if procces is running inside container, %w", err)
 	}
 	if !check {
-		log.Warnf("process <%s> is not running inside <%s> container\n", processName, containerName)
+		c.log.Warnf("process <%s> is not running inside <%s> container\n", processName, containerName)
 		return nil
 	}
-	log.Infof("Stopping <%s> process\n", processName)
-	out, err := dm.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeToStopWith), processName})
+	c.log.Infof("Stopping <%s> process\n", processName)
+	out, err := c.ExecCommandInContainer(ctx, containerName, []string{"pkill", fmt.Sprintf("-%v", codeToStopWith), processName})
 	if err != nil {
-		log.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %v\n", processName, containerName, string(out), err)
+		c.log.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %v\n", processName, containerName, string(out), err)
 		return fmt.Errorf("cannot kill <%s> process inside <%s> container\nout: %s\nerr: %w", processName, containerName, string(out), err)
 	}
 
-	check, _, err = dm.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
+	check, _, err = c.CheckIfProcessIsRunningInContainer(ctx, processName, containerName)
 	if err != nil {
 		return fmt.Errorf("cant check if procces is running inside container, %w", err)
 	}
 	if check {
-		log.Errorf("Process <%s> is still running inside <%s> container\n", processName, containerName)
+		c.log.Errorf("Process <%s> is still running inside <%s> container\n", processName, containerName)
 		return err
 	}
-	log.Infof("<%s> process was successfully stopped\n", processName)
+	c.log.Infof("<%s> process was successfully stopped\n", processName)
 	return nil
+}
+
+func (c *ContainerManager) CloseClient() {
+	c.cli.Close()
 }

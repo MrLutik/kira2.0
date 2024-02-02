@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mrlutik/kira2.0/internal/errors"
+	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
 const (
@@ -14,28 +14,42 @@ const (
 	dockerServiceName                = "docker.service"
 )
 
-func DockerServiceManagement() {
-	dockerServiceManager, err := NewServiceManager(context.Background(), dockerServiceName, "replace")
-	errors.HandleFatalErr("Can't create instance of service manager", err)
-
+func DockerServiceManagement(logger *logging.Logger) error {
 	dockerServiceContext, cancel := context.WithTimeout(context.Background(), allTimeForDockerServiceOperation)
 	defer cancel()
 
+	dockerServiceManager, err := NewServiceManager(dockerServiceContext, logger, dockerServiceName, "replace")
+	if err != nil {
+		return fmt.Errorf("can't create instance of service manager, error: %w", err)
+	}
+	defer dockerServiceManager.Close()
+
 	exists, err := dockerServiceManager.CheckServiceExists(dockerServiceContext)
-	errors.HandleFatalErr("Can't reach the service", err)
+	if err != nil {
+		return fmt.Errorf("can't reach the service, error: %w", err)
+	}
 	if !exists {
-		log.Fatalf("'%s' is not available", dockerServiceName)
+		logger.Fatalf("'%s' is not available", dockerServiceName)
 	}
 
 	status, err := dockerServiceManager.GetServiceStatus(dockerServiceContext)
-	errors.HandleFatalErr(fmt.Sprintf("Can't get the '%s' status", dockerServiceName), err)
+	if err != nil {
+		return fmt.Errorf("can't get the '%s' status, error: %w", dockerServiceName, err)
+	}
+
 	if status != "active" {
-		log.Errorf("'%s' is not active", dockerServiceName)
-		log.Infof("Trying to restart it")
+		logger.Warnf("'%s' is not active", dockerServiceName)
+		logger.Infof("Trying to restart '%s'", dockerServiceName)
 		err = dockerServiceManager.RestartService(dockerServiceContext)
-		errors.HandleFatalErr(fmt.Sprintf("Can't restart '%s'", dockerServiceName), err)
+		if err != nil {
+			return fmt.Errorf("can't restart '%s', error: %w", dockerServiceName, err)
+		}
 	}
 
 	err = dockerServiceManager.WaitForServiceStatus(dockerServiceContext, "active", waitingForServiceStatusTime)
-	errors.HandleFatalErr("Waiting for status", err)
+	if err != nil {
+		return fmt.Errorf("waiting for status, error: %w", err)
+	}
+
+	return nil
 }

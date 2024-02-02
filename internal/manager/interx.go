@@ -13,32 +13,40 @@ import (
 	"github.com/docker/go-connections/nat"
 
 	"github.com/mrlutik/kira2.0/internal/config"
-	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/manager/utils"
 	"github.com/mrlutik/kira2.0/internal/types"
+	"github.com/mrlutik/kira2.0/internal/utils"
 )
 
 // InterxManager represents a manager for Interx container and its associated configurations.
-type InterxManager struct {
-	ContainerConfig     *container.Config
-	InterxHostConfig    *container.HostConfig
-	InterxNetworkConfig *network.NetworkingConfig
-	containerManager    *docker.ContainerManager
-	config              *config.KiraConfig
-}
+type (
+	InterxManager struct {
+		ContainerConfig     *container.Config
+		InterxHostConfig    *container.HostConfig
+		InterxNetworkConfig *network.NetworkingConfig
+		config              *config.KiraConfig
+
+		containerManager ContainerManager
+		jsonEditor       JSONEditor
+
+		log *logging.Logger
+	}
+
+	JSONEditor interface {
+		UpdateJsonValue(input []byte, config *config.JsonValue) ([]byte, error)
+	}
+)
 
 const interxProcessName = "interx"
 
 // NewInterxManager returns configured InterxManager.
-func NewInterxManager(containerManager *docker.ContainerManager, config *config.KiraConfig) (*InterxManager, error) {
-	log := logging.Log
-	log.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
+func NewInterxManager(containerManager ContainerManager, config *config.KiraConfig, logger *logging.Logger) (*InterxManager, error) {
+	logger.Infof("Creating interx manager with port: %s, image: '%s', volume: '%s' in '%s' network",
 		config.InterxPort, config.DockerImageName, config.GetVolumeMountPoint(), config.DockerNetworkName)
 
 	natInterxPort, err := nat.NewPort("tcp", config.InterxPort)
 	if err != nil {
-		log.Errorf("Creating NAT interx port error: %s", err)
+		logger.Errorf("Creating NAT interx port error: %s", err)
 		return nil, err
 	}
 
@@ -67,88 +75,88 @@ func NewInterxManager(containerManager *docker.ContainerManager, config *config.
 		Privileged: true,
 	}
 
+	jsonEditor := utils.NewJSONEditor(logger)
+
 	return &InterxManager{
 		ContainerConfig:     interxContainerConfig,
 		InterxHostConfig:    interxHostConfig,
 		InterxNetworkConfig: interxNetworkingConfig,
-		containerManager:    containerManager,
 		config:              config,
+		containerManager:    containerManager,
+		jsonEditor:          jsonEditor,
+		log:                 logger,
 	}, err
 }
 
 // initInterxBinInContainer sets up the 'interx' container with the specified configurations.
 // Returns an error if any issue occurs during the init process.
 func (i *InterxManager) initInterxBinInContainer(ctx context.Context) error {
-	log := logging.Log
-	log.Infof("Setting up '%s' (interx) container", i.config.InterxContainerName)
+	i.log.Infof("Setting up '%s' (interx) container", i.config.InterxContainerName)
 
 	command := fmt.Sprintf(`%s init --home=%s`, interxProcessName, i.config.InterxHome)
 	_, err := i.containerManager.ExecCommandInContainer(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
-		log.Errorf("Command '%s' execution error: %s", command, err)
+		i.log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
 	}
 
 	updates, err := i.getConfigPacks(ctx)
 	if err != nil {
-		log.Errorf("Can't get config pack based on sekaid application, error: %s", err)
+		i.log.Errorf("Can't get config pack based on sekaid application, error: %s", err)
 		return fmt.Errorf("config pack sekaid initialization error: %w", err)
 	}
 
 	err = i.applyNewConfigs(ctx, updates)
 	if err != nil {
-		log.Errorf("Can't apply new config, error: %s", err)
+		i.log.Errorf("Can't apply new config, error: %s", err)
 		return fmt.Errorf("applying new config error: %w", err)
 	}
 
-	log.Infoln("'interx' is initialized")
+	i.log.Infoln("'interx' is initialized")
 	return err
 }
 
 func (i *InterxManager) applyNewConfigs(ctx context.Context, updates []config.JsonValue) error {
-	log := logging.Log
 	filename := "config.json"
 
-	log.Infof("Applying new configs to '%s/%s'", i.config.InterxHome, filename)
+	i.log.Infof("Applying new configs to '%s/%s'", i.config.InterxHome, filename)
 
 	configFileContent, err := i.containerManager.GetFileFromContainer(ctx, i.config.InterxHome, filename, i.config.InterxContainerName)
 	if err != nil {
-		log.Errorf("Can't get '%s' file of interx application. Error: %s", filename, err)
+		i.log.Errorf("Can't get '%s' file of interx application. Error: %s", filename, err)
 		return fmt.Errorf("getting '%s' file from interx container error: %w", filename, err)
 	}
 
 	var newFileContent []byte
 	for _, update := range updates {
-		newFileContent, err = utils.UpdateJsonValue(configFileContent, &update)
+		newFileContent, err = i.jsonEditor.UpdateJsonValue(configFileContent, &update)
 		if err != nil {
-			log.Errorf("Updating: (%s = %v) error: %s\n", update.Key, update.Value, err)
+			i.log.Errorf("Updating: (%s = %v) error: %s\n", update.Key, update.Value, err)
 
 			// TODO What can we do if updating value is not successful?
 
 			continue
 		}
 
-		log.Infof("(%s = %v) updated successfully\n", update.Key, update.Value)
+		i.log.Infof("(%s = %v) updated successfully\n", update.Key, update.Value)
 
 		configFileContent = newFileContent
 	}
 
 	err = i.containerManager.WriteFileDataToContainer(ctx, configFileContent, filename, i.config.InterxHome, i.config.InterxContainerName)
 	if err != nil {
-		log.Fatalln(err)
+		i.log.Fatalln(err)
 	}
 
 	return nil
 }
 
 func (i *InterxManager) getConfigPacks(ctx context.Context) ([]config.JsonValue, error) {
-	log := logging.Log
-
 	configs := make([]config.JsonValue, 0)
 
-	node_id, err := getLocalSekaidNodeID(i.config.RpcPort)
+	node_id, err := i.getLocalSekaidNodeID(i.config.RpcPort)
 	if err != nil {
-		log.Errorf("Getting sekaid node status error: %s", err)
+		i.log.Errorf("Getting sekaid node status error: %s", err)
 		return nil, err
 	}
 
@@ -173,27 +181,26 @@ func (i *InterxManager) getConfigPacks(ctx context.Context) ([]config.JsonValue,
 	return configs, nil
 }
 
-func getLocalSekaidNodeID(port string) (string, error) {
-	log := logging.Log
+func (i *InterxManager) getLocalSekaidNodeID(port string) (string, error) {
 	var responseStatus types.ResponseSekaidStatus
 
 	url := fmt.Sprintf("http://localhost:%s/status", port)
 	response, err := http.Get(url)
 	if err != nil {
-		log.Errorf("Can't reach sekaid RPC status, error: %s", err)
+		i.log.Errorf("Can't reach sekaid RPC status, error: %s", err)
 		return "", err
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Errorf("Can't read the response body")
+		i.log.Errorf("Can't read the response body")
 		return "", err
 	}
 
 	err = json.Unmarshal(body, &responseStatus)
 	if err != nil {
-		log.Errorf("Can't parse JSON response: %s", err)
+		i.log.Errorf("Can't parse JSON response: %s", err)
 		return "", err
 	}
 
@@ -206,25 +213,27 @@ func (i *InterxManager) startInterxBinInContainer(ctx context.Context) error {
 	command := fmt.Sprintf("%s start -home=%s", interxProcessName, i.config.InterxHome)
 	_, err := i.containerManager.ExecCommandInContainerInDetachMode(ctx, i.config.InterxContainerName, []string{"bash", "-c", command})
 	if err != nil {
-		log.Errorf("Command '%s' execution error: %s", command, err)
+		i.log.Errorf("Command '%s' execution error: %s", command, err)
 		return err
 	}
+
 	const delay = time.Second * 3
-	log.Warningf("Waiting to start '%s' for %0.0f seconds", interxProcessName, delay.Seconds())
+	i.log.Warningf("Waiting to start '%s' for %0.0f seconds", interxProcessName, delay.Seconds())
 	time.Sleep(delay)
 
 	check, _, err := i.containerManager.CheckIfProcessIsRunningInContainer(ctx, interxProcessName, i.config.InterxContainerName)
 	if err != nil {
-		log.Errorf("Starting '%s' bin second time in '%s' container error: %s", interxProcessName, i.config.InterxContainerName, err)
+		i.log.Errorf("Starting '%s' bin second time in '%s' container error: %s", interxProcessName, i.config.InterxContainerName, err)
 		return fmt.Errorf("starting '%s' bin second time in '%s' container error: %w", interxProcessName, i.config.InterxContainerName, err)
 	}
 	if !check {
-		log.Errorf("Process '%s' is not running in '%s' container", interxProcessName, i.config.InterxContainerName)
+		i.log.Errorf("Process '%s' is not running in '%s' container", interxProcessName, i.config.InterxContainerName)
 		return &ProcessNotRunningError{
 			ProcessName:   interxProcessName,
 			ContainerName: i.config.InterxContainerName,
 		}
 	}
-	log.Infof("'%s' started\n", interxProcessName)
+
+	i.log.Infof("'%s' started\n", interxProcessName)
 	return nil
 }

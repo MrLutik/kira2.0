@@ -26,33 +26,13 @@ type (
 	}
 )
 
-func (m *MonitoringService) GetCPULoadPercentage() (float64, error) {
-	return getCPULoadPercentage()
-}
-
-func (m *MonitoringService) GetRAMUsage() (*RamUsageInfo, error) {
-	return getRAMUsage()
-}
-
-func (m *MonitoringService) GetDiskUsage() (*DiskUsageInfo, error) {
-	return getDiskUsage()
-}
-
-func (m *MonitoringService) GetPublicIP() (string, error) {
-	return GetPublicIP()
-}
-
-func (m *MonitoringService) GetInterfacesIP() (map[string]string, error) {
-	return getInterfacesIP()
-}
-
 // getCPULoadPercentage returns the CPU usage percentage.
-func getCPULoadPercentage() (float64, error) {
-	log.Infoln("Getting CPU usage percentage")
+func (m *Service) GetCPULoadPercentage() (float64, error) {
+	m.log.Infoln("Getting CPU usage percentage")
 
 	percent, err := cpu.Percent(time.Millisecond*200, false)
 	if err != nil {
-		log.Errorf("Can't reach the CPU info: %s", err)
+		m.log.Errorf("Can't reach the CPU info: %s", err)
 		return 0, err
 	}
 
@@ -60,12 +40,12 @@ func getCPULoadPercentage() (float64, error) {
 }
 
 // getRAMUsage returns the RAM usage information.
-func getRAMUsage() (*RamUsageInfo, error) {
-	log.Infoln("Getting RAM usage info")
+func (m *Service) GetRAMUsage() (*RamUsageInfo, error) {
+	m.log.Infoln("Getting RAM usage info")
 
 	virtualMemory, err := mem.VirtualMemory()
 	if err != nil {
-		log.Errorf("Can't reach the RAM usage info: %s", err)
+		m.log.Errorf("Can't reach the RAM usage info: %s", err)
 		return nil, err
 	}
 
@@ -77,13 +57,13 @@ func getRAMUsage() (*RamUsageInfo, error) {
 }
 
 // getDiskUsage returns the disk usage information.
-func getDiskUsage() (*DiskUsageInfo, error) {
-	log.Infoln("Getting disk usage info")
+func (m *Service) GetDiskUsage() (*DiskUsageInfo, error) {
+	m.log.Infoln("Getting disk usage info")
 
 	var stat syscall.Statfs_t
 	err := syscall.Statfs("/", &stat)
 	if err != nil {
-		log.Errorf("Can't reach disk usage info: %s", err)
+		m.log.Errorf("Can't reach disk usage info: %s", err)
 		return nil, err
 	}
 
@@ -109,8 +89,8 @@ func getDiskUsage() (*DiskUsageInfo, error) {
 //
 // TODO: Additional services such as 'http://ifconfig.me', 'https://api.ipify.org/' or 'https://ipv4.icanhazip.com/'
 // can be considered as future alternatives for retrieving the public IP address.
-func GetPublicIP() (string, error) {
-	log.Infoln("Getting public IP address")
+func (m *Service) GetPublicIP() (string, error) {
+	m.log.Infoln("Getting public IP address")
 
 	client := dns.Client{Net: "udp4"}
 
@@ -118,10 +98,10 @@ func GetPublicIP() (string, error) {
 		for _, ans := range r.Answer {
 			switch ans := ans.(type) {
 			case *dns.A:
-				log.Debugf("got `dns.A`: '%v'", ans.A.String())
+				m.log.Debugf("got `dns.A`: '%v'", ans.A.String())
 				return ans.A.String(), nil
 			case *dns.TXT:
-				log.Debugf("got `dns.TXT`: '%v'", ans.Txt[0])
+				m.log.Debugf("got `dns.TXT`: '%v'", ans.Txt[0])
 				return ans.Txt[0], nil
 			}
 		}
@@ -129,13 +109,13 @@ func GetPublicIP() (string, error) {
 	}
 
 	queryDNS := func(qname string, qtype uint16, server string) (string, error) {
-		log.Infof("Trying the query '%s' and server '%s'", qname, server)
+		m.log.Infof("Trying the query '%s' and server '%s'", qname, server)
 
 		message := new(dns.Msg)
 		message.SetQuestion(dns.Fqdn(qname), qtype)
 		r, _, err := client.Exchange(message, server)
 		if err != nil {
-			log.Errorf("Getting public IP error: %s", err)
+			m.log.Errorf("Getting public IP error: %s", err)
 			return "", err
 		}
 		return getPublicIPFromResponse(r)
@@ -155,12 +135,12 @@ func GetPublicIP() (string, error) {
 }
 
 // getInterfacesIP returns a map of interface names and their corresponding IP addresses.
-func getInterfacesIP() (map[string]string, error) {
-	log.Infoln("Getting IP addresses of interfaces")
+func (m *Service) GetInterfacesIP() (map[string]string, error) {
+	m.log.Infoln("Getting IP addresses of interfaces")
 
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		log.Errorf("Getting interfaces info error: %s", err)
+		m.log.Errorf("Getting interfaces info error: %s", err)
 		return nil, err
 	}
 
@@ -169,11 +149,11 @@ func getInterfacesIP() (map[string]string, error) {
 	for _, iface := range interfaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
-			log.Errorf("Getting unicast interface addresses for a specific interface error: %s", err)
+			m.log.Errorf("Getting unicast interface addresses for a specific interface error: %s", err)
 			return nil, err
 		}
 
-		log.Infof("Found interface: %s", iface.Name)
+		m.log.Infof("Found interface: %s", iface.Name)
 
 		ipNet, ok := addrs[0].(*net.IPNet)
 		if !ok {

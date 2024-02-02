@@ -2,10 +2,10 @@ package adapters
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"sync"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -15,108 +15,49 @@ import (
 )
 
 type (
-	// Structure gitHubAdapter is a struct to hold the GitHub client
-	gitHubAdapter struct {
+	// GitHubAdapter is a struct to hold the GitHub client
+	GitHubAdapter struct {
 		client *github.Client
+		log    *logging.Logger
 	}
 
-	repository struct {
-		Owner   string
-		Repo    string
-		Version string
-	}
-
-	repositories struct {
-		repos []repository
+	BinaryNotFoundError struct {
+		BinaryName string
 	}
 )
 
 const (
-	envGithubTokenVariableName = "GITHUB_TOKEN"
-	kiraGit                    = "KiraCore"
-	sekaiRepo                  = "sekai"
-	interxRepo                 = "interx"
+	kiraGit    = "KiraCore"
+	sekaiRepo  = "sekai"
+	interxRepo = "interx"
 )
 
-var log = logging.Log
-
-func MustDownloadBinaries(ctx context.Context, cfg *config.KiraConfig) {
-	repositories := repositories{}
-
-	repositories.Set(kiraGit, sekaiRepo, cfg.SekaiVersion)
-	repositories.Set(kiraGit, interxRepo, cfg.InterxVersion)
-	log.Infof("Getting repositories: %+v", repositories.Get())
-
-	token, exists := os.LookupEnv(envGithubTokenVariableName)
-	if !exists {
-		log.Fatalf("'%s' variable is not set", envGithubTokenVariableName)
+func (g *GitHubAdapter) MustDownloadBinaries(ctx context.Context, cfg *config.KiraConfig) {
+	err := g.downloadBinaryFromRepo(ctx, kiraGit, sekaiRepo, cfg.SekaiDebFileName, cfg.SekaiVersion)
+	if err != nil {
+		g.log.Fatalf("Cannot download '%s/%s' from '%s', error: %s", cfg.SekaiDebFileName, cfg.SekaiVersion, sekaiRepo, err)
 	}
 
-	gitHubAdapter := newGitHubAdapter(ctx, token)
-
-	repositories = fetch(ctx, gitHubAdapter, repositories)
-
-	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, sekaiRepo, cfg.SekaiDebFileName, cfg.SekaiVersion)
-	gitHubAdapter.downloadBinaryFromRepo(ctx, kiraGit, interxRepo, cfg.InterxDebFileName, cfg.InterxVersion)
-}
-
-// Add a new Repository to Repositories, version can be = ""
-func (r *repositories) Set(owner, repo, version string) {
-	newRepo := repository{Owner: owner, Repo: repo, Version: version}
-	r.repos = append(r.repos, newRepo)
-}
-
-func (r *repositories) Get() []repository {
-	return r.repos
-}
-
-func fetch(ctx context.Context, adapter *gitHubAdapter, r repositories) repositories {
-	var wg sync.WaitGroup
-	results := make(chan repository)
-
-	for _, repo := range r.repos {
-		wg.Add(1)
-		go func(owner, repo string) {
-			defer wg.Done()
-
-			latestRelease, err := adapter.getLatestRelease(ctx, owner, repo)
-			if err != nil {
-				log.Errorf("Error fetching latest release for %s/%s: %s\n", owner, repo, err)
-				return
-			}
-
-			results <- repository{Owner: owner, Repo: repo, Version: *latestRelease.TagName}
-		}(repo.Owner, repo.Repo)
+	err = g.downloadBinaryFromRepo(ctx, kiraGit, interxRepo, cfg.InterxDebFileName, cfg.InterxVersion)
+	if err != nil {
+		g.log.Fatalf("Cannot download '%s/%s' from '%s', error: %s", cfg.InterxDebFileName, cfg.InterxVersion, interxRepo, err)
 	}
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	var updatedRepos []repository
-	for result := range results {
-		updatedRepos = append(updatedRepos, result)
-	}
-
-	return repositories{repos: updatedRepos}
 }
 
-// newGitHubAdapter initializes a new GitHubAdapter instance
-func newGitHubAdapter(ctx context.Context, accessToken string) *gitHubAdapter {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: accessToken},
-	)
+// NewGitHubAdapter initializes a new GitHubAdapter instance
+func NewGitHubAdapter(ctx context.Context, accessToken string, log *logging.Logger) *GitHubAdapter {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: accessToken})
 	tc := oauth2.NewClient(ctx, ts)
 
-	return &gitHubAdapter{
+	return &GitHubAdapter{
 		client: github.NewClient(tc),
+		log:    log,
 	}
 }
 
 // getLatestRelease fetches the latest release from the specified repository
-func (gh *gitHubAdapter) getLatestRelease(ctx context.Context, owner, repo string) (*github.RepositoryRelease, error) {
-	release, _, err := gh.client.Repositories.GetLatestRelease(ctx, owner, repo)
+func (g *GitHubAdapter) getLatestRelease(ctx context.Context, owner, repo string) (*github.RepositoryRelease, error) {
+	release, _, err := g.client.Repositories.GetLatestRelease(ctx, owner, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -124,25 +65,28 @@ func (gh *gitHubAdapter) getLatestRelease(ctx context.Context, owner, repo strin
 }
 
 // downloadBinaryFromRepo downloads a binary file from a GitHub repository.
-// ctx: The context for the operation.
-// owner: The owner of the GitHub repository.
-// repo: The name of the GitHub repository.
-// binaryName: The name of the binary file to download.
+// - ctx: The context for the operation.
+// - owner: The owner of the GitHub repository.
+// - repo: The name of the GitHub repository.
+// - binaryName: The name of the binary file to download.
 // tag: The tag or version of the release containing the binary file.
-func (gh *gitHubAdapter) downloadBinaryFromRepo(ctx context.Context, owner, repo, binaryName, tag string) {
-	var release *github.RepositoryRelease
-	var err error
-	log.Infof("Downloading '%s' from '%s/%s', tag: %s", binaryName, owner, repo, tag)
+func (g *GitHubAdapter) downloadBinaryFromRepo(ctx context.Context, owner, repo, binaryName, tag string) error {
+	g.log.Infof("Downloading '%s' from '%s/%s', tag: %s", binaryName, owner, repo, tag)
+
+	var (
+		release *github.RepositoryRelease
+		err     error
+	)
 	switch tag {
 	case "latest":
-		release, _, err = gh.client.Repositories.GetLatestRelease(ctx, owner, repo)
+		release, _, err = g.client.Repositories.GetLatestRelease(ctx, owner, repo)
 		if err != nil {
-			log.Fatalf("Error fetching latest release: %v", err)
+			return fmt.Errorf("fetching latest release error: %w", err)
 		}
 	default:
-		release, _, err = gh.client.Repositories.GetReleaseByTag(ctx, owner, repo, tag)
+		release, _, err = g.client.Repositories.GetReleaseByTag(ctx, owner, repo, tag)
 		if err != nil {
-			log.Fatalf("Error fetching latest release: %v", err)
+			return fmt.Errorf("fetching '%s' tag release error: %w", tag, err)
 		}
 	}
 
@@ -156,25 +100,38 @@ func (gh *gitHubAdapter) downloadBinaryFromRepo(ctx context.Context, owner, repo
 	}
 
 	if asset == nil {
-		log.Fatalf("Binary not found in the latest release: %s", binaryName)
+		return &BinaryNotFoundError{BinaryName: binaryName}
 	}
 
-	resp, err := http.Get(*asset.BrowserDownloadURL)
+	// Create a request with context
+	req, err := http.NewRequestWithContext(ctx, "GET", *asset.BrowserDownloadURL, nil)
 	if err != nil {
-		log.Fatalf("Error downloading binary: %v", err)
+		return fmt.Errorf("creating request error: %w", err)
+	}
+
+	// Create an HTTP client and do the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("downloading binary error: %w", err)
 	}
 	defer resp.Body.Close()
 
 	out, err := os.Create(binaryName)
 	if err != nil {
-		log.Fatalf("Error creating binary file: %v", err)
+		return fmt.Errorf("creating binary file error: %w", err)
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		log.Fatalf("Error writing binary to file: %v", err)
+		return fmt.Errorf("writing binary to file error: %w", err)
 	}
 
-	log.Infof("Binary file downloaded successfully")
+	g.log.Infof("Binary file downloaded successfully")
+	return nil
+}
+
+func (e *BinaryNotFoundError) Error() string {
+	return fmt.Sprintf("binary not found in the latest release: %s", e.BinaryName)
 }

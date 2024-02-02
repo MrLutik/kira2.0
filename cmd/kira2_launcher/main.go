@@ -1,12 +1,7 @@
 package main
 
-import (
-	"github.com/mrlutik/kira2.0/internal/cli"
-	"github.com/mrlutik/kira2.0/internal/logging"
-)
+import cli "github.com/mrlutik/kira2.0/internal/cli/launcher"
 
 func main() {
-	log := logging.Log
-	log.Infoln("Starting kira2launcher...")
 	cli.Start()
 }

@@ -37,12 +37,12 @@ type (
 
 // GetDockerNetwork retrieves information about a Docker network.
 // It queries the Docker daemon to obtain a list of network resources and searches for the specified network by name.
-func (m *MonitoringService) GetDockerNetwork(ctx context.Context, networkName string) (*DockerNetworkInfo, error) {
-	log.Infof("Getting network '%s' resource information", networkName)
+func (m *Service) GetDockerNetwork(ctx context.Context, networkName string) (*DockerNetworkInfo, error) {
+	m.log.Infof("Getting network '%s' resource information", networkName)
 
-	resources, err := m.dockerManager.GetNetworksInfo(ctx)
+	resources, err := m.networkProvider.GetNetworksInfo(ctx)
 	if err != nil {
-		log.Errorf("Getting network info error: %s", err)
+		m.log.Errorf("Getting network info error: %s", err)
 		return nil, err
 	}
 
@@ -67,22 +67,22 @@ func (m *MonitoringService) GetDockerNetwork(ctx context.Context, networkName st
 // Finally, a ContainerInfo struct is constructed and returned with the retrieved information.
 // If the network specified by `dockerNetworkName` does not exist in the container's network settings,
 // an error is returned indicating the absence of the network.
-func (m *MonitoringService) GetContainerInfo(ctx context.Context, containerName, dockerNetworkName string) (*ContainerInfo, error) {
+func (m *Service) GetContainerInfo(ctx context.Context, containerName, dockerNetworkName string) (*ContainerInfo, error) {
 	resultInspect, err := m.containerManager.GetInspectOfContainer(ctx, containerName)
 	if err != nil {
-		log.Errorf("Getting containers inspection error: %s", err)
+		m.log.Errorf("Getting containers inspection error: %s", err)
 		return nil, err
 	}
 
 	startingAt, err := time.Parse(time.RFC3339Nano, resultInspect.State.StartedAt)
 	if err != nil {
-		log.Errorf("Can't parse date: %s", resultInspect.State.StartedAt)
+		m.log.Errorf("Can't parse date: %s", resultInspect.State.StartedAt)
 		return nil, fmt.Errorf("can't parse date '%s', error: %w", resultInspect.State.StartedAt, err)
 	}
 
 	finishedAt, err := time.Parse(time.RFC3339Nano, resultInspect.State.FinishedAt)
 	if err != nil {
-		log.Errorf("Can't parse date: %s", resultInspect.State.FinishedAt)
+		m.log.Errorf("Can't parse date: %s", resultInspect.State.FinishedAt)
 		return nil, fmt.Errorf("can't parse date '%s', error: %w", resultInspect.State.FinishedAt, err)
 	}
 
@@ -111,6 +111,6 @@ func (m *MonitoringService) GetContainerInfo(ctx context.Context, containerName,
 		IP:          network.IPAddress,
 		PortBinding: portBinding,
 	}
-	log.Debugf("%+v", *r)
+	m.log.Debugf("%+v", *r)
 	return r, nil
 }

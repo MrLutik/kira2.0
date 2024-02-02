@@ -14,14 +14,16 @@ type ServiceManager struct {
 	connection  *dbus.Conn
 	serviceName string
 	modeAction  string
+
+	log *logging.Logger
 }
 
-var log = logging.Log
-
-func NewServiceManager(ctx context.Context, serviceName, mode string) (*ServiceManager, error) {
+// NewServiceManager returns new instance of systemd manager
+// Callers should call Close() when done with the connection.
+func NewServiceManager(ctx context.Context, logger *logging.Logger, serviceName, mode string) (*ServiceManager, error) {
 	conn, err := dbus.NewWithContext(ctx)
 	if err != nil {
-		log.Errorf("Failed to connect to D-Bus: %s", err)
+		logger.Errorf("Failed to connect to D-Bus: %s", err)
 		return nil, err
 	}
 
@@ -29,6 +31,7 @@ func NewServiceManager(ctx context.Context, serviceName, mode string) (*ServiceM
 		connection:  conn,
 		serviceName: serviceName,
 		modeAction:  mode,
+		log:         logger,
 	}, nil
 }
 
@@ -44,12 +47,12 @@ func (s *ServiceManager) CheckServiceExists(ctx context.Context) (bool, error) {
 
 	for _, unit := range units {
 		if unit.Name == s.serviceName {
-			log.Infof("'%s' exists: %t", s.serviceName, true)
+			s.log.Infof("'%s' exists: %t", s.serviceName, true)
 			return true, nil
 		}
 	}
 
-	log.Infof("'%s' exists: %t", s.serviceName, false)
+	s.log.Infof("'%s' exists: %t", s.serviceName, false)
 	return false, nil
 }
 
@@ -78,7 +81,7 @@ func (s *ServiceManager) GetServiceStatus(ctx context.Context) (string, error) {
 		}
 	}
 
-	log.Infof("'%s' service status is '%s'", s.serviceName, active)
+	s.log.Infof("'%s' service status is '%s'", s.serviceName, active)
 	return unitStates[0].ActiveState, nil
 }
 
@@ -91,7 +94,7 @@ func (s *ServiceManager) RestartService(ctx context.Context) error {
 		return fmt.Errorf("failed to restart service: %w", err)
 	}
 
-	log.Infof("Job path: %d", job)
+	s.log.Infof("Job path: %d", job)
 
 	done := make(chan struct{})
 
@@ -101,11 +104,11 @@ func (s *ServiceManager) RestartService(ctx context.Context) error {
 		defer close(ch)
 
 		for res := range ch {
-			log.Infof("Restart service operation: %s", res)
+			s.log.Infof("Restart service operation: %s", res)
 			if res != "done" {
-				log.Infof("Failed to restart service: %s", s.serviceName)
+				s.log.Infof("Failed to restart service: %s", s.serviceName)
 			} else {
-				log.Infof("Successfully restarted service: %s", s.serviceName)
+				s.log.Infof("Successfully restarted service: %s", s.serviceName)
 				return
 			}
 		}
@@ -128,7 +131,7 @@ func (s *ServiceManager) StopService(ctx context.Context) error {
 		return fmt.Errorf("failed to stop service: %w", err)
 	}
 
-	log.Infof("Job path: %d", job)
+	s.log.Infof("Job path: %d", job)
 
 	done := make(chan struct{})
 
@@ -138,11 +141,11 @@ func (s *ServiceManager) StopService(ctx context.Context) error {
 		defer close(ch)
 
 		for res := range ch {
-			log.Infof("Stop service operation: %s", res)
+			s.log.Infof("Stop service operation: %s", res)
 			if res != "done" {
-				log.Infof("Failed to stop service: %s", s.serviceName)
+				s.log.Infof("Failed to stop service: %s", s.serviceName)
 			} else {
-				log.Infof("Successfully stopped service: %s", s.serviceName)
+				s.log.Infof("Successfully stopped service: %s", s.serviceName)
 				return
 			}
 		}
@@ -166,11 +169,11 @@ func (s *ServiceManager) EnableService(ctx context.Context, runtime, force bool)
 	}
 
 	if len(changes) == 0 {
-		log.Infof("'%s' is already enabled", s.serviceName)
+		s.log.Infof("'%s' is already enabled", s.serviceName)
 	}
 
 	for i, change := range changes {
-		log.Infof("Change [%d]: %+v", i, change)
+		s.log.Infof("Change [%d]: %+v", i, change)
 	}
 
 	return nil
@@ -178,7 +181,7 @@ func (s *ServiceManager) EnableService(ctx context.Context, runtime, force bool)
 
 // WaitForServiceStatus waits until the service reaches the specified status or times out.
 func (s *ServiceManager) WaitForServiceStatus(ctx context.Context, targetStatus string, timeout time.Duration) error {
-	log.Infof("Waiting for '%s' service status '%s'", s.serviceName, targetStatus)
+	s.log.Infof("Waiting for '%s' service status '%s'", s.serviceName, targetStatus)
 	for {
 		select {
 		case <-ctx.Done():
@@ -190,7 +193,7 @@ func (s *ServiceManager) WaitForServiceStatus(ctx context.Context, targetStatus 
 			}
 
 			if status == targetStatus {
-				log.Infof("'%s': target status '%s' has reached", s.serviceName, targetStatus)
+				s.log.Infof("'%s': target status '%s' has reached", s.serviceName, targetStatus)
 				return nil
 			}
 

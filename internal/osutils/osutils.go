@@ -1,6 +1,7 @@
 package osutils
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -15,9 +16,25 @@ import (
 	"github.com/mrlutik/kira2.0/internal/logging"
 )
 
-var log = logging.Log
+type OSUtils struct {
+	log *logging.Logger
+}
 
-func CopyFile(src, dst string) error {
+var ErrNotAFile = errors.New("path exists but is not a file")
+
+func NewOSUtils(logger *logging.Logger) *OSUtils {
+	return &OSUtils{
+		log: logger,
+	}
+}
+
+// CopyFile copies a file from a source path to a destination path.
+// - src: Source file path.
+// - dst: Destination file path.
+// Returns an error if the copying process fails.
+func (o *OSUtils) CopyFile(src, dst string) error {
+	o.log.Debugf("Copying '%s' to '%s", src, dst)
+
 	// Open source file for reading
 	srcFile, err := os.Open(src)
 	if err != nil {
@@ -41,8 +58,11 @@ func CopyFile(src, dst string) error {
 	return nil
 }
 
-func CreateDirPath(dirPath string) error {
-	log.Debugf("Creating dir path: %s", dirPath)
+// CreateDirPath creates a directory at the specified path including any necessary parent directories.
+// - dirPath: The path of the directory to create.
+// Returns an error if the directory creation fails.
+func (o *OSUtils) CreateDirPath(dirPath string) error {
+	o.log.Debugf("Creating dir path: %s", dirPath)
 	err := os.MkdirAll(dirPath, 0o755) // 0755 are the standard permissions for directories.
 	if err != nil {
 		return err
@@ -50,41 +70,55 @@ func CreateDirPath(dirPath string) error {
 	return nil
 }
 
-func CheckIfFileExist(filePath string) (bool, error) {
+// CheckIfFileExist checks whether a file exists at the given file path.
+// - filePath: Path of the file to check.
+// Returns true if the file exists, false otherwise, along with an error if the check fails.
+func (o *OSUtils) CheckIfFileExist(filePath string) (bool, error) {
+	o.log.Debugf("Checking if '%s' exist", filePath)
+
 	info, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		return false, nil
+	} else if err != nil {
+		return false, err
 	}
-	log.Debugf("Checking if '%s' exist: %t", filePath, !info.IsDir())
-	return !info.IsDir(), nil
+
+	if info.IsDir() {
+		return false, ErrNotAFile
+	}
+
+	return true, nil
 }
 
-func GetCurrentOSUser() *user.User {
+// GetCurrentOSUser retrieves the current OS user. If the program is run with sudo, it gets the user who invoked sudo.
+// Returns the user and an error if the retrieval fails.
+func (o *OSUtils) GetCurrentOSUser() (*user.User, error) {
 	// Getting current user home folder even if it run by sudo
 	sudoUser := os.Getenv("SUDO_USER")
 
 	if sudoUser != "" {
 		usr, err := user.Lookup(sudoUser)
 		if err != nil {
-			// TODO leave panic?
-			panic(err)
+			return nil, err
 		}
-		log.Debugf("Getting current user: %+v\n", usr)
-		return usr
-	} else {
-		// Fallback to the current user if not running via sudo
-		usr, err := user.Current()
-		if err != nil {
-			// TODO leave panic?
-			panic(err)
-		}
-		log.Debugf("Getting current user: %+v\n", usr)
-		return usr
+		o.log.Debugf("Getting current user: %+v", usr)
+		return usr, nil
 	}
+
+	// Fallback to the current user if not running via sudo
+	usr, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+	o.log.Debugf("Getting current user: %+v", usr)
+	return usr, nil
 }
 
-func CheckItPathExist(path string) (bool, error) {
-	log.Debugf("Checking if path exist: %s\n", path)
+// CheckIfPathExists checks whether a path exists in the file system.
+// - path: The path to check.
+// Returns true if the path exists, false otherwise, along with an error if the check fails.
+func (o *OSUtils) CheckIfPathExists(path string) (bool, error) {
+	o.log.Debugf("Checking if path '%s' exists", path)
 
 	_, err := os.Stat(path)
 	if err == nil {
@@ -96,16 +130,26 @@ func CheckItPathExist(path string) (bool, error) {
 	return false, err
 }
 
-func CheckIfIPIsValid(input string) (bool, error) {
+// CheckIfIPIsValid checks whether the given string is a valid IP address.
+// - input: The IP address string to validate.
+// Returns true if the IP address is valid, false otherwise, along with an error if the validation fails.
+func (o *OSUtils) CheckIfIPIsValid(input string) (bool, error) {
+	o.log.Debugf("Checking if '%s' is valid IP address", input)
+
 	ipCheck := net.ParseIP(input)
 	if ipCheck == nil {
 		return false, &InvalidIPError{Input: input}
 	}
+
 	return true, nil
 }
 
-// CheckIfPortIsValid checks if the input string is a valid port (0-65535) and returns true if valid, false otherwise.
-func CheckIfPortIsValid(input string) bool {
+// CheckIfPortIsValid checks whether the given string is a valid port number (0-65535).
+// - input: The port number string to validate.
+// Returns true if the port number is valid, false otherwise.
+func (o *OSUtils) CheckIfPortIsValid(input string) bool {
+	o.log.Debugf("Checking if '%s' is valid port", input)
+
 	port, err := strconv.Atoi(input)
 	if err != nil {
 		return false
@@ -118,40 +162,60 @@ func CheckIfPortIsValid(input string) bool {
 	return true
 }
 
-// Run command
-func RunCommand(command string, args ...string) ([]byte, error) {
+// RunCommand executes a command with the provided arguments and returns the combined standard output and standard error.
+// - command: The command to execute.
+// - args: Arguments for the command.
+// Returns the output of the command and an error if the execution fails.
+func (o *OSUtils) RunCommand(command string, args ...string) ([]byte, error) {
 	cmd := exec.Command(command, args...)
-	log.Debugf("Running: %s ", cmd.String())
+	o.log.Debugf("Running: %s", cmd.String())
+
+	// TODO REFACTOR TO check execution status
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		// TODO https://pkg.go.dev/os/exec#example-Cmd.CombinedOutput
+		// NO SENSE in this output
 		return output, err
 	}
 	return output, err
 }
 
-func RunCommandV2(commandStr string) ([]byte, error) {
+// RunCommandV2 executes a command given as a single string and returns the combined standard output and standard error.
+// - commandStr: The entire command with arguments as a single string.
+// Returns the output of the command and an error if the execution fails.
+func (o *OSUtils) RunCommandV2(commandStr string) ([]byte, error) {
+	o.log.Debugf("Running: %s", commandStr)
+
 	args, err := shlex.Split(commandStr)
 	if err != nil {
 		return []byte{}, err
 	}
-	log.Debugf("Running: %s ", commandStr)
+
 	cmd := exec.Command(args[0], args[1:]...)
+
+	// TODO REFACTOR TO check execution status
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		// TODO https://pkg.go.dev/os/exec#example-Cmd.CombinedOutput
+		// NO SENSE in this output
 		return out, err
 	}
 	return (out), nil
 }
 
-func GetInternetInterface() string {
+// GetInternetInterface attempts to find an active internet interface on the system.
+// Returns the name of the internet interface if found, an empty string otherwise.
+func (o *OSUtils) GetInternetInterface() string {
+	o.log.Debug("Getting internet interfaces")
+
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		return ""
 	}
 
-	for _, iface := range interfaces {
-		if iface.Flags&net.FlagUp != 0 && iface.Name != "lo" && hasInternetAccess(iface.Name) {
-			return iface.Name
+	for _, internetInterface := range interfaces {
+		if internetInterface.Flags&net.FlagUp != 0 && internetInterface.Name != "lo" && hasInternetAccess(internetInterface.Name) {
+			return internetInterface.Name
 		}
 	}
 
@@ -171,11 +235,18 @@ func hasInternetAccess(ifaceName string) bool {
 	}
 
 	out, err := cmd.CombinedOutput()
-	return err == nil && !strings.Contains(string(out), "100% packet loss")
+
+	// TODO "100% package loss" case does not cover bad connection issues
+	return err == nil && !strings.Contains(string(out), "100%% packet loss")
 }
 
-// accepts file path with file name for example "/tmp/hello.txt" and data to write in []byte
-func CreateFileWithData(filePath string, data []byte) error {
+// CreateFileWithData creates a new file at the specified path and writes the provided data into it.
+// - filePath: The path where the file will be created.
+// - data: The byte array of data to write into the file.
+// Returns an error if the file creation or data writing fails.
+func (o *OSUtils) CreateFileWithData(filePath string, data []byte) error {
+	o.log.Debugf("Creating file '%s' with provided data", filePath)
+
 	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)

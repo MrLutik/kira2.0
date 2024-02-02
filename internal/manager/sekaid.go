@@ -5,53 +5,95 @@ import (
 	"fmt"
 	"time"
 
+	mnemonicsgenerator "github.com/PeepoFrog/validator-key-gen/MnemonicsGenerator"
+	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
+	"github.com/kiracore/tools/bip39gen/pkg/bip39"
 
 	"github.com/mrlutik/kira2.0/internal/config"
-	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/logging"
-	"github.com/mrlutik/kira2.0/internal/manager/utils"
 	"github.com/mrlutik/kira2.0/internal/monitoring"
 	"github.com/mrlutik/kira2.0/internal/types"
+	"github.com/mrlutik/kira2.0/internal/utils"
 )
 
 // SekaidManager represents a manager for Sekaid container and its associated configurations.
-type SekaidManager struct {
-	ContainerConfig        *container.Config
-	SekaiHostConfig        *container.HostConfig
-	SekaidNetworkingConfig *network.NetworkingConfig
-	containerManager       *docker.ContainerManager
-	config                 *config.KiraConfig
-	helper                 *utils.HelperManager
-	dockerManager          *docker.DockerManager
-}
+type (
+	SekaidManager struct {
+		ContainerConfig        *container.Config
+		SekaiHostConfig        *container.HostConfig
+		SekaidNetworkingConfig *network.NetworkingConfig
+		config                 *config.KiraConfig
+		dockerManager          DockerManager
 
-// Returns configured SekaidManager.
-//
-//	*docker.DockerManager // The pointer for docker.DockerManager instance.
-//	*config	// Config of Kira application struct
-func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *docker.DockerManager, config *config.KiraConfig) (*SekaidManager, error) {
-	log := logging.Log
-	log.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
+		containerManager ContainerManager
+		helper           HelperManager
+		tomlEditor       TOMLEditor
+
+		log *logging.Logger
+	}
+	ContainerManager interface {
+		InitAndCreateContainer(ctx context.Context, containerConfig *container.Config, networkConfig *network.NetworkingConfig, hostConfig *container.HostConfig, containerName string) error
+		SendFileToContainer(ctx context.Context, filePathOnHostMachine, directoryPathOnContainer, containerID string) error
+		InstallDebPackage(ctx context.Context, containerID, debDestPath string) error
+		ExecCommandInContainer(ctx context.Context, containerID string, command []string) ([]byte, error)
+		GetFileFromContainer(ctx context.Context, folderPathOnContainer, fileName, containerID string) ([]byte, error)
+		WriteFileDataToContainer(ctx context.Context, fileData []byte, fileName, destPath, containerID string) error
+		ExecCommandInContainerInDetachMode(ctx context.Context, containerID string, command []string) ([]byte, error)
+		GetInspectOfContainer(ctx context.Context, containerIdentification string) (*dockerTypes.ContainerJSON, error)
+		CheckIfProcessIsRunningInContainer(ctx context.Context, processName, containerName string) (bool, string, error)
+		StopProcessInsideContainer(ctx context.Context, processName string, codeToStopWith int, containerName string) error
+		StartContainer(ctx context.Context, containerName string) error
+		StopContainer(ctx context.Context, containerName string) error
+	}
+
+	DockerManager interface {
+		GetNetworksInfo(ctx context.Context) ([]dockerTypes.NetworkResource, error)
+	}
+
+	HelperManager interface {
+		MnemonicReader() (masterMnemonic string)
+		ReadMnemonicsFromFile(pathToFile string) (masterMnemonic string, err error)
+		GenerateMnemonic() (masterMnemonic bip39.Mnemonic, err error)
+		GenerateMnemonicsFromMaster(masterMnemonic string) (*mnemonicsgenerator.MasterMnemonicSet, error)
+		SetSekaidKeys(ctx context.Context) error
+		SetEmptyValidatorState(ctx context.Context) error
+		GetAddressByName(ctx context.Context, addressName string) (string, error)
+		GivePermissionToAddress(ctx context.Context, permissionToAdd int, address string) error
+		CheckAccountPermission(ctx context.Context, permissionToCheck int, address string) (bool, error)
+	}
+
+	TOMLEditor interface {
+		SetTomlVar(config *config.TomlValue, configStr string) (string, error)
+	}
+)
+
+// NewSekaidManager initializes and returns a new instance of SekaidManager.
+// This function is responsible for setting up the SekaidManager with the necessary
+// Docker container configuration, host configuration, and networking settings
+// for running a Sekai node in a Docker container. It logs the creation process and
+// handles the NAT port mappings for the Sekai node's RPC, P2P, and Prometheus ports.
+func NewSekaidManager(containerManager ContainerManager, helper HelperManager, dockerManager DockerManager, config *config.KiraConfig, logger *logging.Logger) (*SekaidManager, error) {
+	logger.Infof("Creating sekaid manager with ports: %s, %s, image: '%s', volume: '%s' in '%s' network\n",
 		config.P2PPort, config.RpcPort, config.DockerImageName, config.GetVolumeMountPoint(), config.DockerNetworkName)
 
 	natRpcPort, err := nat.NewPort("tcp", config.RpcPort)
 	if err != nil {
-		log.Errorf("Creating NAT RPC port error: %s", err)
+		logger.Errorf("Creating NAT RPC port error: %s", err)
 		return nil, err
 	}
 
 	natP2PPort, err := nat.NewPort("tcp", config.P2PPort)
 	if err != nil {
-		log.Errorf("Creating NAT P2P port error: %s", err)
+		logger.Errorf("Creating NAT P2P port error: %s", err)
 		return nil, err
 	}
 
 	natPrometheusPort, err := nat.NewPort("tcp", config.PrometheusPort)
 	if err != nil {
-		log.Errorf("Creating NAT Prometheus port error: %s", err)
+		logger.Errorf("Creating NAT Prometheus port error: %s", err)
 		return nil, err
 	}
 
@@ -87,25 +129,28 @@ func NewSekaidManager(containerManager *docker.ContainerManager, dockerManager *
 			config.DockerNetworkName: {},
 		},
 	}
-	helper := utils.NewHelperManager(containerManager, config)
+
+	tomlEditor := utils.NewTOMLEditor(logger)
+
 	return &SekaidManager{
 		ContainerConfig:        sekaiContainerConfig,
 		SekaiHostConfig:        sekaiHostConfig,
 		SekaidNetworkingConfig: sekaidNetworkingConfig,
-		containerManager:       containerManager,
-		dockerManager:          dockerManager,
 		config:                 config,
+		dockerManager:          dockerManager,
+		containerManager:       containerManager,
 		helper:                 helper,
+		tomlEditor:             tomlEditor,
+		log:                    logger,
 	}, err
 }
 
 // runCommands executes a list of shell commands inside the Sekaid container
 func (s *SekaidManager) runCommands(ctx context.Context, commands []string) error {
-	log := logging.Log
 	for _, command := range commands {
 		_, err := s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 		if err != nil {
-			log.Errorf("Command '%s' execution error: %s", command, err)
+			s.log.Errorf("Command '%s' execution error: %s", command, err)
 			return err
 		}
 	}
@@ -180,49 +225,46 @@ func (s *SekaidManager) getJoinerAppConfig() []config.TomlValue {
 
 // applyNewConfig applies a set of configurations to the 'sekaid' application running in the SekaidManager's container.
 func (s *SekaidManager) applyNewConfig(ctx context.Context, configsToml []config.TomlValue, filename string) error {
-	log := logging.Log
-
 	configDir := fmt.Sprintf("%s/config", s.config.SekaidHome)
 
-	log.Infof("Applying new configs to '%s/%s'", configDir, filename)
+	s.log.Infof("Applying new configs to '%s/%s'", configDir, filename)
 
 	configFileContent, err := s.containerManager.GetFileFromContainer(ctx, configDir, filename, s.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("Can't get '%s' file of sekaid application. Error: %s", filename, err)
+		s.log.Errorf("Can't get '%s' file of sekaid application. Error: %s", filename, err)
 		return fmt.Errorf("getting '%s' file from sekaid container error: %w", filename, err)
 	}
 
 	config := string(configFileContent)
 	var newConfig string
 	for _, update := range configsToml {
-		newConfig, err = utils.SetTomlVar(&update, config)
+		newConfig, err = s.tomlEditor.SetTomlVar(&update, config)
 		if err != nil {
-			log.Errorf("Updating ([%s] %s = %s) error: %s\n", update.Tag, update.Name, update.Value, err)
+			s.log.Errorf("Updating ([%s] %s = %s) error: %s", update.Tag, update.Name, update.Value, err)
 
 			// TODO What can we do if updating value is not successful?
 
 			continue
 		}
 
-		log.Infof("Value ([%s] %s = %s) updated successfully\n", update.Tag, update.Name, update.Value)
+		s.log.Infof("Value ([%s] %s = %s) updated successfully", update.Tag, update.Name, update.Value)
 
 		config = newConfig
 	}
 
 	err = s.containerManager.WriteFileDataToContainer(ctx, []byte(config), filename, configDir, s.config.SekaidContainerName)
 	if err != nil {
-		log.Fatalln(err)
+		return fmt.Errorf("writing file '%s' into container error: %w", filename, err)
 	}
 
 	return nil
 }
 
 func (s *SekaidManager) getExternalP2PAddress() (config.TomlValue, error) {
-	log := logging.Log
-
-	publicIp, err := monitoring.GetPublicIP() // TODO move method to other package?
+	monitoringService := monitoring.NewMonitoringService(s.dockerManager, s.containerManager, s.log)
+	publicIp, err := monitoringService.GetPublicIP() // TODO move method to other package?
 	if err != nil {
-		log.Errorf("Getting public IP address error: %s", err)
+		s.log.Errorf("Getting public IP address error: %s", err)
 		return config.TomlValue{}, err
 	}
 
@@ -235,14 +277,12 @@ func (s *SekaidManager) getExternalP2PAddress() (config.TomlValue, error) {
 
 // This function allows modifying specific values in the 'config.toml' file of the 'sekaid' application by updating its content.
 func (s *SekaidManager) applyNewConfigToml(ctx context.Context, configsToml []config.TomlValue) error {
-	log := logging.Log
-
 	// Adding external p2p address to config
 	// This action performed here due to avoiding duplication
 	// Genesis and Joiner should both have this configuration
 	externalP2PConfig, err := s.getExternalP2PAddress()
 	if err != nil {
-		log.Errorf("Getting external P2P address error: %s", err)
+		s.log.Errorf("Getting external P2P address error: %s", err)
 		return err
 	}
 	configsToml = append(configsToml, externalP2PConfig)
@@ -256,26 +296,28 @@ func (s *SekaidManager) applyNewAppToml(ctx context.Context, configsToml []confi
 }
 
 func (s *SekaidManager) ReadOrGenerateMasterMnemonic() error {
-	var masterMnemonic string
-	log := logging.Log
-	var err error
+	var (
+		masterMnemonic string
+		err            error
+	)
 	if s.config.Recover {
 		masterMnemonic = s.helper.MnemonicReader()
 	} else {
 		masterMnemonic, err = s.helper.ReadMnemonicsFromFile(s.config.SecretsFolder + "/mnemonics.env")
 
 		if masterMnemonic == "" || err != nil {
-			log.Warningf("Could not read master mnemonic from file, trying to generate new one \n%s\n", err)
+			s.log.Warningf("Could not read master mnemonic from file, trying to generate new one \nError: %s\n", err)
 			bip39mn, err := s.helper.GenerateMnemonic()
 			if err != nil {
 				return err
 			}
 			masterMnemonic = bip39mn.String()
 		} else {
-			log.Info("Master mnemonic was found and restored")
+			s.log.Info("Master mnemonic was found and restored")
 		}
 	}
-	log.Debugf("Master mnemonic is:\n%s\n", masterMnemonic)
+
+	s.log.Debugf("Master mnemonic is:\n%s\n", masterMnemonic)
 	s.config.MasterMnamonicSet, err = s.helper.GenerateMnemonicsFromMaster(string(masterMnemonic))
 	if err != nil {
 		return err
@@ -285,23 +327,22 @@ func (s *SekaidManager) ReadOrGenerateMasterMnemonic() error {
 
 // initGenesisSekaidBinInContainer sets up the 'sekaid' Genesis container and initializes it with necessary configurations.
 func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) error {
-	log := logging.Log
-	log.Infof("Setting up '%s' (sekaid) genesis container", s.config.SekaidContainerName)
+	s.log.Infof("Setting up '%s' (sekaid) genesis container", s.config.SekaidContainerName)
 
 	// Have to do this because need to initialize sekaid folder
 	initcmd := fmt.Sprintf(`sekaid init  --overwrite --chain-id=%s --home=%s "%s"`, s.config.NetworkName, s.config.SekaidHome, s.config.Moniker)
-	log.Tracef("running %s\n", initcmd)
 	out, err := s.containerManager.ExecCommandInContainer(ctx, s.config.SekaidContainerName, []string{"bash", "-c", initcmd})
-	log.Tracef("out: %s, err:%v\n", string(out), err)
+	s.log.Tracef("out: %s, err:%v\n", string(out), err)
+
 	err = s.helper.SetSekaidKeys(ctx)
 	if err != nil {
-		log.Errorf("Can't set sekaid keys: %s", err)
+		s.log.Errorf("Can't set sekaid keys: %s", err)
 		return fmt.Errorf("can't set sekaid keys %w", err)
 	}
 
 	err = s.helper.SetEmptyValidatorState(ctx)
 	if err != nil {
-		log.Errorf("Setting empty validator state error: %s", err)
+		s.log.Errorf("Setting empty validator state error: %s", err)
 		return err
 	}
 
@@ -323,37 +364,36 @@ func (s *SekaidManager) initGenesisSekaidBinInContainer(ctx context.Context) err
 
 	err = s.runCommands(ctx, commands)
 	if err != nil {
-		log.Errorf("Initialized container error: %s", err)
+		s.log.Errorf("Initialized container error: %s", err)
 		return err
 	}
 	err = s.applyNewConfigToml(ctx, s.getStandardConfigPack())
 	if err != nil {
-		log.Errorf("Can't apply new config, error: %s", err)
+		s.log.Errorf("Can't apply new config, error: %s", err)
 		return fmt.Errorf("applying new config error: %w", err)
 	}
 
 	err = s.applyNewAppToml(ctx, s.getGenesisAppConfig())
 	if err != nil {
-		log.Errorf("Can't apply new app config, error: %s", err)
+		s.log.Errorf("Can't apply new app config, error: %s", err)
 		return fmt.Errorf("applying new app config error: %w", err)
 	}
 
-	log.Infof("'sekaid' genesis container '%s' initialized", s.config.SekaidContainerName)
+	s.log.Infof("'sekaid' genesis container '%s' initialized", s.config.SekaidContainerName)
 	return nil
 }
 
 // initJoinerSekaidBinInContainer sets up the 'sekaid' joiner container and initializes it with necessary configurations.
 func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, genesisData []byte) error {
-	log := logging.Log
-	log.Infof("Setting up '%s' joiner container", s.config.SekaidContainerName)
+	s.log.Infof("Setting up '%s' joiner container", s.config.SekaidContainerName)
 	err := s.helper.SetSekaidKeys(ctx)
 	if err != nil {
-		log.Errorf("Unable to set sekaid keys: %s", err)
+		s.log.Errorf("Unable to set sekaid keys: %s", err)
 		return err
 	}
 	err = s.helper.SetEmptyValidatorState(ctx)
 	if err != nil {
-		log.Errorf("Unable to set empty validator state: %s", err)
+		s.log.Errorf("Unable to set empty validator state: %s", err)
 		return err
 	}
 	commands := []string{
@@ -364,7 +404,7 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 
 	err = s.runCommands(ctx, commands)
 	if err != nil {
-		log.Errorf("Initialized container error: %s", err)
+		s.log.Errorf("Initialized container error: %s", err)
 		return err
 	}
 
@@ -373,55 +413,54 @@ func (s *SekaidManager) initJoinerSekaidBinInContainer(ctx context.Context, gene
 	err = s.containerManager.WriteFileDataToContainer(ctx, genesisData, types.GenesisFileName,
 		fmt.Sprintf("%s/config", s.config.SekaidHome), s.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("Write genesis file error: %s", err)
+		s.log.Errorf("Write genesis file error: %s", err)
 		return err
 	}
 
 	updates := s.getStandardConfigPack()
 	if len(s.config.ConfigTomlValues) == 0 {
-		log.Errorf("There is no provided configs for joiner")
+		s.log.Errorf("There is no provided configs for joiner")
 		return ErrEmptyNecessaryConfigs
 	}
 	updates = append(updates, s.config.ConfigTomlValues...)
 
 	err = s.applyNewConfigToml(ctx, updates)
 	if err != nil {
-		log.Errorf("Can't apply new config, error: %s", err)
+		s.log.Errorf("Can't apply new config, error: %s", err)
 		return fmt.Errorf("applying new config error: %w", err)
 	}
 
 	err = s.applyNewAppToml(ctx, s.getJoinerAppConfig())
 	if err != nil {
-		log.Errorf("Can't apply new app config, error: %s", err)
+		s.log.Errorf("Can't apply new app config, error: %s", err)
 		return fmt.Errorf("applying new app config error: %w", err)
 	}
 
-	log.Infof("'sekaid' joiner container '%s' initialized", s.config.SekaidContainerName)
+	s.log.Infof("'sekaid' joiner container '%s' initialized", s.config.SekaidContainerName)
 	return nil
 }
 
 // startSekaidBinInContainer starts the 'sekaid' binary inside the Sekaid container.
 func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
-	log := logging.Log
-	log.Infof("Setting up '%s' genesis container", s.config.SekaidContainerName)
+	s.log.Infof("Setting up '%s' genesis container", s.config.SekaidContainerName)
 	const processName = "sekaid"
 	// TODO move all args to config.toml
 	command := fmt.Sprintf(`%s start --home=%s --grpc.address "0.0.0.0:%s" --trace`, processName, s.config.SekaidHome, s.config.GrpcPort)
 	_, err := s.containerManager.ExecCommandInContainerInDetachMode(ctx, s.config.SekaidContainerName, []string{"bash", "-c", command})
 	if err != nil {
-		log.Errorf("Command '%s' execution error: %s", command, err)
+		s.log.Errorf("Command '%s' execution error: %s", command, err)
 	}
 	const delay = time.Second * 3
-	log.Warningf("Waiting to start '%s' for %0.0f seconds", processName, delay.Seconds())
+	s.log.Warningf("Waiting to start '%s' for %0.0f seconds", processName, delay.Seconds())
 	time.Sleep(delay)
 
 	check, _, err := s.containerManager.CheckIfProcessIsRunningInContainer(ctx, processName, s.config.SekaidContainerName)
 	if err != nil {
-		log.Errorf("Starting '%s' bin second time in '%s' container error: %s", processName, s.config.SekaidContainerName, err)
+		s.log.Errorf("Starting '%s' bin second time in '%s' container error: %s", processName, s.config.SekaidContainerName, err)
 		return fmt.Errorf("starting '%s' bin second time in '%s' container error: %w", processName, s.config.SekaidContainerName, err)
 	}
 	if !check {
-		log.Errorf("Process '%s' is not running in '%s' container", processName, s.config.SekaidContainerName)
+		s.log.Errorf("Process '%s' is not running in '%s' container", processName, s.config.SekaidContainerName)
 		return &ProcessNotRunningError{
 			ProcessName:   processName,
 			ContainerName: s.config.SekaidContainerName,
@@ -437,11 +476,9 @@ func (s *SekaidManager) startSekaidBinInContainer(ctx context.Context) error {
 // For each permission, it gives the permission to the address and checks if the permission is assigned successfully.
 // If any errors occur during the process, an error is returned.
 func (s *SekaidManager) postGenesisProposals(ctx context.Context) error {
-	log := logging.Log
-
 	address, err := s.helper.GetAddressByName(ctx, types.ValidatorAccountName)
 	if err != nil {
-		log.Errorf("Getting address in '%s' container error: %s", s.config.SekaidContainerName, err)
+		s.log.Errorf("Getting address in '%s' container error: %s", s.config.SekaidContainerName, err)
 		return fmt.Errorf("getting address in '%s' container error: %w", s.config.SekaidContainerName, err)
 	}
 
@@ -455,30 +492,30 @@ func (s *SekaidManager) postGenesisProposals(ctx context.Context) error {
 		types.PermVoteUpsertTokenAliasProposal,
 		types.PermVoteSoftwareUpgradeProposal,
 	}
-	log.Infof("Permissions to add: '%d' for: '%s'", permissions, address)
+	s.log.Infof("Permissions to add: '%d' for: '%s'", permissions, address)
 
 	// Waiting for first block when it's going to be propagated
-	log.Infof("Waiting for %0.0f seconds before first block be propagated", time.Duration.Seconds(s.config.TimeBetweenBlocks))
+	s.log.Infof("Waiting for %0.0f seconds before first block be propagated", time.Duration.Seconds(s.config.TimeBetweenBlocks))
 	time.Sleep(s.config.TimeBetweenBlocks)
 
 	for _, perm := range permissions {
-		log.Infof("Adding permission: '%d'", perm)
+		s.log.Infof("Adding permission: '%d'", perm)
 
 		err = s.helper.GivePermissionToAddress(ctx, perm, address)
 		if err != nil {
-			log.Errorf("Giving permission '%d' error: %s", perm, err)
+			s.log.Errorf("Giving permission '%d' error: %s", perm, err)
 			return fmt.Errorf("giving permission '%d' error: %w", perm, err)
 		}
 
-		log.Infof("Checking if '%s' address has '%d' permission", address, perm)
+		s.log.Infof("Checking if '%s' address has '%d' permission", address, perm)
 		check, err := s.helper.CheckAccountPermission(ctx, perm, address)
 		if err != nil {
-			log.Errorf("Checking account permission error: %s", err)
+			s.log.Errorf("Checking account permission error: %s", err)
 
 			// TODO skip error?
 		}
 		if !check {
-			log.Errorf("Could not find '%d' permission for '%s'", perm, address)
+			s.log.Errorf("Could not find '%d' permission for '%s'", perm, address)
 
 			// TODO skip error?
 		}

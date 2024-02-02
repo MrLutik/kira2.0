@@ -54,6 +54,8 @@ linters:
     - exportloopref
     - forbidigo
     - forcetypeassert
+    - gochecknoglobals
+    - gochecknoinits
     - godot
     - goerr113
 
@@ -61,8 +63,6 @@ linters:
   #   - cyclop
   #   - exhaustruct
   #   - funlen
-  #   - gochecknoglobals
-  #   - gochecknoinits
   #   - goconst
   #   - gocognit
   #   - gocritic
@@ -117,7 +117,7 @@ issues:
 
   exclude-rules:
     # monitoring.go is not going to be used
-    - path: internal/manager/cli/commands/monitoring/monitoring.go
+    - path: internal/cli/km2/commands/monitoring/monitoring.go
       text: "Error return value of `.*` is not checked"
 
 
