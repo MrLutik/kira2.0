@@ -36,8 +36,9 @@ func DockerServiceManagement(logger *logging.Logger) error {
 	if err != nil {
 		return fmt.Errorf("can't get the '%s' status, error: %w", dockerServiceName, err)
 	}
+
 	if status != "active" {
-		logger.Errorf("'%s' is not active", dockerServiceName)
+		logger.Warnf("'%s' is not active", dockerServiceName)
 		logger.Infof("Trying to restart '%s'", dockerServiceName)
 		err = dockerServiceManager.RestartService(dockerServiceContext)
 		if err != nil {

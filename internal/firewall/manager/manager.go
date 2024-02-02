@@ -17,11 +17,12 @@ import (
 
 type (
 	FirewallManager struct {
-		controllerKiraZone *controller.FirewallDController
-		dockerMaintenance  DockerMaintenance
-		firewallConfig     *FirewallConfig
-		kiraConfig         *config.KiraConfig
-		utils              *osutils.OSUtils
+		controllerKiraZone   *controller.FirewallDController
+		controllerDockerZone *controller.FirewallDController
+		dockerMaintenance    DockerMaintenance
+		firewallConfig       *FirewallConfig
+		kiraConfig           *config.KiraConfig
+		utils                *osutils.OSUtils
 
 		log *logging.Logger
 	}
@@ -37,6 +38,8 @@ type (
 		portsToOpen []types.Port
 	}
 )
+
+const dockerZoneName = "docker"
 
 var ErrFirewallDNotInstalled = errors.New("firewalld is not installed on the system")
 
@@ -60,18 +63,25 @@ func NewFirewallConfig(kiraCfg *config.KiraConfig) *FirewallConfig {
 
 func NewFirewallManager(dockerMaintenance DockerMaintenance, osUtils *osutils.OSUtils, kiraConfig *config.KiraConfig, logger *logging.Logger) (*FirewallManager, error) {
 	firewallConfig := NewFirewallConfig(kiraConfig)
-	controller, err := controller.NewFirewallDController(osUtils, firewallConfig.zoneName)
+
+	controllerKira, err := controller.NewFirewallDController(osUtils, firewallConfig.zoneName)
 	if err != nil {
-		return nil, fmt.Errorf("initialization of the firewall manager error: %w", err)
+		return nil, fmt.Errorf("initialization of the firewall controller of kira zone error: %w", err)
+	}
+
+	controllerDocker, err := controller.NewFirewallDController(osUtils, dockerZoneName)
+	if err != nil {
+		return nil, fmt.Errorf("initialization of the firewall controller of docker zone error: %w", err)
 	}
 
 	return &FirewallManager{
-		controllerKiraZone: controller,
-		dockerMaintenance:  dockerMaintenance,
-		firewallConfig:     firewallConfig,
-		kiraConfig:         kiraConfig,
-		utils:              osUtils,
-		log:                logger,
+		controllerKiraZone:   controllerKira,
+		controllerDockerZone: controllerDocker,
+		dockerMaintenance:    dockerMaintenance,
+		firewallConfig:       firewallConfig,
+		kiraConfig:           kiraConfig,
+		utils:                osUtils,
+		log:                  logger,
 	}, nil
 }
 
@@ -107,9 +117,7 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		return fmt.Errorf("verifying docker installation failed: %w", err)
 	}
 
-	// TODO DOCKER ZONE
-	f.log.Infof("Checking and deleting default docker zone")
-	dockerZoneName := "docker"
+	f.log.Infof("Checking default docker zone")
 	check, err := f.checkFirewallZone(dockerZoneName)
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -119,19 +127,19 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 		f.log.Infof("docker zone exist: %s, deleting", dockerZoneName)
 
 		var output string
-		// TODO Docker firewall!
-		output, err = f.controllerKiraZone.DeleteFirewallZone()
+		output, err = f.controllerDockerZone.DeleteFirewallZone()
 		if err != nil {
 			return fmt.Errorf("%s\n%w", output, err)
 		}
-		output, err = f.controllerKiraZone.ReloadFirewall()
+
+		output, err = f.controllerDockerZone.ReloadFirewall()
 		if err != nil {
 			return fmt.Errorf("%s\n%w", output, err)
 		}
+
 	} else {
 		f.log.Infof("zone '%s' does not exist", dockerZoneName)
 	}
-	// TODO DOCKER ZONE
 
 	f.log.Infof("Checking if '%s' zone exists", f.firewallConfig.zoneName)
 	check, err = f.checkFirewallZone(f.firewallConfig.zoneName)
@@ -158,6 +166,7 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
+
 	o, err = f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
@@ -208,15 +217,17 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	f.log.Debugf("issuing docker interface subnet")
 
 	dockerInterfaceConfig := dockerInterface.IPAM.Config
-	f.log.Debugf("docker interace subnet: %s", dockerInterfaceConfig[0].Subnet)
+	f.log.Debugf("docker interface subnet: %s", dockerInterfaceConfig[0].Subnet)
 	o, err = f.controllerKiraZone.AddRichRule(fmt.Sprintf("rule family=ipv4 source address=%s accept", dockerInterfaceConfig[0].Subnet))
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
+
 	o, err = f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
+
 	o, err = f.controllerKiraZone.TurnOnMasquerade()
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
@@ -225,10 +236,6 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	// Adding docker to the zone and enabling routing
 	f.log.Infof("Adding docker0 interface to the zone and enabling routing")
 	o, err = f.controllerKiraZone.AddInterfaceToTheZone("docker0")
-	if err != nil {
-		return fmt.Errorf("%s\n%w", o, err)
-	}
-	o, err = f.controllerKiraZone.ReloadFirewall()
 	if err != nil {
 		return fmt.Errorf("%s\n%w", o, err)
 	}
@@ -244,6 +251,7 @@ func (f *FirewallManager) SetUpFirewall(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot restart docker service: %w", err)
 	}
+
 	return nil
 }
 
@@ -300,6 +308,7 @@ func (f *FirewallManager) OpenConfigPorts(ctx context.Context) error {
 	return nil
 }
 
+// TODO Do we need this method?
 func (f *FirewallManager) RestoreDefaultFirewalldSettingsForKM2(ctx context.Context) error {
 	check, err := f.checkFirewallZone(f.firewallConfig.zoneName)
 	if err != nil {
@@ -308,7 +317,7 @@ func (f *FirewallManager) RestoreDefaultFirewalldSettingsForKM2(ctx context.Cont
 
 	if check {
 		var output string
-		f.log.Infof("docker zone exist: %s, deleting", f.firewallConfig.zoneName)
+		f.log.Infof("kira validator zone exist: %s, deleting", f.firewallConfig.zoneName)
 		output, err = f.controllerKiraZone.DeleteFirewallZone()
 		if err != nil {
 			return fmt.Errorf("%s\n%w", output, err)
