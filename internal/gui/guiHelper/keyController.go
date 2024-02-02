@@ -121,6 +121,14 @@ func AddKey(eMnemonic EncryptedMnemonic) error {
 		log.Errorf("error while adding key: %s", err)
 		return err
 	}
+	if eMnemonic.Name == "" {
+		return fmt.Errorf("key name cannot be empty")
+	}
+	for _, k := range keys {
+		if k.Name == eMnemonic.Name {
+			return fmt.Errorf(`mnemonic with "%s" already exist`, eMnemonic.Name)
+		}
+	}
 	keys = append(keys, eMnemonic)
 	err = setKeys(keys)
 	if err != nil {

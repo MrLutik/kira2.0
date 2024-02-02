@@ -14,6 +14,7 @@ import (
 	"github.com/mrlutik/kira2.0/internal/gui/guiHelper"
 	"github.com/mrlutik/kira2.0/internal/gui/sshC"
 	"github.com/mrlutik/kira2.0/internal/osutils"
+	"github.com/tyler-smith/go-bip39"
 )
 
 var sshMnemonicsMap = make(map[string]string)
@@ -23,12 +24,16 @@ func (g *Gui) showConnect() {
 
 	joinToInitializedNode := func() *fyne.Container {
 
-		var mnemonics []string
-		encryptedMnemonics, _ := guiHelper.GetKeys()
-		for _, m := range encryptedMnemonics {
-
-			mnemonics = append(mnemonics, m.Name)
+		updateMnemonicKeysList := func() []string {
+			var list []string
+			encryptedMnemonics, _ := guiHelper.GetKeys()
+			for _, m := range encryptedMnemonics {
+				list = append(list, m.Name)
+			}
+			return list
 		}
+		mnemonics := updateMnemonicKeysList()
+
 		var selectedKeyToJoin guiHelper.EncryptedMnemonic
 		userEntry := widget.NewEntry()
 		ipEntry := widget.NewEntry()
@@ -43,11 +48,18 @@ func (g *Gui) showConnect() {
 			log.Println("selected to join: ", s, k)
 			selectedKeyToJoin = k
 		})
-		restoreButton := widget.NewButton("restore SSH key", func() {})
-		bnonce := []byte(guiHelper.Nonce)
+		restoreButton := widget.NewButton("restore SSH key", func() {
+
+			g.showAddKeyDialog(encryptedMnemonicsSelect)
+
+			selectList := updateMnemonicKeysList()
+			log.Printf("updating list\n")
+			encryptedMnemonicsSelect.SetOptions(selectList)
+		})
+		bNonce := []byte(guiHelper.Nonce)
 		log.Printf("nonce: %s hexNonce %s", guiHelper.Nonce, hex.EncodeToString([]byte(guiHelper.Nonce)))
-		log.Printf("bnonce: %s hexbnonce %s", bnonce, hex.EncodeToString(bnonce))
-		log.Printf("bnonce: %v", bnonce)
+		log.Printf("bnonce: %s hexbnonce %s", bNonce, hex.EncodeToString(bNonce))
+		log.Printf("bnonce: %v", bNonce)
 
 		submitFunc := func() {
 			var err error
@@ -152,6 +164,101 @@ func (g *Gui) showConnect() {
 	wizard = dialogs.NewWizard("Create ssh connection", mainDialogScreen)
 	wizard.Show(g.Window)
 	wizard.Resize(fyne.NewSize(300, 200))
+}
+
+func (g *Gui) showErrorDialog(err error) {
+	var wizard *dialogs.Wizard
+	mainDialogScreen := container.NewVBox(
+		widget.NewLabel(err.Error()),
+		widget.NewButton("Close", func() { wizard.Hide() }),
+	)
+	wizard = dialogs.NewWizard("Create ssh connection", mainDialogScreen)
+	wizard.Show(g.Window)
+	wizard.Resize(fyne.NewSize(300, 200))
+
+}
+
+func (g *Gui) showAddKeyDialog(sW *widget.Select) {
+	var wizard *dialogs.Wizard
+	updateMnemonicKeysList := func() []string {
+		var list []string
+		encryptedMnemonics, _ := guiHelper.GetKeys()
+		for _, m := range encryptedMnemonics {
+			list = append(list, m.Name)
+		}
+		return list
+	}
+	sshMnemonicChoice := "sshMnemonic"
+	masterMnemonicChoice := "masterMnemonic"
+	var masterMnemonicCheck bool
+	choices := []string{sshMnemonicChoice, masterMnemonicChoice}
+	mnemonicNameEntering := widget.NewEntry()
+	mnemonicEntering := widget.NewEntry()
+	encryptionPassword := widget.NewPasswordEntry()
+	radioCheck := widget.NewRadioGroup(choices, func(s string) {
+		if s == sshMnemonicChoice {
+			masterMnemonicCheck = false
+		} else if s == masterMnemonicChoice {
+			masterMnemonicCheck = true
+		}
+	})
+	radioCheck.SetSelected(sshMnemonicChoice)
+	addButton := widget.NewButton("Add", func() {
+		var gErr error
+		if masterMnemonicCheck {
+		} else {
+
+			mnemonicCheck := bip39.IsMnemonicValid(mnemonicEntering.Text)
+			if !mnemonicCheck {
+				err := fmt.Errorf("Mnemonic is not valid")
+				g.showErrorDialog(err)
+				gErr = err
+				return
+			}
+			formattedPassword, err := guiHelper.Set32BytePassword(encryptionPassword.Text)
+			if err != nil {
+				gErr = err
+				g.showErrorDialog(err)
+				return
+			}
+			eMnemonic, err := guiHelper.EncryptMnemonic(mnemonicEntering.Text, formattedPassword, []byte(guiHelper.Nonce))
+			if err != nil {
+				gErr = err
+				g.showErrorDialog(err)
+				return
+			}
+			err = guiHelper.AddKey(guiHelper.EncryptedMnemonic{Name: mnemonicNameEntering.Text, EncoderMnemonicHex: hex.EncodeToString(eMnemonic)})
+			if err != nil {
+				gErr = err
+				g.showErrorDialog(err)
+				return
+			}
+		}
+		if gErr == nil {
+			sW.SetOptions(updateMnemonicKeysList())
+			wizard.Hide()
+
+		}
+	})
+	closeButton := widget.NewButton("Close", func() {
+		sW.SetOptions(updateMnemonicKeysList())
+		wizard.Hide()
+
+	})
+	mainDialogScreen := container.NewVBox(
+		radioCheck,
+		widget.NewLabel("name of mnemonic key"),
+		mnemonicNameEntering,
+		widget.NewLabel("bip39 mnemonic"),
+		mnemonicEntering,
+		widget.NewLabel("encryption password"),
+		encryptionPassword,
+		container.NewVBox(addButton, closeButton),
+	)
+	wizard = dialogs.NewWizard("Restore key with mnemonic", mainDialogScreen)
+	wizard.Show(g.Window)
+	wizard.Resize(fyne.NewSize(500, 200))
+
 }
 
 func showCmdExecDialogAndRunCmdV4(g *Gui, infoMSG string, cmd string) {
