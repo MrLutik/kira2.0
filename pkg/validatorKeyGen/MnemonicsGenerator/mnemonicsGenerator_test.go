@@ -16,6 +16,27 @@ import (
 // VALIDATOR_VAL_MNEMONIC=stick about junk liberty same envelope boy machine zoo wide shrimp clutch oval mango diary strike round divorce toilet cross guard appear govern chief
 // SIGNER_ADDR_MNEMONIC=near spirit dial february access song panda clean diesel legend clock remind name pupil drum general trap afford tuition side dune address alpha stool
 
+// files to test:
+
+// cat node_key.json
+// {"priv_key":{"type":"tendermint/PrivKeyEd25519","value":"XI+eMf0mqqX5a07cAgxBWpLKq8AicMETxQQoLIhxBw1u8GRu0kGFZ2jPpJhwp/aEUL9dPaGZ5taNaQFA0i8cMA=="}}
+
+// cat priv_validator_key.json && echo
+// {
+//   "address": "47E4C09C2BF5782B634BF393D394464BE08728A7",
+//   "pub_key": {
+//     "type": "tendermint/PubKeyEd25519",
+//     "value": "jNh+yX/KQRAON8KnwI+fawpRcKpUFyqolEn4dAaESNI="
+//   },
+//   "priv_key": {
+//     "type": "tendermint/PrivKeyEd25519",
+//     "value": "OYqWRyEl48LdMSihUM3f2pv9LARabDZeeqmUqXejOzSM2H7Jf8pBEA43wqfAj59rClFwqlQXKqiUSfh0BoRI0g=="
+//   }
+// }
+
+// cat validator_node_id.key
+// 935ea41280fa8754a35bd2916d935f222b559488
+
 func TestMasterKeysGen(t *testing.T) {
 	tests := []struct {
 		name           string
