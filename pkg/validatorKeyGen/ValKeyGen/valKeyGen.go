@@ -3,7 +3,6 @@ package valkeygen
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -186,10 +185,10 @@ func ValKeyGen(mnemonic, defaultPrefix, defaultPath, valkey, nodekey, keyid stri
 	}
 
 	// Generate HD(Hierarchical Deterministic) path from string
-	hdPath, err := hd.NewParamsFromPath(defaultPath)
-	if err != nil {
-		panic(err)
-	}
+	// hdPath, err := hd.NewParamsFromPath(defaultPath)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	// Generate tendermint MASTER private key from mnemonic
 	tmPrivKey := ed25519.GenPrivKeyFromSecret([]byte(mnemonic))
@@ -198,11 +197,11 @@ func ValKeyGen(mnemonic, defaultPrefix, defaultPath, valkey, nodekey, keyid stri
 	// tmPrivKey := ed25519.GenPrivKeyFromSecret(tmMasterPrivKey.Bytes())
 
 	// Derive MASTER key from mnemonic and HD path
-	masterPrivKey, err := hd.Secp256k1.Derive()(mnemonic, "", hdPath.String())
+	// masterPrivKey, err := hd.Secp256k1.Derive()(mnemonic, "", hdPath.String())
 
 	// Generate private key from MASTER key
-	privKey := hd.Secp256k1.Generate()(masterPrivKey)
-	pubKey := privKey.PubKey()
+	// privKey := hd.Secp256k1.Generate()(masterPrivKey)
+	// pubKey := privKey.PubKey()
 
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(prefix.GetBech32PrefixAccAddr(), prefix.GetBech32PrefixAccPub())
@@ -229,23 +228,13 @@ func ValKeyGen(mnemonic, defaultPrefix, defaultPath, valkey, nodekey, keyid stri
 				if err != nil {
 					panic(err)
 				}
+
 			}
 			if len(keyid) != 0 {
-				err = ioutil.WriteFile(keyid, []byte(filenodekey.ID()), 0o644)
+				err = os.WriteFile(keyid, []byte(filenodekey.ID()), 0o644)
 				if err != nil {
 					panic(err)
 				}
-			}
-
-		} else {
-			if acadr {
-				fmt.Fprintln(out, sdk.AccAddress(pubKey.Address().Bytes()).String())
-			}
-			if valadr {
-				fmt.Fprintln(out, sdk.ValAddress(pubKey.Address()).String())
-			}
-			if consadr {
-				fmt.Fprintln(out, sdk.ConsAddress(pubKey.Address().Bytes()).String())
 			}
 
 		}
