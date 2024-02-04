@@ -14,6 +14,10 @@ import (
 )
 
 const (
+	DefaultValidatorNodeKeyFileName string = "validator_node_key.json"
+	DefaultPrivValidatorKeyFileName string = "priv_validator_key.json"
+	DefaultValidatorNodeIdFileName  string = "validator_node_id.key"
+
 	DefaultPrefix string = "kira"
 	DefaultPath   string = "44'/118'/0'/0/0"
 )
@@ -138,12 +142,12 @@ func MasterKeysGen(masterMnemonic []byte, defaultPrefix, defaultPath, masterkeys
 		if masterkeys != "" {
 			// validator_node_key.json validator_node_id.key" files
 			valkeygen.ValKeyGen(string(mnemonicSet.ValidatorNodeMnemonic), defaultPrefix, defaultPath, "",
-				fmt.Sprintf("%s/validator_node_key.json", masterkeys),
-				fmt.Sprintf("%s/validator_node_id.key", masterkeys),
+				fmt.Sprintf("%s/%s", masterkeys, DefaultValidatorNodeKeyFileName),
+				fmt.Sprintf("%s/%s", masterkeys, DefaultValidatorNodeIdFileName),
 				false, false, false)
 
 			// priv_validator_key.json files
-			valkeygen.ValKeyGen(string(mnemonicSet.ValidatorValMnemonic), defaultPrefix, defaultPath, fmt.Sprintf("%s/priv_validator_key.json", masterkeys), "", "", false, false, false)
+			valkeygen.ValKeyGen(string(mnemonicSet.ValidatorValMnemonic), defaultPrefix, defaultPath, fmt.Sprintf("%s/%s", masterkeys, DefaultPrivValidatorKeyFileName), "", "", false, false, false)
 
 			// mnemonics.env file
 			dataToWrite := []byte(fmt.Sprintf("MASTER_MNEMONIC=%s\nVALIDATOR_ADDR_MNEMONIC=%s\nVALIDATOR_NODE_MNEMONIC=%s\nVALIDATOR_NODE_ID=%s\nVALIDATOR_VAL_MNEMONIC=%s\nSIGNER_ADDR_MNEMONIC=%s\n ", masterMnemonic, mnemonicSet.ValidatorAddrMnemonic, mnemonicSet.ValidatorNodeMnemonic, mnemonicSet.ValidatorNodeId, mnemonicSet.ValidatorValMnemonic, mnemonicSet.SignerAddrMnemonic))
