@@ -28,6 +28,7 @@ type MasterMnemonicSet struct {
 	SignerAddrMnemonic    []byte
 	ValidatorNodeMnemonic []byte
 	ValidatorNodeId       []byte
+	NodeSHHMnemonic       []byte
 }
 
 // returns nodeId from mnemonic
@@ -60,7 +61,7 @@ func createMnemonicsFile(path string, mnemonicData []byte) error {
 	return nil
 }
 
-// acceps name and typeOfMnemonic as salt and mnemonic, for example MnemonicGenerator --name="validator" --type="addr"  - validator address
+// accepts name and typeOfMnemonic as salt and mnemonic, for example MnemonicGenerator --name="validator" --type="addr"  - validator address
 func generateFromMasterMnemonic(name, typeOfMnemonic string, masterMnemonic []byte) ([]byte, error) {
 	stringToHash := strings.ToLower(fmt.Sprintf("%s ; %s %s", masterMnemonic, name, typeOfMnemonic))
 	stringToHash = strings.ReplaceAll(stringToHash, " ", "")
@@ -139,6 +140,13 @@ func MasterKeysGen(masterMnemonic []byte, defaultPrefix, defaultPath, masterkeys
 			return mnemonicSet, err
 		}
 
+		// ssh mnemonic
+		mnemonicSet.NodeSHHMnemonic, err = DeriveSSHMnemonicFromMasterMnemonic(masterMnemonic)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return mnemonicSet, err
+		}
+
 		if masterkeys != "" {
 			// validator_node_key.json validator_node_id.key" files
 			valkeygen.ValKeyGen(string(mnemonicSet.ValidatorNodeMnemonic), defaultPrefix, defaultPath, "",
@@ -163,4 +171,24 @@ func MasterKeysGen(masterMnemonic []byte, defaultPrefix, defaultPath, masterkeys
 
 	}
 	return mnemonicSet, nil
+}
+
+// Accepts parent mnemonic as masterMnemonic and derives from it a sshMnemonic using generateFromMasterMnemonic func
+// salt is name and typeOfMnemonic hardcoded as const
+//
+// Constants:
+// name=ssh,
+// typeOfMnemonic=key.
+func DeriveSSHMnemonicFromMasterMnemonic(masterMnemonic []byte) (sshMnemonic []byte, err error) {
+	const name string = "ssh"
+	const typeOfMnemonic string = "key"
+	err = valkeygen.CheckMnemonic(string(masterMnemonic))
+	if err != nil {
+		return nil, err
+	}
+	sshMnemonic, err = generateFromMasterMnemonic(name, typeOfMnemonic, masterMnemonic)
+	if err != nil {
+		return nil, fmt.Errorf("error while generating ")
+	}
+	return
 }
