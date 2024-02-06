@@ -62,8 +62,30 @@ var (
 		ValidatorValMnemonic:  []byte("stick about junk liberty same envelope boy machine zoo wide shrimp clutch oval mango diary strike round divorce toilet cross guard appear govern chief"),
 		SignerAddrMnemonic:    []byte("near spirit dial february access song panda clean diesel legend clock remind name pupil drum general trap afford tuition side dune address alpha stool"),
 		ValidatorNodeId:       []byte("935ea41280fa8754a35bd2916d935f222b559488"),
+		NodeSHHMnemonic:       []byte("width pigeon crystal into predict step check wrist obvious creek special degree later poverty model detect click because sort real believe barely vacuum family"),
 	}
 )
+
+// This test excludes NodeSSHMnemonic to check if func return the proper origin mnemonics from original tool
+func TestMasterKeysGenWithOutSSHMnemonic(t *testing.T) {
+	got, err := mnemonicsgenerator.MasterKeysGen([]byte(masterMnemonicForTest), mnemonicsgenerator.DefaultPrefix, mnemonicsgenerator.DefaultPath, "")
+	if err != nil {
+		t.Errorf("MasterKeysGen(%+s)\n error = %v", masterMnemonicForTest, err)
+		return
+	}
+	switch {
+	case string(wantedMnemonicSet.ValidatorAddrMnemonic) != string(got.ValidatorAddrMnemonic):
+		t.Errorf("wrong mnemonic: %v", string(got.ValidatorValMnemonic))
+	case string(wantedMnemonicSet.ValidatorNodeMnemonic) != string(got.ValidatorNodeMnemonic):
+		t.Errorf("wrong mnemonic: %v", string(got.ValidatorNodeMnemonic))
+	case string(wantedMnemonicSet.ValidatorValMnemonic) != string(got.ValidatorValMnemonic):
+		t.Errorf("wrong mnemonic: %v", string(got.ValidatorValMnemonic))
+	case string(wantedMnemonicSet.SignerAddrMnemonic) != string(got.SignerAddrMnemonic):
+		t.Errorf("wrong mnemonic: %v", string(got.SignerAddrMnemonic))
+	case string(wantedMnemonicSet.ValidatorNodeId) != string(got.ValidatorNodeId):
+		t.Errorf("wrong mnemonic: %v", string(got.ValidatorNodeId))
+	}
+}
 
 func TestMasterKeysGen(t *testing.T) {
 	mnemonicSetTest := []struct {
@@ -114,15 +136,25 @@ func TestMasterKeysGen(t *testing.T) {
 	}
 
 	for _, tt := range keyFileTest {
-		t.Run(tt.name, func(t *testing.T) {
-			out, err := os.ReadFile(tt.fileName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("unable to read %s file, error = %v", tt.fileName, err)
-				return
-			}
-			if string(out) != tt.wantedData {
-				t.Errorf("wrong key\nExpected: %v\nReceived: %v", []byte(tt.wantedData), out)
-			}
-		})
+
+		out, err := os.ReadFile(tt.fileName)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("unable to read %s file, error = %v", tt.fileName, err)
+			return
+		}
+		if string(out) != tt.wantedData {
+			t.Errorf("wrong key\nExpected: %v\nReceived: %v", []byte(tt.wantedData), out)
+		}
+
+	}
+}
+
+func TestDeriveSSHMnemonicFromMasterMnemonic(t *testing.T) {
+	sshMnemonic, err := mnemonicsgenerator.DeriveSSHMnemonicFromMasterMnemonic([]byte(masterMnemonicForTest))
+	if err != nil {
+		t.Errorf("unable to derive ssh mnemonic from <%s>, error: %v", masterMnemonicForTest, err)
+	}
+	if string(sshMnemonic) != string(wantedMnemonicSet.NodeSHHMnemonic) {
+		t.Errorf("derived ssh mnemonic is not equal to wanted mnemonic\nGot: %s\nWanted:%s", sshMnemonic, wantedMnemonicSet.NodeSHHMnemonic)
 	}
 }
