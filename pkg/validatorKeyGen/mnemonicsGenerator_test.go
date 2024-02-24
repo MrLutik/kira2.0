@@ -62,12 +62,12 @@ var (
 		ValidatorValMnemonic:  []byte("stick about junk liberty same envelope boy machine zoo wide shrimp clutch oval mango diary strike round divorce toilet cross guard appear govern chief"),
 		SignerAddrMnemonic:    []byte("near spirit dial february access song panda clean diesel legend clock remind name pupil drum general trap afford tuition side dune address alpha stool"),
 		ValidatorNodeId:       []byte("935ea41280fa8754a35bd2916d935f222b559488"),
-		NodeSHHMnemonic:       []byte("width pigeon crystal into predict step check wrist obvious creek special degree later poverty model detect click because sort real believe barely vacuum family"),
+		PrivKeyMnemonic:       []byte("trash conduct welcome seek people duty enter monkey turtle holiday husband recall iron check gorilla bottom amused clump glue culture kidney news umbrella cancel"),
 	}
 )
 
-// This test excludes NodeSSHMnemonic to check if func return the proper origin mnemonics from original tool
-func TestMasterKeysGenWithOutSSHMnemonic(t *testing.T) {
+// This test excludes PrivKeyMnemonic to check if func return the proper origin mnemonics from original tool
+func TestMasterKeysGenWithOutPrivKeyMnemonic(t *testing.T) {
 	got, err := mnemonicsgenerator.MasterKeysGen([]byte(masterMnemonicForTest), mnemonicsgenerator.DefaultPrefix, mnemonicsgenerator.DefaultPath, "")
 	if err != nil {
 		t.Errorf("MasterKeysGen(%+s)\n error = %v", masterMnemonicForTest, err)
@@ -149,12 +149,12 @@ func TestMasterKeysGen(t *testing.T) {
 	}
 }
 
-func TestDeriveSSHMnemonicFromMasterMnemonic(t *testing.T) {
-	sshMnemonic, err := mnemonicsgenerator.DeriveSSHMnemonicFromMasterMnemonic([]byte(masterMnemonicForTest))
+func TestDerivePrivKeyMnemonicFromMasterMnemonic(t *testing.T) {
+	privKeyMnemonic, err := mnemonicsgenerator.DerivePrivKeyMnemonicFromMasterMnemonic([]byte(masterMnemonicForTest))
 	if err != nil {
-		t.Errorf("unable to derive ssh mnemonic from <%s>, error: %v", masterMnemonicForTest, err)
+		t.Errorf("unable to derive privKey mnemonic from <%s>, error: %v", masterMnemonicForTest, err)
 	}
-	if string(sshMnemonic) != string(wantedMnemonicSet.NodeSHHMnemonic) {
-		t.Errorf("derived ssh mnemonic is not equal to wanted mnemonic\nGot: %s\nWanted:%s", sshMnemonic, wantedMnemonicSet.NodeSHHMnemonic)
+	if string(privKeyMnemonic) != string(wantedMnemonicSet.PrivKeyMnemonic) {
+		t.Errorf("derived privKey mnemonic is not equal to wanted mnemonic\nGot: %s\nWanted:%s", privKeyMnemonic, wantedMnemonicSet.PrivKeyMnemonic)
 	}
 }

@@ -28,7 +28,7 @@ type MasterMnemonicSet struct {
 	SignerAddrMnemonic    []byte
 	ValidatorNodeMnemonic []byte
 	ValidatorNodeId       []byte
-	NodeSHHMnemonic       []byte
+	PrivKeyMnemonic       []byte
 }
 
 // returns nodeId from mnemonic
@@ -89,7 +89,7 @@ func generateFromMasterMnemonic(name, typeOfMnemonic string, masterMnemonic []by
 //
 // go run .\main.go --mnemonic "want vanish frown filter resemble purchase trial baby equal never cinnamon claim wrap cash snake cable head tray few daring shine clip loyal series" --masterkeys .\test\ --master
 //
-// # FOR PACKAGE USSAGE
+// # FOR PACKAGE USAGE
 //
 // defaultPrefix: "kira"
 //
@@ -140,8 +140,8 @@ func MasterKeysGen(masterMnemonic []byte, defaultPrefix, defaultPath, masterkeys
 			return mnemonicSet, err
 		}
 
-		// ssh mnemonic
-		mnemonicSet.NodeSHHMnemonic, err = DeriveSSHMnemonicFromMasterMnemonic(masterMnemonic)
+		// privKey mnemonic
+		mnemonicSet.PrivKeyMnemonic, err = DerivePrivKeyMnemonicFromMasterMnemonic(masterMnemonic)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return mnemonicSet, err
@@ -173,20 +173,20 @@ func MasterKeysGen(masterMnemonic []byte, defaultPrefix, defaultPath, masterkeys
 	return mnemonicSet, nil
 }
 
-// Accepts parent mnemonic as masterMnemonic and derives from it a sshMnemonic using generateFromMasterMnemonic func
+// Accepts parent mnemonic as masterMnemonic and derives from it a PrivKeyMnemonic using generateFromMasterMnemonic func
 // salt is name and typeOfMnemonic hardcoded as const
 //
 // Constants:
-// name=ssh,
+// name=priv,
 // typeOfMnemonic=key.
-func DeriveSSHMnemonicFromMasterMnemonic(masterMnemonic []byte) (sshMnemonic []byte, err error) {
-	const name string = "ssh"
+func DerivePrivKeyMnemonicFromMasterMnemonic(masterMnemonic []byte) (privKey []byte, err error) {
+	const name string = "priv"
 	const typeOfMnemonic string = "key"
 	err = valkeygen.CheckMnemonic(string(masterMnemonic))
 	if err != nil {
 		return nil, err
 	}
-	sshMnemonic, err = generateFromMasterMnemonic(name, typeOfMnemonic, masterMnemonic)
+	privKey, err = generateFromMasterMnemonic(name, typeOfMnemonic, masterMnemonic)
 	if err != nil {
 		return nil, fmt.Errorf("error while generating ")
 	}
