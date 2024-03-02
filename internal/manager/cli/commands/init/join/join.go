@@ -12,7 +12,6 @@ import (
 	"github.com/mrlutik/kira2.0/internal/config/configFileController"
 	"github.com/mrlutik/kira2.0/internal/docker"
 	"github.com/mrlutik/kira2.0/internal/errors"
-	"github.com/mrlutik/kira2.0/internal/firewall/firewallManager"
 	"github.com/mrlutik/kira2.0/internal/logging"
 	"github.com/mrlutik/kira2.0/internal/manager"
 	"github.com/mrlutik/kira2.0/internal/systemd"
@@ -221,13 +220,13 @@ func mainJoin(cmd *cobra.Command) {
 	// Right now the files are downloaded in current directory, where the program starts
 	adapters.MustDownloadBinaries(ctx, cfg)
 
-	firewallManager := firewallManager.NewFirewallManager(dockerManager, cfg)
-	check, err := firewallManager.CheckFirewallSetUp(ctx)
-	errors.HandleFatalErr("Error while checking valid firewalld setup", err)
-	if !check {
-		err = firewallManager.SetUpFirewall(ctx)
-		errors.HandleFatalErr("Error while setuping firewall", err)
-	}
+	// firewallManager := firewallManager.NewFirewallManager(dockerManager, cfg)
+	// check, err := firewallManager.CheckFirewallSetUp(ctx)
+	// errors.HandleFatalErr("Error while checking valid firewalld setup", err)
+	// if !check {
+	// 	err = firewallManager.SetUpFirewall(ctx)
+	// 	errors.HandleFatalErr("Error while setuping firewall", err)
+	// }
 
 	sekaiManager, err := manager.NewSekaidManager(containerManager, dockerManager, cfg)
 	errors.HandleFatalErr("Can't create new 'sekai' manager instance", err)
